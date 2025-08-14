@@ -5,13 +5,16 @@ import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { ArrowRight, Loader2 } from "lucide-react"
-
+import { ArrowRight, Loader2, Shield, ShoppingBag, Store } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+
+const roleSchema = z.enum(["buyer", "seller", "admin"]) 
 
 const registerSchema = z
   .object({
@@ -19,6 +22,7 @@ const registerSchema = z
     email: z.string().email("Enter a valid email"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(6, "Confirm your password"),
+    role: roleSchema,
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],
@@ -28,25 +32,52 @@ const registerSchema = z
 type RegisterValues = z.infer<typeof registerSchema>
 
 export function RegisterForm() {
+  const router = useRouter()
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterValues>({ resolver: zodResolver(registerSchema), mode: "onBlur" })
+    setValue,
+    watch,
+  } = useForm<RegisterValues>({
+    resolver: zodResolver(registerSchema),
+    mode: "onBlur",
+    defaultValues: { role: "buyer" },
+  })
+
+  const selectedRole = watch("role")
 
   async function onSubmit(values: RegisterValues) {
     await new Promise((r) => setTimeout(r, 800))
-    toast.success("Account created", { description: `Welcome, ${values.name}` })
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("role", values.role)
+      }
+    } catch {}
+    const roleLabel = values.role === "buyer" ? "Buyer" : values.role === "seller" ? "Seller" : "Admin"
+    toast.success("Account created", { description: `Welcome, ${values.name} (${roleLabel})` })
+    router.push("/")
   }
 
   return (
     <>
       <CardHeader>
         <CardTitle className="text-2xl">Create account</CardTitle>
-        <CardDescription>Sign up to start your journey.</CardDescription>
+        <CardDescription>Sign up and choose your role.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Register as</Label>
+            <Tabs value={selectedRole} onValueChange={(v) => setValue("role", v as RegisterValues["role"]) }>
+              <TabsList>
+                <TabsTrigger value="buyer" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
+                <TabsTrigger value="seller" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
+                <TabsTrigger value="admin" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <input type="hidden" {...register("role")} />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input id="name" placeholder="Your name" autoComplete="name" {...register("name")} />

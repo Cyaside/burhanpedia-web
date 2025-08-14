@@ -5,41 +5,72 @@ import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { ArrowRight, Loader2 } from "lucide-react"
-
+import { ArrowRight, Loader2, Shield, ShoppingBag, Store } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+
+const roleSchema = z.enum(["buyer", "seller", "admin"]) 
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  role: roleSchema,
 })
 
 type LoginValues = z.infer<typeof loginSchema>
 
 export function LoginForm() {
+  const router = useRouter()
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginValues>({ resolver: zodResolver(loginSchema), mode: "onBlur" })
+    setValue,
+    watch,
+  } = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+    defaultValues: { role: "buyer" },
+  })
+
+  const selectedRole = watch("role")
 
   async function onSubmit(values: LoginValues) {
     await new Promise((r) => setTimeout(r, 800))
-    toast.success("Logged in", { description: `Welcome back, ${values.email}` })
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("role", values.role)
+      }
+    } catch {}
+    const roleLabel = values.role === "buyer" ? "Buyer" : values.role === "seller" ? "Seller" : "Admin"
+    toast.success("Logged in", { description: `Welcome back, ${values.email} (${roleLabel})` })
+    router.push("/")
   }
 
   return (
     <>
       <CardHeader>
         <CardTitle className="text-2xl">Welcome back</CardTitle>
-        <CardDescription>Enter your credentials to access your account.</CardDescription>
+        <CardDescription>Enter your credentials and choose your role.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Sign in as</Label>
+            <Tabs value={selectedRole} onValueChange={(v) => setValue("role", v as LoginValues["role"]) }>
+              <TabsList>
+                <TabsTrigger value="buyer" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
+                <TabsTrigger value="seller" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
+                <TabsTrigger value="admin" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <input type="hidden" {...register("role")} />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} />
