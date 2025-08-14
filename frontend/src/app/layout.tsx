@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import React from "react"
 
 import "@/styles/index.css"
+import { Toaster } from "@/components/ui/sonner"
 
 export const metadata: Metadata = {
   title: "BurhanPedia",
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh bg-background text-foreground antialiased">
         {children}
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   )

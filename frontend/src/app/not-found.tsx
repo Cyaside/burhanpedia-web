@@ -20,7 +20,7 @@ export default function NotFound() {
         <div className="space-y-2">
           <h1 className="text-4xl font-bold tracking-tight">404 - Page Not Found</h1>
           <p className="text-muted-foreground max-w-prose">
-            Looks like Burhan wandered off. The page you're looking for doesn't exist or has moved.
+            Looks like Burhan wandered off. The page you&apos;re looking for doesn&apos;t exist or has moved.
           </p>
         </div>
         <div className="flex gap-3">
