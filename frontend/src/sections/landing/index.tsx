@@ -37,7 +37,7 @@ export default function LandingSection() {
           <span className="text-sm font-semibold">BurhanPedia</span>
         </div>
         <Button asChild variant="outline" size="sm" className="gap-1">
-          <Link href="#login" aria-label="Login">
+          <Link href="/login" aria-label="Login">
             Login
             <ArrowRight className="size-4" />
           </Link>
