@@ -5,7 +5,7 @@ import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { ArrowRight, Loader2, Shield, ShoppingBag, Store } from "lucide-react"
+import { ArrowRight, Loader2, Shield, ShoppingBag, Store, Home } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -100,6 +100,14 @@ export function LoginForm() {
               <Link href="/register">Create one</Link>
             </Button>
           </p>
+          <div className="text-center">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/">
+                <Home className="mr-2 size-4" />
+                Back to Home
+              </Link>
+            </Button>
+          </div>
         </form>
       </CardContent>
     </>
