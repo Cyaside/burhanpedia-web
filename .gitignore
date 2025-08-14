@@ -17,12 +17,19 @@ frontend/out/
 frontend/build
 frontend/dist
 
+#nestjs (backend)
+backend/dist
+backend/build
+backend/generated/prisma
+
 # env files (can opt-in for committing if needed)
 .env
 frontend/.env
+backend/.env
 
 # production
 frontend/build
+backend/build
 
 # testing
 /coverage
