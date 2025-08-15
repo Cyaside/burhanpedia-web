@@ -79,6 +79,7 @@ This NestJS backend can be deployed to Vercel as a serverless function. Follow t
    - `JWT_SECRET`: Your JWT secret key
    - `JWT_EXPIRES_IN`: JWT expiration time (e.g., "24h")
    - `NODE_ENV`: Set to "production"
+   - `ADDITIONAL_ORIGINS`: Additional CORS origins (comma-separated, optional)
 
 4. **Database**: Ensure your database is accessible from Vercel's servers. Consider using:
    - Vercel Postgres
