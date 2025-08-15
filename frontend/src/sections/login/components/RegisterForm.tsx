@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 
-const roleSchema = z.enum(["buyer", "seller", "admin"]) 
+const roleSchema = z.enum(["BUYER", "SELLER", "ADMIN"]) 
 
 const registerSchema = z
   .object({
@@ -42,21 +42,42 @@ export function RegisterForm() {
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     mode: "onBlur",
-    defaultValues: { role: "buyer" },
+    defaultValues: { role: "BUYER" },
   })
 
   const selectedRole = watch("role")
 
   async function onSubmit(values: RegisterValues) {
-    await new Promise((r) => setTimeout(r, 800))
     try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("role", values.role)
+      const response = await fetch('http://localhost:3000/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          role: values.role,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        const roleLabel = values.role === "BUYER" ? "Buyer" : values.role === "SELLER" ? "Seller" : "Admin"
+        toast.success("Account created successfully", { description: `Welcome, ${data.name} (${roleLabel})` })
+        
+        // Redirect to login page
+        router.push("/login");
+      } else {
+        const errorData = await response.json();
+        toast.error("Registration failed", { description: errorData.message || "Failed to create account" });
       }
-    } catch {}
-    const roleLabel = values.role === "buyer" ? "Buyer" : values.role === "seller" ? "Seller" : "Admin"
-    toast.success("Account created", { description: `Welcome, ${values.name} (${roleLabel})` })
-    router.push("/")
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast.error("Registration failed", { description: "An error occurred during registration" });
+    }
   }
 
   return (
@@ -71,9 +92,9 @@ export function RegisterForm() {
             <Label>Register as</Label>
             <Tabs value={selectedRole} onValueChange={(v) => setValue("role", v as RegisterValues["role"]) }>
               <TabsList>
-                <TabsTrigger value="buyer" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
-                <TabsTrigger value="seller" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
-                <TabsTrigger value="admin" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
+                <TabsTrigger value="BUYER" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
+                <TabsTrigger value="SELLER" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
+                <TabsTrigger value="ADMIN" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
               </TabsList>
             </Tabs>
             <input type="hidden" {...register("role")} />

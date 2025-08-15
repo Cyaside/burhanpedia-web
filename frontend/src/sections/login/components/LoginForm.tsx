@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 
-const roleSchema = z.enum(["buyer", "seller", "admin"]) 
+const roleSchema = z.enum(["BUYER", "SELLER", "ADMIN"]) 
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -35,21 +35,43 @@ export function LoginForm() {
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
-    defaultValues: { role: "buyer" },
+    defaultValues: { role: "BUYER" },
   })
 
   const selectedRole = watch("role")
 
   async function onSubmit(values: LoginValues) {
-    await new Promise((r) => setTimeout(r, 800))
     try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("role", values.role)
+      const response = await fetch('http://localhost:3000/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Store the token
+        localStorage.setItem('token', data.access_token);
+        
+        const roleLabel = values.role === "BUYER" ? "Buyer" : values.role === "SELLER" ? "Seller" : "Admin"
+        toast.success("Logged in successfully", { description: `Welcome back, ${data.user.name} (${roleLabel})` })
+        
+        // Redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        const errorData = await response.json();
+        toast.error("Login failed", { description: errorData.message || "Invalid credentials" });
       }
-    } catch {}
-    const roleLabel = values.role === "buyer" ? "Buyer" : values.role === "seller" ? "Seller" : "Admin"
-    toast.success("Logged in", { description: `Welcome back, ${values.email} (${roleLabel})` })
-    router.push("/")
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error("Login failed", { description: "An error occurred during login" });
+    }
   }
 
   return (
@@ -64,9 +86,9 @@ export function LoginForm() {
             <Label>Sign in as</Label>
             <Tabs value={selectedRole} onValueChange={(v) => setValue("role", v as LoginValues["role"]) }>
               <TabsList>
-                <TabsTrigger value="buyer" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
-                <TabsTrigger value="seller" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
-                <TabsTrigger value="admin" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
+                <TabsTrigger value="BUYER" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
+                <TabsTrigger value="SELLER" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
+                <TabsTrigger value="ADMIN" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
               </TabsList>
             </Tabs>
             <input type="hidden" {...register("role")} />
