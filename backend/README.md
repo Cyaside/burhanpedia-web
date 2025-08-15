@@ -112,11 +112,13 @@ This is the backend API for the Burhanpedia application with authentication and 
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Create a `.env` file in the root directory with the following variables:
+
 ```env
 DATABASE_URL="postgresql://username:password@localhost:5432/burhanpedia"
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
@@ -125,16 +127,19 @@ JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
 3. Set up your PostgreSQL database and update the DATABASE_URL accordingly.
 
 4. Generate Prisma client:
+
 ```bash
 npx prisma generate
 ```
 
 5. Run database migrations:
+
 ```bash
 npx prisma migrate dev
 ```
 
 6. Start the development server:
+
 ```bash
 npm run start:dev
 ```
@@ -144,6 +149,7 @@ The server will start on `http://localhost:3000`
 ## API Endpoints
 
 ### Authentication
+
 - `POST /auth/register` - User registration
 - `POST /auth/login` - User login
 - `GET /auth/profile` - Get user profile (protected)
@@ -151,6 +157,7 @@ The server will start on `http://localhost:3000`
 ### Request/Response Examples
 
 #### Register
+
 ```json
 POST /auth/register
 {
@@ -162,6 +169,7 @@ POST /auth/register
 ```
 
 #### Login
+
 ```json
 POST /auth/login
 {
@@ -171,6 +179,7 @@ POST /auth/login
 ```
 
 Response:
+
 ```json
 {
   "user": {

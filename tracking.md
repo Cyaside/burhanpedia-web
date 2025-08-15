@@ -4,6 +4,8 @@ Used so i dont forget what my current progress are.
 
 Keep this file short and high-signal. Update the log as you make changes.
 
+### Important : Run The Backend First since i configurate the frontend in 3001 (ts pmo)
+
 ### What’s Done (Current Snapshot)
 
 - **Backend (NestJS + Prisma + PostgreSQL)**
