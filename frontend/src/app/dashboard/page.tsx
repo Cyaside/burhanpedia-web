@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getApiUrl } from '@/lib/config';
 
@@ -16,18 +16,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
-    fetchUserProfile(token);
-  }, [router]);
-
-  const fetchUserProfile = async (token: string) => {
+  const fetchUserProfile = useCallback(async (token: string) => {
     try {
       const response = await fetch(getApiUrl('/auth/profile'), {
         headers: {
@@ -49,7 +38,18 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    fetchUserProfile(token);
+  }, [router, fetchUserProfile]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

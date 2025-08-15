@@ -92,7 +92,7 @@ export default function GlobalNavigationOverlay() {
     window.addEventListener("click", onClick, { capture: true })
     window.addEventListener("beforeunload", onBeforeUnload)
     return () => {
-      window.removeEventListener("click", onClick, { capture: true } as any)
+      window.removeEventListener("click", onClick, { capture: true })
       window.removeEventListener("beforeunload", onBeforeUnload)
       if (hideTimerRef.current) {
         window.clearTimeout(hideTimerRef.current)
