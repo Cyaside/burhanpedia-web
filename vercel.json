@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "projects": {
+    "backend": {
+      "root": "backend",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist",
+      "installCommand": "npm install"
+    },
+    "frontend": {
+      "root": "frontend",
+      "buildCommand": "npm run build",
+      "outputDirectory": ".next",
+      "installCommand": "npm install"
+    }
+  }
+}

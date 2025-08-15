@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getApiUrl } from '@/lib/config';
 
 interface User {
   id: number;
@@ -28,7 +29,7 @@ export default function Dashboard() {
 
   const fetchUserProfile = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:3000/auth/profile', {
+      const response = await fetch(getApiUrl('/auth/profile'), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

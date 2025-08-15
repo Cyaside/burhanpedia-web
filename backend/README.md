@@ -59,6 +59,35 @@ $ npm run test:cov
 
 ## Deployment
 
+### Vercel Deployment
+
+This NestJS backend can be deployed to Vercel as a serverless function. Follow these steps:
+
+1. **Install Vercel CLI** (optional):
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Deploy to Vercel**:
+   ```bash
+   # From the backend directory
+   vercel
+   ```
+
+3. **Environment Variables**: Set these in your Vercel dashboard:
+   - `DATABASE_URL`: Your PostgreSQL connection string
+   - `JWT_SECRET`: Your JWT secret key
+   - `JWT_EXPIRES_IN`: JWT expiration time (e.g., "24h")
+   - `NODE_ENV`: Set to "production"
+
+4. **Database**: Ensure your database is accessible from Vercel's servers. Consider using:
+   - Vercel Postgres
+   - Supabase
+   - PlanetScale
+   - Any cloud PostgreSQL service
+
+### Alternative Deployment Options
+
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
 
 If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
@@ -97,6 +126,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
+
 # Burhanpedia Backend
 
 This is the backend API for the Burhanpedia application with authentication and user management.
@@ -112,13 +142,11 @@ This is the backend API for the Burhanpedia application with authentication and 
 ## Setup
 
 1. Install dependencies:
-
 ```bash
 npm install
 ```
 
 2. Create a `.env` file in the root directory with the following variables:
-
 ```env
 DATABASE_URL="postgresql://username:password@localhost:5432/burhanpedia"
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
@@ -127,19 +155,16 @@ JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
 3. Set up your PostgreSQL database and update the DATABASE_URL accordingly.
 
 4. Generate Prisma client:
-
 ```bash
 npx prisma generate
 ```
 
 5. Run database migrations:
-
 ```bash
 npx prisma migrate dev
 ```
 
 6. Start the development server:
-
 ```bash
 npm run start:dev
 ```
@@ -149,7 +174,6 @@ The server will start on `http://localhost:3000`
 ## API Endpoints
 
 ### Authentication
-
 - `POST /auth/register` - User registration
 - `POST /auth/login` - User login
 - `GET /auth/profile` - Get user profile (protected)
@@ -157,7 +181,6 @@ The server will start on `http://localhost:3000`
 ### Request/Response Examples
 
 #### Register
-
 ```json
 POST /auth/register
 {
@@ -169,7 +192,6 @@ POST /auth/register
 ```
 
 #### Login
-
 ```json
 POST /auth/login
 {
@@ -179,7 +201,6 @@ POST /auth/login
 ```
 
 Response:
-
 ```json
 {
   "user": {

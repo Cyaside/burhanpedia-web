@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+import { getApiUrl } from "@/lib/config"
 
 const roleSchema = z.enum(["BUYER", "SELLER", "ADMIN"]) 
 
@@ -42,7 +43,7 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginValues) {
     try {
-      const response = await fetch('http://localhost:3000/auth/login', {
+      const response = await fetch(getApiUrl('/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

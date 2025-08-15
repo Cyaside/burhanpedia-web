@@ -6,7 +6,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:3001'], // Allow both ports
+    origin: [
+      'http://localhost:5173', 
+      'http://localhost:3001',
+      'https://your-frontend-domain.vercel.app', // Add your Vercel frontend domain
+      'https://burhanpedia-web.vercel.app' // Example domain
+    ],
     credentials: true,
   });
   
