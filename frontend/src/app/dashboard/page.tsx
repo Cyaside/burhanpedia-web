@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getApiUrl } from '@/lib/config';
 import AdminDashboard from '@/sections/dashboard/admindashboard';
+import SellerDashboard from '@/sections/dashboard/sellerdashboard';
 
 interface User {
   id: number;
@@ -82,6 +83,33 @@ export default function Dashboard() {
     }
   };
 
+  let dashboardContent;
+  if (user.role === 'ADMIN') {
+    dashboardContent = <AdminDashboard />;
+  } else if (user.role === 'SELLER') {
+    dashboardContent = <SellerDashboard />;
+  } else {
+    dashboardContent = (
+      <div className="text-center">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+            Welcome, {user.name}!
+          </h2>
+          <p className="text-gray-600">{user.email}</p>
+        </div>
+        <div className="inline-block">
+          <span className={`px-6 py-3 rounded-full text-lg font-semibold ${getRoleColor(user.role)}`}>
+            Logged in as: {user.role}
+          </span>
+        </div>
+        <div className="mt-8 text-gray-500">
+          <p>This is your dashboard page.</p>
+          <p>More features coming soon...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto py-12 px-4">
@@ -95,27 +123,7 @@ export default function Dashboard() {
               Logout
             </button>
           </div>
-          {user.role === 'ADMIN' ? (
-            <AdminDashboard />
-          ) : (
-            <div className="text-center">
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-                  Welcome, {user.name}!
-                </h2>
-                <p className="text-gray-600">{user.email}</p>
-              </div>
-              <div className="inline-block">
-                <span className={`px-6 py-3 rounded-full text-lg font-semibold ${getRoleColor(user.role)}`}>
-                  Logged in as: {user.role}
-                </span>
-              </div>
-              <div className="mt-8 text-gray-500">
-                <p>This is your dashboard page.</p>
-                <p>More features coming soon...</p>
-              </div>
-            </div>
-          )}
+          {dashboardContent}
         </div>
       </div>
     </div>
