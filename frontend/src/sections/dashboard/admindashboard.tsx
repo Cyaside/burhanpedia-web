@@ -32,8 +32,12 @@ const AdminDashboard: React.FC = () => {
         const users: User[] = await response.json();
         setSellers(users.filter(u => u.role === 'SELLER'));
         setBuyers(users.filter(u => u.role === 'BUYER'));
-      } catch (err: any) {
-        setError(err.message || 'Unknown error');
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Unknown error');
+        }
       } finally {
         setLoading(false);
       }
