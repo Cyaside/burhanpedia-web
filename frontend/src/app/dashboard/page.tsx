@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getApiUrl } from '@/lib/config';
+import AdminDashboard from '@/sections/dashboard/admindashboard';
 
 interface User {
   id: number;
@@ -94,26 +95,27 @@ export default function Dashboard() {
               Logout
             </button>
           </div>
-          
-          <div className="text-center">
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-                Welcome, {user.name}!
-              </h2>
-              <p className="text-gray-600">{user.email}</p>
+          {user.role === 'ADMIN' ? (
+            <AdminDashboard />
+          ) : (
+            <div className="text-center">
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+                  Welcome, {user.name}!
+                </h2>
+                <p className="text-gray-600">{user.email}</p>
+              </div>
+              <div className="inline-block">
+                <span className={`px-6 py-3 rounded-full text-lg font-semibold ${getRoleColor(user.role)}`}>
+                  Logged in as: {user.role}
+                </span>
+              </div>
+              <div className="mt-8 text-gray-500">
+                <p>This is your dashboard page.</p>
+                <p>More features coming soon...</p>
+              </div>
             </div>
-            
-            <div className="inline-block">
-              <span className={`px-6 py-3 rounded-full text-lg font-semibold ${getRoleColor(user.role)}`}>
-                Logged in as: {user.role}
-              </span>
-            </div>
-            
-            <div className="mt-8 text-gray-500">
-              <p>This is your dashboard page.</p>
-              <p>More features coming soon...</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
