@@ -45,10 +45,14 @@ const SellerDashboard: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Failed to fetch products');
-      const data = await res.json();
+      const data: Product[] = await res.json();
       setProducts(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Unknown error');
+      }
     } finally {
       setLoading(false);
     }
@@ -82,8 +86,12 @@ const SellerDashboard: React.FC = () => {
       if (!res.ok) throw new Error('Failed to add product');
       setForm({ name: '', price: '', stock: '', imageUrl: '' });
       fetchProducts(sellerId, token);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Unknown error');
+      }
     } finally {
       setLoading(false);
     }

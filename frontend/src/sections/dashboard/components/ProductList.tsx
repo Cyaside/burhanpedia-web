@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface Product {
   id: number;
@@ -21,7 +22,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, loading }) => (
       {products.length === 0 && <p>No products added yet.</p>}
       {products.map((product) => (
         <div key={product.id} style={{ border: '1px solid #ccc', padding: 12, borderRadius: 8 }}>
-          <img src={product.imageUrl} alt={product.name} style={{ maxWidth: 100, marginBottom: 8 }} />
+          <Image src={product.imageUrl} alt={product.name} width={100} height={100} style={{ objectFit: 'contain', marginBottom: 8 }} />
           <div><strong>{product.name}</strong></div>
           <div>Price: ${product.price}</div>
           <div>Stock: {product.stock}</div>
