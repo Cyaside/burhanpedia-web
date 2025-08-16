@@ -9,6 +9,7 @@ Keep this file short and high-signal. Update the log as you make changes.
 ### What’s Done (Current Snapshot)
 
 - **Backend (NestJS + Prisma + PostgreSQL)**
+
   - Bootstrapped NestJS app (`src/main.ts`, `src/app.module.ts`).
   - Added `PrismaService` and wired it into `AppModule`.
   - Created `UserService` and `UserController` with `GET /users` → `prisma.user.findMany()`.
@@ -28,6 +29,7 @@ Keep this file short and high-signal. Update the log as you make changes.
 ### Tech Stack Overview
 
 - **Backend**
+
   - Framework: NestJS 11 (`@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express`)
   - Language: TypeScript 5
   - ORM: Prisma 6 (`@prisma/client`, `prisma`)
@@ -65,14 +67,24 @@ Keep this file short and high-signal. Update the log as you make changes.
 
 ### Progress Log
 
-- 2025-08-14
-  - Backend: set up NestJS, Prisma, PostgreSQL; created `User` model, migration, and `GET /users` endpoint.
-  - Frontend: set up Next.js App Router, Tailwind 4, global layout, 404 page.
+- 2025-08-16
 
-- 2025-08-13
+  - Backend: Added Product model and user relation in Prisma schema. Upload Products from Seller dashboard and User credentials info in admin dashboard
+  - Frontend: Dedicated seperation for seller and admin dasboard
+
+- 2025-08-15
+
+  - Backend: Implement for login/register
+  - Frontend: Dashboard placeholder
+  - Deployement
+
+- 2025-08-14
+
+  - Backend: set up NestJS, Prisma, PostgreSQL; created `User` model, migration, and `GET /users` endpoint.
   - Frontend: Making Login/Register Page and role selection and adding Global loading overlay
 
-### Next Up (Checklist)
+- 2025-08-13
+  - Frontend: set up Next.js App Router, Tailwind 4, global layout, 404 page.
 
 ### Log Template (copy/paste)
 
