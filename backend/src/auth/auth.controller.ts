@@ -22,6 +22,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@Request() req) {
-    return req.user;
+    // Return id as req.user.userId for frontend compatibility
+    return {
+      id: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+    };
   }
 }

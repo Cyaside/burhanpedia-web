@@ -5,7 +5,7 @@ interface ProductFormProps {
     name: string;
     price: string;
     stock: string;
-    imageUrl: string;
+    image: File | null;
   };
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -40,10 +40,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ form, onChange, onSubmit, loa
       required
     />
     <input
-      type="text"
-      name="imageUrl"
-      placeholder="Image URL (upload not implemented)"
-      value={form.imageUrl}
+      type="file"
+      name="image"
+      accept="image/*"
       onChange={onChange}
       required
     />

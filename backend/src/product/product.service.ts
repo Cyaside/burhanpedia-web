@@ -6,15 +6,29 @@ export class ProductService {
   constructor(private prisma: PrismaService) {}
 
   async createProduct(data: any, sellerId: number) {
-    return this.prisma.product.create({
-      data: {
-        name: data.name,
-        price: data.price,
-        stock: data.stock,
-        imageUrl: data.imageUrl,
-        sellerId,
-      },
+    console.log('Creating product with data:', {
+      name: data.name,
+      price: data.price,
+      stock: data.stock,
+      imageUrl: data.imageUrl,
+      sellerId,
     });
+    try {
+      const product = await this.prisma.product.create({
+        data: {
+          name: data.name,
+          price: data.price,
+          stock: data.stock,
+          imageUrl: data.imageUrl,
+          sellerId,
+        },
+      });
+      console.log('Product created:', product);
+      return product;
+    } catch (error) {
+      console.error('Error creating product:', error);
+      throw error;
+    }
   }
 
   async getAllProducts() {
