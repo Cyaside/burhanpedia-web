@@ -28,7 +28,7 @@ export class ProductController {
         if (error) {
           return { statusCode: 500, message: 'Image upload failed', error };
         }
-        imageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/product-images/${fileName}`;
+        imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${fileName}`;
       }
       const productData = {
         name,
