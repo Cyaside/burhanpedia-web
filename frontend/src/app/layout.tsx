@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Knowledge with a smile.",
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { readonly children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh bg-background text-foreground antialiased">

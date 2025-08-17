@@ -1,7 +1,7 @@
 import React from "react"
 import { Sparkles } from "lucide-react"
 
-export default function AnimatedBadge({ text, colorClass }: { text: string; colorClass: string }) {
+export default function AnimatedBadge({ text, colorClass }: { readonly text: string; readonly colorClass: string }) {
   return (
     <span
       className={

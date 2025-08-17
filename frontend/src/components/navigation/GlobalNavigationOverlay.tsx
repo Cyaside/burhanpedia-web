@@ -31,52 +31,54 @@ export default function GlobalNavigationOverlay() {
       return null
     }
 
+    function isValidClick(event: MouseEvent): boolean {
+      if (event.defaultPrevented || event.button !== 0) return false
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false
+      return true
+    }
+
+    function shouldShowOverlay(anchor: HTMLAnchorElement | null): boolean {
+      if (!anchor) return false
+      if (anchor.dataset.noOverlay === "true") return false
+      if (anchor.target && anchor.target !== "_self") return false
+      const hrefAttr = anchor.getAttribute("href") || ""
+      if (!hrefAttr) return false
+      if (hrefAttr.startsWith("#") || hrefAttr.startsWith("mailto:") || hrefAttr.startsWith("tel:")) return false
+      return true
+    }
+
+    function getInternalResolvedUrl(hrefAttr: string): URL | null {
+      if (hrefAttr.startsWith("/")) {
+        try { return new URL(hrefAttr, window.location.href) } catch { return null }
+      }
+      try {
+        const url = new URL(hrefAttr, window.location.href)
+        if (url.origin === window.location.origin) return url
+      } catch {
+        return null
+      }
+      return null
+    }
+
+    function isSamePath(resolvedUrl: URL | null): boolean {
+      if (!resolvedUrl) return false
+      return (resolvedUrl.pathname + resolvedUrl.search) === (window.location.pathname + window.location.search)
+    }
+
     function onClick(event: MouseEvent) {
-      // Only react to primary button, without modifier keys
-      if (event.defaultPrevented || event.button !== 0) return
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      if (!isValidClick(event)) return
 
       const anchor = findAnchor(event.target as Element | null)
-      if (!anchor) return
+      if (!shouldShowOverlay(anchor)) return
 
-      // Skip if explicit opt-out
-      if (anchor.dataset.noOverlay === "true") return
+      const hrefAttr = anchor!.getAttribute("href") || ""
+      const resolvedUrl = getInternalResolvedUrl(hrefAttr)
+      if (!resolvedUrl) return
 
-      // Respect target
-      if (anchor.target && anchor.target !== "_self") return
+      if (isSamePath(resolvedUrl)) return
 
-      const hrefAttr = anchor.getAttribute("href") || ""
-      if (!hrefAttr) return
-      if (hrefAttr.startsWith("#") || hrefAttr.startsWith("mailto:") || hrefAttr.startsWith("tel:")) return
-
-      let isInternal = false
-      let resolvedUrl: URL | null = null
-      if (hrefAttr.startsWith("/")) {
-        isInternal = true
-        try { resolvedUrl = new URL(hrefAttr, window.location.href) } catch { resolvedUrl = null }
-      } else {
-        try {
-          const url = new URL(hrefAttr, window.location.href)
-          isInternal = url.origin === window.location.origin
-          resolvedUrl = url
-        } catch {
-          // non-URL or invalid
-          isInternal = false
-          resolvedUrl = null
-        }
-      }
-
-      if (!isInternal) return
-
-      // Skip if navigating to the same path + search (no real transition)
-      if (resolvedUrl && (resolvedUrl.pathname + resolvedUrl.search) === (window.location.pathname + window.location.search)) {
-        return
-      }
-
-      // Show overlay immediately
       setIsNavigating(true)
 
-      // Safety: auto-hide if navigation does not occur
       if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current)
       hideTimerRef.current = window.setTimeout(() => {
         setIsNavigating(false)
@@ -115,7 +117,7 @@ export default function GlobalNavigationOverlay() {
       <div className="relative grid h-full place-items-center">
         <div className="flex flex-col items-center gap-3 rounded-xl border bg-card/95 px-6 py-5 shadow-md">
           <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden />
-          <span className="text-xs text-muted-foreground" role="status">Navigating…</span>
+          <output className="text-xs text-muted-foreground">Navigating...</output>
         </div>
       </div>
     </div>
