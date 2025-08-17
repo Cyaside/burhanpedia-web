@@ -10,13 +10,26 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('image'))
-  async createProduct(@UploadedFile() file: Express.Multer.File, @Request() req: any) {
+  async createProduct(@UploadedFile() file: any, @Request() req: any) {
     // req.body: { name, price, stock }
     // file: image file
     try {
       const sellerId = req.user.userId;
       const { name, price, stock } = req.body;
-      const imageUrl = file ? file.originalname : '';
+      let imageUrl = '';
+      if (file) {
+        // Upload image to Supabase Storage
+        const { supabase } = await import('../supabaseClient.js');
+        const fileExt = file.originalname.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+        const { data, error } = await supabase.storage.from('product-images').upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+        });
+        if (error) {
+          return { statusCode: 500, message: 'Image upload failed', error };
+        }
+        imageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/product-images/${fileName}`;
+      }
       const productData = {
         name,
         price: Number(price),
