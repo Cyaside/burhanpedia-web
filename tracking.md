@@ -69,6 +69,11 @@ Keep this file short and high-signal. Update the log as you make changes.
 
 - 2025-08-16
 
+  - Backend: Continue the Upload Products from seller (Config the Bucket left)
+  - Frontend: Refactoring and bit changes
+
+- 2025-08-16
+
   - Backend: Added Product model and user relation in Prisma schema. Upload Products from Seller dashboard and User credentials info in admin dashboard
   - Frontend: Dedicated seperation for seller and admin dasboard
 
