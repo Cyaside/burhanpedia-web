@@ -67,7 +67,15 @@ Keep this file short and high-signal. Update the log as you make changes.
 
 ### Progress Log
 
-- 2025-08-16
+- 2025-08-19
+
+  - Frontend: Contact us sections
+
+- 2025-08-18
+
+  - Frontend: Style dashboard
+
+- 2025-08-17
 
   - Backend: Continue the Upload Products from seller (Config the Bucket left)
   - Frontend: Refactoring and bit changes
