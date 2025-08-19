@@ -3,6 +3,7 @@
 import React from "react"
 import Header from "@/sections/landing/components/Header"
 import Hero from "@/sections/landing/components/Hero"
+import ContactUs from "@/sections/landing/components/ContactUs"
 
 export default function LandingSection() {
   return (
@@ -14,6 +15,7 @@ export default function LandingSection() {
         <div className="absolute top-1/2 left-1/2 size-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-500/10 blur-3xl" />
       </div>
       <Hero />
+      <ContactUs />
     </main>
   )
 }
