@@ -2,5 +2,6 @@
     "sonarlint.connectedMode.project": {
         "connectionId": "cyaside",
         "projectKey": "Cyaside_burhanpedia-web"
-    }
+    },
+    "git.ignoreLimitWarning": true
 }
