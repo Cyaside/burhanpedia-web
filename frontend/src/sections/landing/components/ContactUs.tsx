@@ -60,7 +60,7 @@ export default function ContactUs() {
       className="max-w-lg mx-auto my-16 p-8 rounded-xl shadow-lg bg-background border border-border"
     >
       <h2 className="text-3xl font-bold mb-2 text-primary">Contact Us</h2>
-      <p className="mb-6 text-muted-foreground">We'd love to hear from you! Fill out the form below and we'll get back to you soon</p>
+      <p className="mb-6 text-muted-foreground">We love to hear messages from you! Fill out the form below and we will get back to you soon.</p>
       <form onSubmit={sendEmail} className="space-y-5">
         <div className="flex items-center gap-2">
           <Mail className="text-primary" size={20} />
