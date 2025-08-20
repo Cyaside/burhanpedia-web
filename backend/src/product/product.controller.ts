@@ -3,8 +3,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage} from 'multer';
 import { ProductService } from './product.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { supabase } from 'src/supabaseClient';
-import { MulterExceptionFilter } from 'src/filters/multerexception.filter';
+import { supabase } from '../supabaseClient';
+import { MulterExceptionFilter } from '../filters/multerexception.filter';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
 const ALLOWED_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
