@@ -4,13 +4,8 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Twitter, Github, Mail } from "lucide-react";
+import { Twitter, Github, Mail, ShoppingCart, CreditCard, Smartphone } from "lucide-react";
 import { motion } from "framer-motion";
-
-// Clean, compact footer layout
-// - replaces Card with simple flex layout
-// - uses /burhan.jpg from public folder as logo
-// - fixes spacing so icons and copyright sit inline
 
 export default function Footer(): JSX.Element {
   return (
@@ -21,111 +16,139 @@ export default function Footer(): JSX.Element {
       className="w-full bg-white border-t border-gray-200 mt-auto"
       aria-label="Site footer"
     >
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-          {/* LEFT: logo + text + socials */}
-          <div className="flex items-start gap-4 min-w-0">
-            <div className="flex-shrink-0">
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* BRAND */}
+          <div className="space-y-4 min-w-0">
+            <div className="flex items-center gap-3">
               <Image
                 src="/burhan.jpg"
                 alt="BurhanPedia logo"
-                width={48}
-                height={48}
+                width={56}
+                height={56}
                 className="rounded-md object-cover"
                 priority={false}
               />
-            </div>
-
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
+              <div className="min-w-0">
                 <h3 className="text-lg font-semibold text-slate-900 leading-tight">BurhanPedia</h3>
-              </div>
-
-              <p className="text-sm text-slate-500 mt-1 truncate">Curated knowledge — build, learn, repeat.</p>
-
-              <div className="flex items-center gap-4 mt-3">
-                <p className="text-sm text-slate-600 mr-2">&copy; {new Date().getFullYear()} BurhanPedia. All rights reserved.</p>
-
-                <nav className="flex items-center gap-2">
-                  <motion.a
-                    whileHover={{ y: -3 }}
-                    className="p-2 rounded-md hover:bg-red-50"
-                    href="#"
-                    aria-label="Twitter"
-                    rel="noopener noreferrer"
-                  >
-                    <Twitter className="w-5 h-5 text-red-600" />
-                  </motion.a>
-
-                  <motion.a
-                    whileHover={{ y: -3 }}
-                    className="p-2 rounded-md hover:bg-green-50"
-                    href="#"
-                    aria-label="GitHub"
-                    rel="noopener noreferrer"
-                  >
-                    <Github className="w-5 h-5 text-green-600" />
-                  </motion.a>
-
-                  <motion.a
-                    whileHover={{ y: -3 }}
-                    className="p-2 rounded-md hover:bg-blue-50"
-                    href="#"
-                    aria-label="Email"
-                    rel="noopener noreferrer"
-                  >
-                    <Mail className="w-5 h-5 text-blue-600" />
-                  </motion.a>
-                </nav>
+                <p className="text-sm text-slate-500 truncate">Your marketplace for curated</p>
+                <p className="text-sm text-slate-500 truncate">products & trusted sellers</p>
               </div>
             </div>
-          </div>
 
-          {/* CENTER: quick links*/}
-          <div className="flex justify-center md:justify-center gap-10">
-            <div>
-              <h4 className="text-sm font-medium text-slate-700">Product</h4>
-              <nav className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
-                <Link className="hover:text-red-600 transition-colors" href="#">Features</Link>
-                <Link className="hover:text-green-600 transition-colors" href="#">Pricing</Link>
-                <Link className="hover:text-blue-600 transition-colors" href="#">Docs</Link>
+            <div className="flex items-center gap-3">
+              <nav className="flex items-center gap-2">
+                <motion.a whileHover={{ y: -3 }} className="p-2 rounded-md hover:bg-gray-100" href="#" aria-label="Twitter">
+                  <Twitter className="w-5 h-5 text-red-600" />
+                </motion.a>
+
+                <motion.a whileHover={{ y: -3 }} className="p-2 rounded-md hover:bg-gray-100" href="#" aria-label="GitHub">
+                  <Github className="w-5 h-5 text-green-600" />
+                </motion.a>
+
+                <motion.a whileHover={{ y: -3 }} className="p-2 rounded-md hover:bg-gray-100" href="#" aria-label="Email">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                </motion.a>
               </nav>
             </div>
 
-            <div>
-              <h4 className="text-sm font-medium text-slate-700">Company</h4>
-              <nav className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
-                <Link className="hover:text-red-600 transition-colors" href="#">About</Link>
-                <Link className="hover:text-green-600 transition-colors" href="#">Careers</Link>
-                <Link className="hover:text-blue-600 transition-colors" href="#">Press</Link>
-              </nav>
+            {/*quick facts */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2 text-sm text-slate-600">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4" />
+                <span>Secure checkout</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4" />
+                <span>Multiple payment options</span>
+              </div>
             </div>
+
+            <div className="pt-2 text-xs text-slate-500">&copy; {new Date().getFullYear()} BurhanPedia — All rights reserved.</div>
           </div>
 
-          {/* RIGHT: newsletter */}
-          <div className="md:pl-6 min-w-[220px]">
-            <h4 className="text-sm font-medium text-slate-700">Stay in the loop</h4>
-            <p className="text-sm text-slate-600 mt-2">Get occasional updates, tutorials, and short tips.</p>
+          {/* CATEGORIES */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-700">Categories</h4>
+            <nav className="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-600">
+              <Link className="hover:text-red-600 transition-colors" href="#">Electronics</Link>
+              <Link className="hover:text-red-600 transition-colors" href="#">Fashion</Link>
+              <Link className="hover:text-red-600 transition-colors" href="#">Home & Living</Link>
+              <Link className="hover:text-red-600 transition-colors" href="#">Beauty</Link>
+              <Link className="hover:text-red-600 transition-colors" href="#">Toys & Games</Link>
+              <Link className="hover:text-red-600 transition-colors" href="#">Sports</Link>
+            </nav>
+          </div>
 
-            <motion.form
-              whileTap={{ scale: 0.995 }}
-              className="mt-3 flex flex-col sm:flex-row gap-3"
-              onSubmit={(e) => e.preventDefault()}
-            >
+          {/* CUSTOMER SERVICE / SELLER CENTER */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-700">Customer service</h4>
+            <nav className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
+              <Link className="hover:text-green-600 transition-colors" href="#">Help Center</Link>
+              <Link className="hover:text-green-600 transition-colors" href="#">Shipping & Returns</Link>
+              <Link className="hover:text-green-600 transition-colors" href="#">Track Order</Link>
+              <Link className="hover:text-green-600 transition-colors" href="#">Contact Us</Link>
+              <Separator className="my-3" />
+              <h5 className="text-sm font-medium text-slate-700">Sell with us</h5>
+              <Link className="hover:text-blue-600 transition-colors" href="#">Seller Center</Link>
+              <Link className="hover:text-blue-600 transition-colors" href="#">Seller Fees</Link>
+            </nav>
+          </div>
+
+          {/* NEWSLETTER + APPS */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-700">Get the app & updates</h4>
+            <p className="text-sm text-slate-600 mt-2">Subscribe for deals, order alerts and merchant offers.</p>
+
+            <motion.form whileTap={{ scale: 0.995 }} className="mt-3 flex gap-2" onSubmit={(e) => e.preventDefault()}>
               <Input placeholder="Your email" aria-label="Email address" className="min-w-0" />
               <Button type="submit" className="whitespace-nowrap">Subscribe</Button>
             </motion.form>
 
+            <div className="mt-4 flex gap-3 items-center">
+              <Button asChild variant="outline" className="flex items-center gap-2 px-3 py-2 text-sm">
+                <Link href="#" aria-label="Download on App Store">
+                  <Smartphone className="w-4 h-4" />
+                  <span>App</span>
+                </Link>
+              </Button>
+
+              <Button asChild variant="outline" className="flex items-center gap-2 px-3 py-2 text-sm">
+                <Link href="#" aria-label="Download on Play Store">
+                  <Smartphone className="w-4 h-4" />
+                  <span>Play</span>
+                </Link>
+              </Button>
+            </div>
+
             <Separator className="my-4" />
 
-            <div className="text-xs text-slate-500">Made with <span className="text-red-600">&#10084;</span> by BurhanPedia Team</div>
+            {/* Payment icons / simplified */}
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-slate-500">We accept:</div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-5 rounded-sm bg-slate-100 flex items-center justify-center text-[10px]">VISA</div>
+                <div className="w-8 h-5 rounded-sm bg-slate-100 flex items-center justify-center text-[10px]">MC</div>
+                <div className="w-8 h-5 rounded-sm bg-slate-100 flex items-center justify-center text-[10px]">PAY</div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* bottom tiny footer */}
-        <div className="mt-8 border-t border-gray-100 pt-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-3">
-          <span>Privacy · Terms · Sitemap</span>
-          <span className="text-slate-400">Version 1.2.3</span>
+        <div className="mt-8 border-t border-gray-100 pt-6 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-3">
+          <div className="flex items-center gap-4">
+            <span className="hover:text-slate-700">Privacy</span>
+            <span className="hover:text-slate-700">Terms</span>
+            <span className="hover:text-slate-700">Sitemap</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="text-xs">Language: <strong>EN</strong></div>
+            <div className="text-xs">Currency: <strong>IDR</strong></div>
+            <div className="text-xs">Version 1.2.3</div>
+          </div>
         </div>
       </div>
     </motion.footer>

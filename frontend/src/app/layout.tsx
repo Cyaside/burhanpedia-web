@@ -13,6 +13,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { readonly children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+        <head>
+          <link rel="icon" href="/burhan.jpg" type="image/jpeg" />
+        </head>
       <body className="min-h-dvh bg-background text-foreground antialiased">
         <GlobalNavigationOverlay />
         {children}
