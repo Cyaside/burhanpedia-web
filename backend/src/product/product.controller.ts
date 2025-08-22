@@ -23,6 +23,11 @@ function imageFileFilter(
 @Controller('products')
 @UseFilters(new MulterExceptionFilter())
 export class ProductController {
+  @Get('recommended')
+  async getRecommendedProducts() {
+    // Bisa di add logic buat filter recommend section
+    return this.productService.getAllProducts();
+  }
   constructor(private readonly productService: ProductService) {}
 
   @UseGuards(JwtAuthGuard)

@@ -7,6 +7,7 @@ import ContactUs from "@/sections/landing/components/ContactUs"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import Footer from "@/sections/landing/components/Footer"
+import RecommendedProducts from "./RecommendedProducts"
 
 export default function LandingSection() {
   return (
@@ -28,6 +29,18 @@ export default function LandingSection() {
             <Hero />
           </div>
         </Card>
+        {/* Recommended Products Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="w-full max-w-5xl mx-auto mt-12"
+        >
+          <div className="min-h-[40vh] flex flex-col justify-center">
+            <RecommendedProducts />
+          </div>
+        </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
