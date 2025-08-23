@@ -3,7 +3,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { ShoppingCart, Eye } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
+import Image from "next/image";
 
 interface Product {
   id: number;
@@ -17,7 +18,7 @@ interface Product {
 interface ProductCardProps {
   product: Product;
   formatCurrency: (value: number) => string;
-  itemVariants: any;
+  itemVariants: Variants;
 }
 
 export function ProductCard({ product: p, formatCurrency, itemVariants }: ProductCardProps) {
@@ -25,14 +26,16 @@ export function ProductCard({ product: p, formatCurrency, itemVariants }: Produc
     <motion.div key={p.id} variants={itemVariants} whileHover={{ y: -6 }} whileTap={{ scale: 0.98 }}>
       <Card className="flex flex-col h-full">
         <div className="relative w-full overflow-hidden rounded-t-md bg-gray-100">
-          <img
+          <Image
             src={p.imageUrl}
             alt={p.name}
-            loading="lazy"
+            width={400}
+            height={176}
             className="w-full h-44 object-cover"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = "/images/fallback-product.png";
             }}
+            priority={false}
           />
         </div>
         <CardContent className="flex-1 flex flex-col justify-between">

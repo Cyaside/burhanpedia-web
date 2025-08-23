@@ -1,7 +1,7 @@
 import React, { JSX, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { ProductCard } from "./components/ProductCard";
 
 interface Product {
@@ -22,9 +22,9 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 8, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } },
 };
 
 const skeletonArray = Array.from({ length: 6 }).map((_, i) => i);
@@ -46,11 +46,11 @@ export default function RecommendedProducts(): JSX.Element {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as Product[];
         setProducts(data);
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
-        console.error("Error fetching recommended products:", err);
-        setError("Gagal memuat produk — coba lagi nanti.");
-        setProducts([]);
+  } catch (err: unknown) {
+  if (typeof err === "object" && err !== null && "name" in err && (err as { name?: string }).name === "AbortError") return;
+  console.error("Error fetching recommended products:", err);
+  setError("Gagal memuat produk — coba lagi nanti.");
+  setProducts([]);
       } finally {
         setLoading(false);
       }

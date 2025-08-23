@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -49,11 +50,14 @@ const SellerProductList: React.FC<SellerProductListProps> = ({ products, loading
             transition={{ type: 'spring', stiffness: 300 }}
             style={{ borderColor: 'var(--color-border)' }}
           >
-            <img
+            <Image
               src={product.imageUrl}
               alt={product.name}
+              width={80}
+              height={80}
               className="w-20 h-20 object-cover rounded-md border"
               style={{ borderColor: 'var(--color-border)' }}
+              priority={false}
             />
             <div className="flex-1">
               <div className="font-bold text-green-700 text-lg">{product.name}</div>
