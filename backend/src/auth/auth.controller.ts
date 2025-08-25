@@ -21,12 +21,17 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req) {
-    // Return id as req.user.userId for frontend compatibility
+  async getProfile(@Request() req) {
+    // Fetch Seluruh info user dari database
+    const user = await this.authService.getUserById(req.user.userId);
+    if (!user) {
+      return { error: 'User not found' };
+    }
     return {
-      id: req.user.userId,
-      email: req.user.email,
-      role: req.user.role,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
     };
   }
 }

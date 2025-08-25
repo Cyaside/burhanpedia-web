@@ -16,9 +16,9 @@ interface Product {
 }
 
 interface ProductCardProps {
-  product: Product;
-  formatCurrency: (value: number) => string;
-  itemVariants: Variants;
+  readonly product: Product;
+  readonly formatCurrency: (value: number) => string;
+  readonly itemVariants: Variants;
 }
 
 export function ProductCard({ product: p, formatCurrency, itemVariants }: ProductCardProps) {

@@ -5,12 +5,25 @@ import { useRouter } from 'next/navigation';
 import { getApiUrl } from '@/lib/config';
 import AdminDashboard from '@/sections/dashboard/admindashboard';
 import SellerDashboard from '@/sections/dashboard/sellerdashboard';
+import BuyerDashboard from '@/sections/dashboard/buyerdashboard';
+
+
+
+interface Coupon {
+  id: number;
+  code: string;
+  discount: string;
+  expiry: string;
+}
 
 interface User {
   id: number;
   name: string;
   email: string;
   role: 'BUYER' | 'SELLER' | 'ADMIN';
+  profileImage?: string;
+  balance?: number;
+  coupons?: Coupon[];
 }
 
 export default function Dashboard() {
@@ -88,25 +101,31 @@ export default function Dashboard() {
     dashboardContent = <AdminDashboard />;
   } else if (user.role === 'SELLER') {
     dashboardContent = <SellerDashboard />;
-  } else {
+  } else if (user.role === 'BUYER') {
+    // Mock data Karena belum jadi
+    const balance = typeof user.balance === 'number' ? user.balance : 250000;
+    const coupons = user.coupons ?? [
+      {
+        id: 1,
+        code: 'WWODKDNADJD',
+        discount: '10% Off',
+        expiry: '2025-12-31',
+      },
+      {
+        id: 2,
+        code: 'QOSIDHSNAD',
+        discount: '32% off',
+        expiry: '2025-09-30',
+      },
+    ];
     dashboardContent = (
-      <div className="text-center">
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-            Welcome, {user.name}!
-          </h2>
-          <p className="text-gray-600">{user.email}</p>
-        </div>
-        <div className="inline-block">
-          <span className={`px-6 py-3 rounded-full text-lg font-semibold ${getRoleColor(user.role)}`}>
-            Logged in as: {user.role}
-          </span>
-        </div>
-        <div className="mt-8 text-gray-500">
-          <p>This is your dashboard page.</p>
-          <p>More features coming soon...</p>
-        </div>
-      </div>
+      <BuyerDashboard
+        name={user.name}
+        email={user.email}
+        profileImage={user.profileImage}
+        balance={balance}
+        coupons={coupons}
+      />
     );
   }
 
