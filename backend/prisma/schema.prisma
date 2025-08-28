@@ -13,10 +13,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  BUYER
-  SELLER
-  ADMIN
+// User bisa punya multiple roles dengan seperated things
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  buyerProfile  BuyerProfile?
+  sellerProfile SellerProfile?
+  adminProfile  AdminProfile?
+}
+
+model BuyerProfile {
+  id      Int        @id @default(autoincrement())
+  userId  Int        @unique
+  balance Float      @default(0)
+  voucher String?
+  user    User       @relation(fields: [userId], references: [id])
+  cart    CartItem[]
+}
+
+model SellerProfile {
+  id       Int       @id @default(autoincrement())
+  userId   Int       @unique
+  balance  Float     @default(0)
+  user     User      @relation(fields: [userId], references: [id])
+  products Product[]
+}
+
+model AdminProfile {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
 }
 
 model Product {
@@ -28,64 +59,17 @@ model Product {
   sellerId  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Seller    Seller   @relation(fields: [sellerId], references: [id])
-  User      User?    @relation(fields: [userId], references: [id])
-  userId    Int?
-  Buyer     Buyer?   @relation(fields: [buyerId], references: [id])
-  buyerId   Int?
+
+  seller   SellerProfile @relation(fields: [sellerId], references: [id])
+  CartItem CartItem[]
 }
 
-// User model for Seller and Buyer
-model User {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  password  String
-  role      UserRole  @default(BUYER)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  products  Product[]
+model CartItem {
+  id        Int @id @default(autoincrement())
+  buyerId   Int
+  productId Int
+  quantity  Int @default(1)
 
-  seller Seller? @relation(fields: [sellerId], references: [id])
-  buyer  Buyer?  @relation(fields: [buyerId], references: [id])
-  admin  Admin?  @relation(fields: [adminId], references: [id])
-
-  sellerId Int?
-  buyerId  Int?
-  adminId  Int?
-}
-
-model Seller {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  password  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  products  Product[]
-  balance   Float     @default(0)
-  User      User[]
-}
-
-model Buyer {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  password  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  bought    Product[]
-  balance   Float     @default(0)
-  voucher   String?
-  User      User[]
-}
-
-model Admin {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  User      User[]
+  buyer   BuyerProfile @relation(fields: [buyerId], references: [id])
+  product Product      @relation(fields: [productId], references: [id])
 }
