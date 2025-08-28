@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { getApiUrl } from "@/lib/config"
 
-const roleSchema = z.enum(["BUYER", "SELLER", "ADMIN"]) 
+const profileTypesSchema = z.array(z.enum(["BUYER", "SELLER", "ADMIN"])).min(1, "Choose at least one role")
 
 const registerSchema = z
   .object({
@@ -23,7 +23,7 @@ const registerSchema = z
     email: z.string().email("Enter a valid email"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(6, "Confirm your password"),
-    role: roleSchema,
+    profileTypes: profileTypesSchema,
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],
@@ -43,10 +43,10 @@ export function RegisterForm() {
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     mode: "onBlur",
-    defaultValues: { role: "BUYER" },
+    defaultValues: { profileTypes: ["BUYER"] },
   })
 
-  const selectedRole = watch("role")
+  const selectedRoles = watch("profileTypes")
 
   async function onSubmit(values: RegisterValues) {
     try {
@@ -59,17 +59,13 @@ export function RegisterForm() {
           name: values.name,
           email: values.email,
           password: values.password,
-          role: values.role,
+          profileTypes: values.profileTypes,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        
-        const roleLabel = values.role === "BUYER" ? "Buyer" : values.role === "SELLER" ? "Seller" : "Admin"
-        toast.success("Account created successfully", { description: `Welcome, ${data.name} (${roleLabel})` })
-        
-        // Redirect to login page
+        toast.success("Account created successfully", { description: `Welcome, ${data.name} (${values.profileTypes.join(", ")})` })
         router.push("/login");
       } else {
         const errorData = await response.json();
@@ -91,14 +87,15 @@ export function RegisterForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label>Register as</Label>
-            <Tabs value={selectedRole} onValueChange={(v) => setValue("role", v as RegisterValues["role"]) }>
+            <Tabs value={selectedRoles[0]} onValueChange={(v: string) => setValue("profileTypes", [v as "BUYER" | "SELLER" | "ADMIN"])}>
               <TabsList>
                 <TabsTrigger value="BUYER" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
                 <TabsTrigger value="SELLER" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
                 <TabsTrigger value="ADMIN" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
               </TabsList>
             </Tabs>
-            <input type="hidden" {...register("role")} />
+            {/* Hidden input for react-hook-form */}
+            <input type="hidden" {...register("profileTypes.0")} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>

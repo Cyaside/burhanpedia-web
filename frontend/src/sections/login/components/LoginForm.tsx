@@ -15,12 +15,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { getApiUrl } from "@/lib/config"
 
-const roleSchema = z.enum(["BUYER", "SELLER", "ADMIN"]) 
-
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: roleSchema,
 })
 
 type LoginValues = z.infer<typeof loginSchema>
@@ -36,10 +33,7 @@ export function LoginForm() {
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
-    defaultValues: { role: "BUYER" },
   })
-
-  const selectedRole = watch("role")
 
   async function onSubmit(values: LoginValues) {
     try {
@@ -56,13 +50,9 @@ export function LoginForm() {
 
       if (response.ok) {
         const data = await response.json();
-        
         // Store the token
         localStorage.setItem('token', data.access_token);
-        
-        const roleLabel = values.role === "BUYER" ? "Buyer" : values.role === "SELLER" ? "Seller" : "Admin"
-        toast.success("Logged in successfully", { description: `Welcome back, ${data.user.name} (${roleLabel})` })
-        
+        toast.success("Logged in successfully", { description: `Welcome back, ${data.user.name}` })
         // Redirect to dashboard
         router.push("/dashboard");
       } else {
@@ -83,17 +73,7 @@ export function LoginForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Sign in as</Label>
-            <Tabs value={selectedRole} onValueChange={(v) => setValue("role", v as LoginValues["role"]) }>
-              <TabsList>
-                <TabsTrigger value="BUYER" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
-                <TabsTrigger value="SELLER" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
-                <TabsTrigger value="ADMIN" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <input type="hidden" {...register("role")} />
-          </div>
+          {/* Role selection removed, Nanti bakal di showin profile (pilihan profil)*/}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} />
