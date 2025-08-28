@@ -12,7 +12,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, name, role } = registerDto;
+    const { email, password, name, profileTypes } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -32,13 +32,34 @@ export class AuthService {
         email,
         password: hashedPassword,
         name,
-        role,
       },
     });
 
+    // Create profiles as requested
+    const profileResults: {
+      buyerProfile?: any;
+      sellerProfile?: any;
+      adminProfile?: any;
+    } = {};
+    if (profileTypes.includes('BUYER')) {
+      profileResults.buyerProfile = await this.prisma.buyerProfile.create({
+        data: { userId: user.id }
+      });
+    }
+    if (profileTypes.includes('SELLER')) {
+      profileResults.sellerProfile = await this.prisma.sellerProfile.create({
+        data: { userId: user.id }
+      });
+    }
+    if (profileTypes.includes('ADMIN')) {
+      profileResults.adminProfile = await this.prisma.adminProfile.create({
+        data: { userId: user.id }
+      });
+    }
+
     // Remove password from response
     const { password: _, ...result } = user;
-    return result;
+    return { ...result, ...profileResults };
   }
 
   async login(loginDto: LoginDto) {
@@ -61,7 +82,6 @@ export class AuthService {
     const payload = {
       email: user.email,
       sub: user.id,
-      role: user.role,
     };
 
     const { password: _, ...result } = user;
@@ -86,6 +106,13 @@ export class AuthService {
   }
 
   async getUserById(id: number) {
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        buyerProfile: true,
+        sellerProfile: true,
+        adminProfile: true,
+      },
+    });
   }
 }

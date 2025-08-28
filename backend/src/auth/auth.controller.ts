@@ -22,7 +22,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req) {
-    // Fetch Seluruh info user dari database
+    // Fetch all user info including profiles
     const user = await this.authService.getUserById(req.user.userId);
     if (!user) {
       return { error: 'User not found' };
@@ -30,8 +30,10 @@ export class AuthController {
     return {
       id: user.id,
       email: user.email,
-      role: user.role,
       name: user.name,
+      buyerProfile: user.buyerProfile,
+      sellerProfile: user.sellerProfile,
+      adminProfile: user.adminProfile,
     };
   }
 }

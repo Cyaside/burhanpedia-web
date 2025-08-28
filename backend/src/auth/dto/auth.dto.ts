@@ -1,10 +1,4 @@
-import { IsEmail, IsString, MinLength, IsEnum } from 'class-validator';
-
-export enum UserRole {
-  BUYER = 'BUYER',
-  SELLER = 'SELLER',
-  ADMIN = 'ADMIN',
-}
+import { IsEmail, IsString, MinLength, IsArray, ArrayNotEmpty, IsIn } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -27,6 +21,9 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
-  @IsEnum(UserRole)
-  role: UserRole;
+  // Milih profile mana yang dibuat
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsIn(['BUYER', 'SELLER', 'ADMIN'], { each: true })
+  profileTypes: string[];
 }
