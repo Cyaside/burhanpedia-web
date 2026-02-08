@@ -22,7 +22,8 @@ export class ProductService {
         stock: data.stock,
         imageUrl: data.imageUrl,
         sellerId,
-        category: data.categoryId ? { connect: { id: data.categoryId } } : undefined,
+        // set scalar foreign key directly to match generated Prisma types
+        categoryId: data.categoryId ?? undefined,
       },
     });
     return product;

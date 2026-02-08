@@ -50,10 +50,10 @@ export function RegisterForm() {
 
   async function onSubmit(values: RegisterValues) {
     try {
-      const response = await fetch(getApiUrl('/auth/register'), {
-        method: 'POST',
+      const response = await fetch(getApiUrl("/auth/register"), {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: values.name,
@@ -61,19 +61,19 @@ export function RegisterForm() {
           password: values.password,
           profileTypes: values.profileTypes,
         }),
-      });
+      })
 
       if (response.ok) {
-        const data = await response.json();
-        toast.success("Account created successfully", { description: `Welcome, ${data.name} (${values.profileTypes.join(", ")})` })
-        router.push("/login");
+        const data = await response.json()
+        toast.success("Account created successfully", { description: `Welcome, ${data.name}` })
+        router.push("/login")
       } else {
-        const errorData = await response.json();
-        toast.error("Registration failed", { description: errorData.message || "Failed to create account" });
+        const errorData = await response.json()
+        toast.error("Registration failed", { description: errorData.message || "Failed to create account" })
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      toast.error("Registration failed", { description: "An error occurred during registration" });
+      console.error("Registration error:", error)
+      toast.error("Registration failed", { description: "An error occurred during registration" })
     }
   }
 
@@ -81,20 +81,20 @@ export function RegisterForm() {
     <>
       <CardHeader>
         <CardTitle className="text-2xl">Create account</CardTitle>
-        <CardDescription>Sign up and choose your role.</CardDescription>
+        <CardDescription>Join BurhanPedia and choose how you want to participate.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label>Register as</Label>
-            <Tabs value={selectedRoles[0]} onValueChange={(v: string) => setValue("profileTypes", [v as "BUYER" | "SELLER" | "ADMIN"])}>
-              <TabsList>
+            <Tabs value={selectedRoles[0]} onValueChange={(v: string) => setValue("profileTypes", [v as "BUYER" | "SELLER" | "ADMIN"]) }>
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="BUYER" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
                 <TabsTrigger value="SELLER" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
                 <TabsTrigger value="ADMIN" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
               </TabsList>
             </Tabs>
-            {/* Hidden input for react-hook-form */}
+            <p className="text-xs text-muted-foreground">You can add more roles later from your dashboard.</p>
             <input type="hidden" {...register("profileTypes.0")} />
           </div>
           <div className="space-y-2">
@@ -117,21 +117,21 @@ export function RegisterForm() {
             <Input id="confirmPassword" type="password" autoComplete="new-password" {...register("confirmPassword")} />
             {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
           </div>
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin" />
                 Creating...
               </>
             ) : (
               <>
                 Create account
-                <ArrowRight className="ml-2 size-4" />
+                <ArrowRight className="size-4" />
               </>
             )}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account? {" "}
+            Already have an account?{" "}
             <Button asChild variant="link" className="px-1">
               <Link href="/login">Sign in</Link>
             </Button>
@@ -151,5 +151,3 @@ export function RegisterForm() {
 }
 
 export default RegisterForm
-
-

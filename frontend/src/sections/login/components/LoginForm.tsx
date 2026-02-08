@@ -5,13 +5,12 @@ import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { ArrowRight, Loader2, Shield, ShoppingBag, Store, Home } from "lucide-react"
+import { ArrowRight, Loader2, Home } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { getApiUrl } from "@/lib/config"
 
@@ -28,8 +27,6 @@ export function LoginForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    setValue,
-    watch,
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
@@ -37,31 +34,29 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginValues) {
     try {
-      const response = await fetch(getApiUrl('/auth/login'), {
-        method: 'POST',
+      const response = await fetch(getApiUrl("/auth/login"), {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email: values.email,
           password: values.password,
         }),
-      });
+      })
 
       if (response.ok) {
-        const data = await response.json();
-        // Store the token
-        localStorage.setItem('token', data.access_token);
+        const data = await response.json()
+        localStorage.setItem("token", data.access_token)
         toast.success("Logged in successfully", { description: `Welcome back, ${data.user.name}` })
-        // Redirect to dashboard
-        router.push("/dashboard");
+        router.push("/dashboard")
       } else {
-        const errorData = await response.json();
-        toast.error("Login failed", { description: errorData.message || "Invalid credentials" });
+        const errorData = await response.json()
+        toast.error("Login failed", { description: errorData.message || "Invalid credentials" })
       }
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error("Login failed", { description: "An error occurred during login" });
+      console.error("Login error:", error)
+      toast.error("Login failed", { description: "An error occurred during login" })
     }
   }
 
@@ -69,11 +64,10 @@ export function LoginForm() {
     <>
       <CardHeader>
         <CardTitle className="text-2xl">Welcome back</CardTitle>
-        <CardDescription>Enter your credentials and choose your role.</CardDescription>
+        <CardDescription>Sign in to manage your orders, products, and profile.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Role selection removed, Nanti bakal di showin profile (pilihan profil)*/}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} />
@@ -84,21 +78,21 @@ export function LoginForm() {
             <Input id="password" type="password" autoComplete="current-password" {...register("password")} />
             {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
           </div>
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin" />
                 Signing in...
               </>
             ) : (
               <>
                 Sign in
-                <ArrowRight className="ml-2 size-4" />
+                <ArrowRight className="size-4" />
               </>
             )}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account? {" "}
+            Don&apos;t have an account?{" "}
             <Button asChild variant="link" className="px-1">
               <Link href="/register">Create one</Link>
             </Button>
@@ -118,5 +112,3 @@ export function LoginForm() {
 }
 
 export default LoginForm
-
-

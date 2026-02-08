@@ -1,25 +1,20 @@
-import React from 'react';
-
-interface BankAccount {
-  id: number;
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-}
+import React from "react"
+import Image from "next/image"
+import { CreditCard, Gift, UserRound } from "lucide-react"
 
 interface Coupon {
-  id: number;
-  code: string;
-  discount: string;
-  expiry: string;
+  id: number
+  code: string
+  discount: string
+  expiry: string
 }
 
 interface BuyerDashboardProps {
-  name: string;
-  email: string;
-  profileImage?: string;
-  balance: number;
-  coupons: Coupon[];
+  name: string
+  email: string
+  profileImage?: string
+  balance: number
+  coupons: Coupon[]
 }
 
 const BuyerDashboard: React.FC<BuyerDashboardProps> = ({
@@ -30,54 +25,72 @@ const BuyerDashboard: React.FC<BuyerDashboardProps> = ({
   coupons,
 }) => {
   return (
-    <div className="space-y-8">
-      <div className="flex items-center space-x-4">
-        {profileImage ? (
-          <img
-            src={profileImage}
-            alt="Profile"
-            className="w-20 h-20 rounded-full object-cover border"
-          />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-500">
-            {typeof name === 'string' && name.length > 0 ? name.charAt(0) : '?'}
+    <div className="grid gap-6">
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-2xl border border-border/70 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            {profileImage ? (
+              <Image
+                src={profileImage}
+                alt="Profile"
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded-full object-cover border"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-2xl font-bold text-emerald-600">
+                {typeof name === "string" && name.length > 0 ? name.charAt(0) : "?"}
+              </div>
+            )}
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">{name || "User"}</h2>
+              <p className="text-sm text-muted-foreground">{email}</p>
+            </div>
           </div>
-        )}
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-800">
-            {typeof name === 'string' && name.length > 0 ? name : <span className="italic text-gray-400">Username</span>}
-          </h2>
-          <p className="text-gray-500">{email}</p>
+          <div className="mt-4 grid gap-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <UserRound className="size-4 text-emerald-600" />
+              Verified buyer profile
+            </div>
+            <div className="flex items-center gap-2">
+              <Gift className="size-4 text-blue-600" />
+              {coupons.length} coupons available
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border/70 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CreditCard className="size-4 text-emerald-600" />
+            Balance
+          </div>
+          <div className="mt-4 text-3xl font-semibold text-slate-900">Rp {balance.toLocaleString("id-ID")}</div>
+          <p className="mt-2 text-xs text-muted-foreground">Available to spend on your next purchase.</p>
         </div>
       </div>
 
-      <div>
-        <h3 className="text-lg font-bold mb-2 text-gray-700">Balance</h3>
-        <div className="bg-white rounded-lg shadow p-4 text-2xl font-bold text-green-700">
-          Rp {balance.toLocaleString('id-ID')}
+      <div className="rounded-2xl border border-border/70 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-900">Coupons</h3>
+          <span className="text-xs text-muted-foreground">{coupons.length} active</span>
         </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-bold mb-2 text-gray-700">Coupons</h3>
         {coupons.length === 0 ? (
-          <p className="text-gray-400">No coupons available.</p>
+          <p className="text-sm text-muted-foreground">No coupons available.</p>
         ) : (
-          <ul className="space-y-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {coupons.map((coupon) => (
-              <li key={coupon.id} className="bg-green-50 rounded-lg shadow p-4 flex justify-between items-center">
-                <div>
-                  <div className="font-semibold text-green-700">Code: {coupon.code}</div>
-                  <div className="text-green-600">Discount: {coupon.discount}</div>
-                  <div className="text-green-500">Expires: {coupon.expiry}</div>
-                </div>
-              </li>
+              <div key={coupon.id} className="rounded-xl border border-border/60 bg-emerald-50 px-4 py-4">
+                <div className="text-xs text-emerald-700">Code</div>
+                <div className="text-lg font-semibold text-emerald-800">{coupon.code}</div>
+                <div className="mt-2 text-sm text-emerald-700">Discount: {coupon.discount}</div>
+                <div className="text-xs text-emerald-600">Expires: {coupon.expiry}</div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default BuyerDashboard;
+export default BuyerDashboard

@@ -1,76 +1,72 @@
-import React from "react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
-import { ShoppingCart, Eye } from "lucide-react";
-import { motion, Variants } from "framer-motion";
-import Image from "next/image";
+import React from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { motion, Variants } from "framer-motion"
+import { Eye, ShoppingCart } from "lucide-react"
+
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
 interface Product {
-  id: number;
-  name: string;
-  price: number;
-  imageUrl: string;
-  seller?: { name?: string };
-  description?: string;
+  id: number
+  slug?: string
+  name: string
+  price: number
+  imageUrl: string
+  seller?: { name?: string }
+  description?: string
 }
 
 interface ProductCardProps {
-  readonly product: Product;
-  readonly formatCurrency: (value: number) => string;
-  readonly itemVariants: Variants;
+  readonly product: Product
+  readonly formatCurrency: (value: number) => string
+  readonly itemVariants: Variants
 }
 
 export function ProductCard({ product: p, formatCurrency, itemVariants }: ProductCardProps) {
   return (
     <motion.div key={p.id} variants={itemVariants} whileHover={{ y: -6 }} whileTap={{ scale: 0.98 }}>
-      <Card className="flex flex-col h-full">
-        <div className="relative w-full overflow-hidden rounded-t-md bg-gray-100">
+      <Card className="group flex h-full flex-col overflow-hidden border-border/60 bg-white shadow-sm">
+        <div className="relative">
           <Image
             src={p.imageUrl}
             alt={p.name}
             width={400}
-            height={176}
-            className="w-full h-44 object-cover"
+            height={240}
+            className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = "/images/fallback-product.png";
+              ;(e.currentTarget as HTMLImageElement).src = "/images/fallback-product.png"
             }}
-            priority={false}
           />
+          <Badge variant="blue" className="absolute left-3 top-3">Trending</Badge>
         </div>
-        <CardContent className="flex-1 flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-medium leading-tight break-words line-clamp-2">{p.name}</h3>
-              {/* Buat placement jenis product nanti disini*/}
+        <CardContent className="flex flex-1 flex-col gap-3 p-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 line-clamp-2">{p.name}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">Seller: {p.seller?.name ?? "Unknown"}</p>
+          </div>
+          <div className="mt-auto flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">Price</p>
+              <p className="text-lg font-semibold text-slate-900">{formatCurrency(p.price)}</p>
             </div>
-            <div className="text-right flex-shrink-0">
-              <div className="text-lg font-semibold">{formatCurrency(p.price)}</div>
-              <div className="text-xs text-muted-foreground mt-1 max-w-[100px] truncate">Seller: {p.seller?.name ?? "Unknown"}</div>
-            </div>
+            <Button asChild size="sm" variant="outline" className="gap-2">
+              <Link href={p.slug ? `/products/${p.slug}` : "#"}>
+                <Eye className="size-4" />
+                View
+              </Link>
+            </Button>
           </div>
         </CardContent>
-        <CardFooter className="pt-0 flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <Avatar>
-              <span className="sr-only">Seller avatar</span>
-            </Avatar>
-            <div className="text-xs text-muted-foreground truncate max-w-[80px]">{p.seller?.name ?? "Seller"}</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="flex items-center gap-2">
-              <Eye size={16} />
-              View
-            </Button>
-            <motion.div whileTap={{ scale: 0.96 }}>
-              <Button size="sm" className="flex items-center gap-2">
-                <ShoppingCart size={16} />
-                Add
-              </Button>
-            </motion.div>
-          </div>
+        <CardFooter className="flex items-center justify-between p-4 pt-0">
+          <div className="text-xs text-muted-foreground">In stock</div>
+          <Button size="sm" className="gap-2">
+            <ShoppingCart className="size-4" />
+            Add
+          </Button>
         </CardFooter>
       </Card>
     </motion.div>
-  );
+  )
 }

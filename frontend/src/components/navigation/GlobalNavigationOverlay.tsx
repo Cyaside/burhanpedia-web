@@ -9,7 +9,6 @@ export default function GlobalNavigationOverlay() {
   const [isNavigating, setIsNavigating] = React.useState(false)
   const hideTimerRef = React.useRef<number | null>(null)
 
-  // Hide overlay when the route has changed
   React.useEffect(() => {
     if (isNavigating) {
       setIsNavigating(false)
@@ -49,7 +48,11 @@ export default function GlobalNavigationOverlay() {
 
     function getInternalResolvedUrl(hrefAttr: string): URL | null {
       if (hrefAttr.startsWith("/")) {
-        try { return new URL(hrefAttr, window.location.href) } catch { return null }
+        try {
+          return new URL(hrefAttr, window.location.href)
+        } catch {
+          return null
+        }
       }
       try {
         const url = new URL(hrefAttr, window.location.href)
@@ -62,7 +65,7 @@ export default function GlobalNavigationOverlay() {
 
     function isSamePath(resolvedUrl: URL | null): boolean {
       if (!resolvedUrl) return false
-      return (resolvedUrl.pathname + resolvedUrl.search) === (window.location.pathname + window.location.search)
+      return resolvedUrl.pathname + resolvedUrl.search === window.location.pathname + window.location.search
     }
 
     function onClick(event: MouseEvent) {
@@ -87,7 +90,6 @@ export default function GlobalNavigationOverlay() {
     }
 
     function onBeforeUnload() {
-      // Show overlay during unload/refresh
       setIsNavigating(true)
     }
 
@@ -103,25 +105,26 @@ export default function GlobalNavigationOverlay() {
     }
   }, [])
 
-  const overlayVisible = isNavigating
-
   return (
     <div
       className={[
         "fixed inset-0 z-50 transition-opacity duration-150",
-        overlayVisible ? "opacity-100" : "pointer-events-none opacity-0",
+        isNavigating ? "opacity-100" : "pointer-events-none opacity-0",
       ].join(" ")}
-      aria-hidden={!overlayVisible}
+      aria-hidden={!isNavigating}
     >
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
       <div className="relative grid h-full place-items-center">
-        <div className="flex flex-col items-center gap-3 rounded-xl border bg-card/95 px-6 py-5 shadow-md">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden />
-          <output className="text-xs text-muted-foreground">Navigating...</output>
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-emerald-100 bg-white/90 px-7 py-6 shadow-xl">
+          <div className="flex items-center gap-3">
+            <span className="size-2 rounded-full bg-emerald-500" />
+            <span className="size-2 rounded-full bg-blue-500" />
+            <span className="size-2 rounded-full bg-red-500" />
+          </div>
+          <Loader2 className="h-5 w-5 animate-spin text-emerald-600" aria-hidden />
+          <output className="text-xs font-medium text-muted-foreground">Navigating to your next stop...</output>
         </div>
       </div>
     </div>
   )
 }
-
-

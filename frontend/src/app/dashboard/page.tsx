@@ -1,137 +1,162 @@
-'use client';
+"use client"
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { getApiUrl } from '@/lib/config';
-import AdminDashboard from '@/sections/dashboard/admindashboard';
-import SellerDashboard from '@/sections/dashboard/sellerdashboard';
-import BuyerDashboard from '@/sections/dashboard/buyerdashboard';
+import { useEffect, useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { getApiUrl } from "@/lib/config"
+import AdminDashboard from "@/sections/dashboard/admindashboard"
+import SellerDashboard from "@/sections/dashboard/sellerdashboard"
+import BuyerDashboard from "@/sections/dashboard/buyerdashboard"
+import DashboardShell, { Role } from "@/sections/dashboard/components/DashboardShell"
 
-
-
-interface Coupon {
-  id: number;
-  code: string;
-  discount: string;
-  expiry: string;
+interface BuyerProfile {
+  id: number
+  balance?: number
+  voucher?: string | null
 }
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: 'BUYER' | 'SELLER' | 'ADMIN';
-  profileImage?: string;
-  balance?: number;
-  coupons?: Coupon[];
+interface SellerProfile {
+  id: number
+  balance?: number
+}
+
+interface AdminProfile {
+  id: number
+}
+
+interface UserProfile {
+  id: number
+  name: string
+  email: string
+  buyerProfile?: BuyerProfile | null
+  sellerProfile?: SellerProfile | null
+  adminProfile?: AdminProfile | null
+}
+
+interface Coupon {
+  id: number
+  code: string
+  discount: string
+  expiry: string
+}
+
+const fallbackCoupons: Coupon[] = [
+  {
+    id: 1,
+    code: "WELCOME10",
+    discount: "10% Off",
+    expiry: "2026-12-31",
+  },
+  {
+    id: 2,
+    code: "MEGA32",
+    discount: "32% Off",
+    expiry: "2026-09-30",
+  },
+]
+
+function deriveRoles(user: UserProfile): Role[] {
+  const roles: Role[] = []
+  if (user.buyerProfile) roles.push("BUYER")
+  if (user.sellerProfile) roles.push("SELLER")
+  if (user.adminProfile) roles.push("ADMIN")
+  return roles.length ? roles : ["BUYER"]
 }
 
 export default function Dashboard() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [user, setUser] = useState<UserProfile | null>(null)
+  const [roles, setRoles] = useState<Role[]>([])
+  const [activeRole, setActiveRole] = useState<Role>("BUYER")
+  const [loading, setLoading] = useState(true)
+  const [token, setToken] = useState<string | null>(null)
+  const router = useRouter()
 
-  const fetchUserProfile = useCallback(async (token: string) => {
-    try {
-      const response = await fetch(getApiUrl('/auth/profile'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+  const fetchUserProfile = useCallback(
+    async (authToken: string) => {
+      try {
+        const response = await fetch(getApiUrl("/auth/profile"), {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-      } else {
-        localStorage.removeItem('token');
-        router.push('/login');
+        if (response.ok) {
+          const userData = (await response.json()) as UserProfile
+          setUser(userData)
+          const derivedRoles = deriveRoles(userData)
+          setRoles(derivedRoles)
+          setActiveRole((prev) => (derivedRoles.includes(prev) ? prev : derivedRoles[0]))
+        } else {
+          localStorage.removeItem("token")
+          router.push("/login")
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error)
+        localStorage.removeItem("token")
+        router.push("/login")
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      localStorage.removeItem('token');
-      router.push('/login');
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
+    },
+    [router]
+  )
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      router.push('/login');
-      return;
+    const storedToken = localStorage.getItem("token")
+
+    if (!storedToken) {
+      router.push("/login")
+      return
     }
 
-    fetchUserProfile(token);
-  }, [router, fetchUserProfile]);
+    setToken(storedToken)
+    fetchUserProfile(storedToken)
+  }, [router, fetchUserProfile])
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/login');
-  };
+    localStorage.removeItem("token")
+    router.push("/login")
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+      <div className="min-h-dvh flex items-center justify-center bg-slate-50">
+        <div className="text-sm text-muted-foreground">Loading dashboard...</div>
       </div>
-    );
+    )
   }
 
   if (!user) {
-    return null;
+    return null
   }
 
-  let dashboardContent;
-  if (user.role === 'ADMIN') {
-    dashboardContent = <AdminDashboard />;
-  } else if (user.role === 'SELLER') {
-    dashboardContent = <SellerDashboard />;
-  } else if (user.role === 'BUYER') {
-    // Mock data Karena belum jadi
-    const balance = typeof user.balance === 'number' ? user.balance : 250000;
-    const coupons = user.coupons ?? [
-      {
-        id: 1,
-        code: 'WWODKDNADJD',
-        discount: '10% Off',
-        expiry: '2025-12-31',
-      },
-      {
-        id: 2,
-        code: 'QOSIDHSNAD',
-        discount: '32% off',
-        expiry: '2025-09-30',
-      },
-    ];
+  let dashboardContent: React.ReactNode = null
+
+  if (activeRole === "ADMIN") {
+    dashboardContent = <AdminDashboard />
+  } else if (activeRole === "SELLER") {
+    dashboardContent = <SellerDashboard sellerId={user.id} token={token || ""} />
+  } else if (activeRole === "BUYER") {
+    const balance = typeof user.buyerProfile?.balance === "number" ? user.buyerProfile.balance : 250000
+    const coupons = fallbackCoupons
     dashboardContent = (
       <BuyerDashboard
         name={user.name}
         email={user.email}
-        profileImage={user.profileImage}
         balance={balance}
         coupons={coupons}
       />
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto py-12 px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-          {dashboardContent}
-        </div>
-      </div>
-    </div>
-  );
+    <DashboardShell
+      user={{ name: user.name, email: user.email }}
+      roles={roles}
+      activeRole={activeRole}
+      onRoleChange={setActiveRole}
+      onLogout={handleLogout}
+    >
+      {dashboardContent}
+    </DashboardShell>
+  )
 }

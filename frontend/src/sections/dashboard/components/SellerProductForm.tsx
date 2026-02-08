@@ -1,81 +1,117 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface SellerProductFormProps {
   form: {
-    name: string;
-    price: string;
-    stock: string;
-    imageUrl: string;
-    image: File | null;
-  };
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  loading: boolean;
-  submitting: boolean;
-  error: string | null;
+    name: string
+    price: string
+    stock: string
+    description: string
+    categoryId: string
+    imageUrl: string
+    image: File | null
+  }
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
+  onSubmit: (e: React.FormEvent) => void
+  loading: boolean
+  submitting: boolean
+  error: string | null
+  categories?: { id: number; name: string }[]
 }
 
-const SellerProductForm: React.FC<SellerProductFormProps> = ({ form, onChange, onSubmit, loading, submitting, error }) => (
-  <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
+const SellerProductForm: React.FC<SellerProductFormProps> = ({ form, onChange, onSubmit, loading, submitting, error, categories = [] }) => (
+  <form onSubmit={onSubmit} className="grid gap-4">
+    <div className="grid gap-4 md:grid-cols-2">
+      <div>
+        <Label htmlFor="name">Product name</Label>
+        <Input
+          id="name"
+          name="name"
+          type="text"
+          placeholder="Example: Wireless headset"
+          value={form.name}
+          onChange={onChange}
+          required
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label htmlFor="price">Price</Label>
+        <Input
+          id="price"
+          name="price"
+          type="number"
+          placeholder="Price"
+          value={form.price}
+          onChange={onChange}
+          required
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label htmlFor="categoryId">Category</Label>
+        <div className="mt-1">
+          <select
+            id="categoryId"
+            name="categoryId"
+            value={form.categoryId}
+            onChange={onChange}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="">Select category</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
     <div>
-      <Label htmlFor="name" className="text-green-700">Product Name</Label>
+      <Label htmlFor="description">Description</Label>
       <Input
-        id="name"
-        name="name"
+        id="description"
+        name="description"
         type="text"
-        placeholder="Product Name"
-        value={form.name}
+        placeholder="Short description"
+        value={form.description}
         onChange={onChange}
-        required
         className="mt-1"
       />
     </div>
-    <div>
-      <Label htmlFor="price" className="text-blue-700">Price</Label>
-      <Input
-        id="price"
-        name="price"
-        type="number"
-        placeholder="Price"
-        value={form.price}
-        onChange={onChange}
-        required
-        className="mt-1"
-      />
+    <div className="grid gap-4 md:grid-cols-2">
+      <div>
+        <Label htmlFor="stock">Stock quantity</Label>
+        <Input
+          id="stock"
+          name="stock"
+          type="number"
+          placeholder="Stock quantity"
+          value={form.stock}
+          onChange={onChange}
+          required
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label htmlFor="image">Product image</Label>
+        <Input
+          id="image"
+          name="image"
+          type="file"
+          accept="image/*"
+          onChange={onChange}
+          required
+          className="mt-1"
+        />
+      </div>
     </div>
-    <div>
-      <Label htmlFor="stock" className="text-red-700">Stock Quantity</Label>
-      <Input
-        id="stock"
-        name="stock"
-        type="number"
-        placeholder="Stock Quantity"
-        value={form.stock}
-        onChange={onChange}
-        required
-        className="mt-1"
-      />
-    </div>
-    <div>
-      <Label htmlFor="image" className="text-green-700">Product Image</Label>
-      <Input
-        id="image"
-        name="image"
-        type="file"
-        accept="image/*"
-        onChange={onChange}
-        required
-        className="mt-1"
-      />
-    </div>
-    <Button type="submit" disabled={submitting || loading} variant="default" className="bg-green-600 text-white hover:bg-green-700">
-      {submitting ? 'Adding...' : 'Add Product'}
+    <Button type="submit" disabled={submitting || loading} className="w-full gap-2">
+      {submitting ? "Adding..." : "Add product"}
     </Button>
-    {error && <div className="text-red-600 mt-2">{error}</div>}
+    {error && <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
   </form>
-);
+)
 
-export default SellerProductForm;
+export default SellerProductForm

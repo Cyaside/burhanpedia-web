@@ -1,103 +1,85 @@
-import React, { JSX } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { Separator } from "@/components/ui/separator";
-import { Twitter, Github, Mail, ShoppingCart, CreditCard } from "lucide-react";
-import { motion } from "framer-motion";
+import React, { JSX } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { Mail, ShoppingBag, Store, Twitter } from "lucide-react"
 
 export default function Footer(): JSX.Element {
   return (
-    <motion.footer
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: "easeOut" }}
-      className="w-full bg-white border-t border-gray-200 mt-auto"
-      aria-label="Site footer"
-    >
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* BRAND */}
-          <div className="space-y-4 min-w-0">
+    <footer className="border-t border-border/60 bg-white" aria-label="Site footer">
+      <div className="mx-auto max-w-7xl px-6 py-12">
+        <div className="grid gap-8 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
+          <div className="space-y-4">
             <div className="flex items-center gap-3">
               <Image
                 src="/burhan.jpg"
                 alt="BurhanPedia logo"
-                width={56}
-                height={56}
-                className="rounded-md object-cover"
-                priority={false}
+                width={52}
+                height={52}
+                className="rounded-xl border border-emerald-100"
               />
-              <div className="min-w-0">
-                <h3 className="text-lg font-semibold text-slate-900 leading-tight">BurhanPedia</h3>
-                <p className="text-sm text-slate-500 truncate">Your marketplace for curated</p>
-                <p className="text-sm text-slate-500 truncate">products & trusted sellers</p>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">BurhanPedia</h3>
+                <p className="text-xs text-muted-foreground">Your trusted marketplace for curated products.</p>
               </div>
             </div>
-
-            <div className="flex items-center gap-3">
-              <nav className="flex items-center gap-2">
-                <motion.a whileHover={{ y: -3 }} className="p-2 rounded-md hover:bg-gray-100" href="#" aria-label="Twitter">
-                  <Twitter className="w-5 h-5 text-red-600" />
-                </motion.a>
-                <motion.a whileHover={{ y: -3 }} className="p-2 rounded-md hover:bg-gray-100" href="#" aria-label="GitHub">
-                  <Github className="w-5 h-5 text-green-600" />
-                </motion.a>
-                <motion.a whileHover={{ y: -3 }} className="p-2 rounded-md hover:bg-gray-100" href="#" aria-label="Email">
-                  <Mail className="w-5 h-5 text-blue-600" />
-                </motion.a>
-              </nav>
+            <p className="text-sm text-muted-foreground">
+              Built for sellers who want growth and buyers who want confidence. Every transaction stays transparent.
+            </p>
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <a className="rounded-full border border-border/60 p-2 hover:text-emerald-600" href="#" aria-label="Twitter">
+                <Twitter className="size-4" />
+              </a>
+              <a className="rounded-full border border-border/60 p-2 hover:text-blue-600" href="#" aria-label="Email">
+                <Mail className="size-4" />
+              </a>
+              <a className="rounded-full border border-border/60 p-2 hover:text-red-600" href="#" aria-label="Marketplace">
+                <ShoppingBag className="size-4" />
+              </a>
             </div>
-
-            {/* quick facts */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2 text-sm text-slate-600">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4" />
-                <span>Secure checkout</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4" />
-                <span>Multiple payment options</span>
-              </div>
-            </div>
-
-            <div className="pt-2 text-xs text-slate-500">&copy; {new Date().getFullYear()} BurhanPedia — All rights reserved.</div>
           </div>
 
-          {/* Customer Service buat nanti */}
           <div>
-            <h4 className="text-sm font-medium text-slate-700">Customer service</h4>
-            <nav className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
-              <Link className="hover:text-green-600 transition-colors" href="#">Help Center</Link>
-              <Link className="hover:text-green-600 transition-colors" href="#">Shipping & Returns</Link>
-              <Link className="hover:text-green-600 transition-colors" href="#">Track Order</Link>
-              <Link className="hover:text-green-600 transition-colors" href="#">Contact Us</Link>
+            <h4 className="text-sm font-semibold text-slate-900">Marketplace</h4>
+            <nav className="mt-4 flex flex-col gap-2 text-sm text-muted-foreground">
+              <a className="hover:text-foreground" href="#categories">Categories</a>
+              <a className="hover:text-foreground" href="#recommended">Recommended</a>
+              <a className="hover:text-foreground" href="#testimonials">Reviews</a>
             </nav>
           </div>
 
-          {/* Seller Center buat nanti */}
           <div>
-            <h5 className="text-sm font-medium text-slate-700">Sell with us</h5>
-            <nav className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
-              <Link className="hover:text-blue-600 transition-colors" href="#">Seller Center</Link>
-              <Link className="hover:text-blue-600 transition-colors" href="#">Seller Fees</Link>
+            <h4 className="text-sm font-semibold text-slate-900">For sellers</h4>
+            <nav className="mt-4 flex flex-col gap-2 text-sm text-muted-foreground">
+              <Link className="hover:text-foreground" href="/register">Open a store</Link>
+              <Link className="hover:text-foreground" href="/login">Seller login</Link>
+              <a className="hover:text-foreground" href="#contact">Partnerships</a>
+            </nav>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-slate-900">Support</h4>
+            <nav className="mt-4 flex flex-col gap-2 text-sm text-muted-foreground">
+              <a className="hover:text-foreground" href="#contact">Help center</a>
+              <a className="hover:text-foreground" href="#contact">Contact us</a>
+              <a className="hover:text-foreground" href="#how-it-works">Shipping info</a>
             </nav>
           </div>
         </div>
 
-        {/* bottom footer */}
-        <div className="mt-8 border-t border-gray-100 pt-6 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-3">
+        <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground md:flex-row md:items-center">
+          <div>Copyright (c) {new Date().getFullYear()} BurhanPedia. All rights reserved.</div>
           <div className="flex items-center gap-4">
-            <span className="hover:text-slate-700">Privacy</span>
-            <span className="hover:text-slate-700">Terms</span>
-            <span className="hover:text-slate-700">Sitemap</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-xs">Language: <strong>EN</strong></div>
-            <div className="text-xs">Currency: <strong>IDR</strong></div>
-            <div className="text-xs">Version 1.2.3</div>
+            <span className="inline-flex items-center gap-2">
+              <Store className="size-3" />
+              Seller-first platform
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <ShoppingBag className="size-3" />
+              Buyer protection included
+            </span>
           </div>
         </div>
       </div>
-    </motion.footer>
-  );
+    </footer>
+  )
 }
