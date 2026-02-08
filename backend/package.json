@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "prisma generate && nest build",
-    "vercel-build": "prisma generate && nest build",
+    "vercel-build": "prisma generate && prisma migrate deploy && nest build",
 
     "postinstall": "prisma generate",
 
