@@ -1,4 +1,4 @@
-import {Controller,Get,Post,Request,Param,UseGuards,UseInterceptors,UploadedFile,UseFilters,BadRequestException,} from '@nestjs/common';
+import {Controller,Get,Post,Request,Param,UseGuards,UseInterceptors,UploadedFile,UseFilters,BadRequestException, Query, Body, Patch,} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage} from 'multer';
 import { ProductService } from './product.service';
@@ -23,12 +23,12 @@ function imageFileFilter(
 @Controller('products')
 @UseFilters(new MulterExceptionFilter())
 export class ProductController {
-  @Get('recommended')
-  async getRecommendedProducts() {
-    // Bisa di add logic buat filter recommend section
-    return this.productService.getAllProducts();
-  }
   constructor(private readonly productService: ProductService) {}
+
+  @Get('recommended')
+  async getRecommendedProducts(@Query('q') q?: string) {
+    return this.productService.getAllProducts({ q });
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -76,6 +76,8 @@ export class ProductController {
         price: Number(price),
         stock: Number(stock),
         imageUrl,
+        description: req.body.description,
+        categoryId: req.body.categoryId ? Number(req.body.categoryId) : undefined,
       };
 
       const product = await this.productService.createProduct(productData, sellerId);
@@ -90,12 +92,64 @@ export class ProductController {
   }
 
   @Get()
-  async getAllProducts() {
-    return this.productService.getAllProducts();
+  async getAllProducts(
+    @Query('q') q?: string,
+    @Query('category') category?: string,
+    @Query('rating') rating?: string,
+    @Query('priceMin') priceMin?: string,
+    @Query('priceMax') priceMax?: string,
+  ) {
+    return this.productService.getAllProducts({
+      q,
+      category,
+      rating: rating ? Number(rating) : undefined,
+      priceMin: priceMin ? Number(priceMin) : undefined,
+      priceMax: priceMax ? Number(priceMax) : undefined,
+    });
   }
 
   @Get('seller/:sellerId')
   async getSellerProducts(@Param('sellerId') sellerId: number) {
     return this.productService.getSellerProducts(Number(sellerId));
+  }
+
+  @Get(':slug')
+  async getBySlug(@Param('slug') slug: string) {
+    return this.productService.getBySlug(slug);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/images')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_FILE_SIZE },
+      fileFilter: imageFileFilter,
+    }),
+  )
+  async uploadImage(@UploadedFile() file: Express.Multer.File, @Param('id') productId: string) {
+    if (!file) throw new BadRequestException('Image required');
+    const fileExt = (file.originalname.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const pathInBucket = `products/${productId}/${fileName}`;
+    const { error } = await supabase.storage
+      .from('product-images')
+      .upload(pathInBucket, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
+    if (error) throw new BadRequestException(error.message);
+    const { data } = supabase.storage.from('product-images').getPublicUrl(pathInBucket);
+    await this.productService.addImages(Number(productId), [data?.publicUrl || '']);
+    return { url: data?.publicUrl };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/variants')
+  async addVariant(
+    @Param('id') productId: string,
+    @Body() body: { color?: string; size?: string; sku?: string; stock: number; priceDelta?: number },
+  ) {
+    return this.productService.addVariant(Number(productId), body);
   }
 }
