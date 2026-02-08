@@ -62,7 +62,7 @@ export default function CheckoutPage() {
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Checkout</p>
             <h1 className="text-2xl font-semibold text-foreground">Review & pay</h1>
           </div>
-          <Badge variant="secondary">{items.length} items</Badge>
+          <Badge variant="default">{items.length} items</Badge>
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">

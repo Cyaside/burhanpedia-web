@@ -2,14 +2,16 @@ const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-  const headers: HeadersInit = { ...(options.headers || {}) }
+  // Use the Headers API to safely set header values (avoids TS index errors)
+  const hdrs = new Headers(options.headers as HeadersInit)
   if (!(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json"
+    hdrs.set("Content-Type", "application/json")
   }
-  if (token) headers.Authorization = `Bearer ${token}`
+  if (token) hdrs.set("Authorization", `Bearer ${token}`)
+
   const res = await fetch(`${baseUrl}${path}`, {
     ...options,
-    headers,
+    headers: hdrs,
   })
   if (!res.ok) {
     const text = await res.text().catch(() => "")

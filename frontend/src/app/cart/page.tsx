@@ -30,7 +30,7 @@ export default function CartPage() {
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Cart</p>
             <h1 className="text-2xl font-semibold text-foreground">Your bag</h1>
           </div>
-          <Badge variant="secondary">{items.length} items</Badge>
+          <Badge variant="default">{items.length} items</Badge>
         </div>
 
         {loading && <p className="mt-6 text-sm text-muted-foreground">Loading cart...</p>}

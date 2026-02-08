@@ -34,7 +34,7 @@ export default function ProfilePage() {
                 <Package className="size-4 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">Orders</h2>
               </div>
-              <Badge variant="secondary">{orders.length}</Badge>
+              <Badge variant="default">{orders.length}</Badge>
             </div>
             <div className="mt-4 space-y-3">
               {orders.length === 0 && <p className="text-sm text-muted-foreground">No orders yet.</p>}
@@ -59,7 +59,7 @@ export default function ProfilePage() {
                 <Heart className="size-4 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">Wishlist</h2>
               </div>
-              <Badge variant="secondary">{wishlist.length}</Badge>
+              <Badge variant="default">{wishlist.length}</Badge>
             </div>
             <div className="mt-4 grid gap-3">
               {wishlist.length === 0 && <p className="text-sm text-muted-foreground">No wishlist items.</p>}

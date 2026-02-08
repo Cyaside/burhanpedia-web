@@ -99,7 +99,7 @@ export default function ProductDetailPage() {
               <p className="text-3xl font-semibold text-foreground">
                 {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(price)}
               </p>
-              {product.stock < 5 && <Badge variant="destructive">Low stock</Badge>}
+              {product.stock < 5 && <Badge variant="red">Low stock</Badge>}
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">{product.description ?? "Carefully curated product for you."}</p>
 
