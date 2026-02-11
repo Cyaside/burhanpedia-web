@@ -1,12 +1,14 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from './prisma.service';
 
-@Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  async onModuleInit() {
-    await this.$connect();
-  }
-  async onModuleDestroy() {
-    await this.$disconnect();
-  }
-}
+describe('PrismaService', () => {
+  it('throws when DATABASE_URL is missing', async () => {
+    const config = {
+      get: () => undefined,
+    } as unknown as ConfigService;
+
+    const service = new PrismaService(config);
+
+    await expect(service.onModuleInit()).rejects.toThrow(/DATABASE_URL/i);
+  });
+});

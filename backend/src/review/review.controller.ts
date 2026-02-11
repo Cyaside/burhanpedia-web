@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ReviewService } from './review.service';
 
@@ -18,7 +26,10 @@ export class ReviewController {
     @Param('productId') productId: string,
     @Body() body: { rating: number; comment?: string },
   ) {
-    return this.service.create(req.user.userId, { productId: Number(productId), rating: Number(body.rating), comment: body.comment });
+    return this.service.create(req.user.userId, {
+      productId: Number(productId),
+      rating: Number(body.rating),
+      comment: body.comment,
+    });
   }
 }
-

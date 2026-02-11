@@ -17,7 +17,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const text = await res.text().catch(() => "")
     throw new Error(text || res.statusText)
   }
-  return (await res.json()) as T
+  const contentType = res.headers.get("content-type") || ""
+  if (contentType.includes("application/json")) {
+    return (await res.json()) as T
+  }
+  const bodyText = await res.text().catch(() => "")
+  throw new Error(`Expected JSON response but received: ${bodyText.slice(0,200)}`)
 }
 
 export const api = {

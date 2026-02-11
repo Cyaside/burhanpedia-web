@@ -6,12 +6,14 @@ export class ReviewService {
   constructor(private readonly prisma: PrismaService) {}
 
   private async getBuyerId(userId: number) {
-    const profile = await this.prisma.buyerProfile.findUnique({ where: { userId } });
+    const profile = await this.prisma.buyerProfile.findUnique({
+      where: { userId },
+    });
     if (!profile) throw new BadRequestException('Buyer profile not found');
     return profile.id;
   }
 
-  async list(productId: number) {
+  list(productId: number) {
     return this.prisma.review.findMany({
       where: { productId },
       include: { buyer: { include: { user: true } } },
@@ -19,7 +21,10 @@ export class ReviewService {
     });
   }
 
-  async create(userId: number, payload: { productId: number; rating: number; comment?: string }) {
+  async create(
+    userId: number,
+    payload: { productId: number; rating: number; comment?: string },
+  ) {
     const buyerId = await this.getBuyerId(userId);
     const review = await this.prisma.review.create({
       data: {

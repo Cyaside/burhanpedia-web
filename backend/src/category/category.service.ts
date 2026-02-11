@@ -9,4 +9,3 @@ export class CategoryService {
     return this.prisma.category.findMany({ orderBy: { name: 'asc' } });
   }
 }
-

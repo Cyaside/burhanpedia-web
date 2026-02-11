@@ -1,4 +1,11 @@
-import { IsEmail, IsString, MinLength, IsArray, ArrayNotEmpty, IsIn } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsArray,
+  ArrayNotEmpty,
+  IsIn,
+} from 'class-validator';
 
 export class LoginDto {
   @IsEmail()

@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
@@ -43,22 +47,22 @@ export class AuthService {
     } = {};
     if (profileTypes.includes('BUYER')) {
       profileResults.buyerProfile = await this.prisma.buyerProfile.create({
-        data: { userId: user.id }
+        data: { userId: user.id },
       });
     }
     if (profileTypes.includes('SELLER')) {
       profileResults.sellerProfile = await this.prisma.sellerProfile.create({
-        data: { userId: user.id }
+        data: { userId: user.id },
       });
     }
     if (profileTypes.includes('ADMIN')) {
       profileResults.adminProfile = await this.prisma.adminProfile.create({
-        data: { userId: user.id }
+        data: { userId: user.id },
       });
     }
 
     // Remove password from response
-    const { password: _, ...result } = user;
+    const { password: _password, ...result } = user;
     return { ...result, ...profileResults };
   }
 
@@ -84,7 +88,7 @@ export class AuthService {
       sub: user.id,
     };
 
-    const { password: _, ...result } = user;
+    const { password: _password, ...result } = user;
 
     return {
       user: result,
@@ -98,14 +102,14 @@ export class AuthService {
     });
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      const { password: _, ...result } = user;
+      const { password: _password, ...result } = user;
       return result;
     }
 
     return null;
   }
 
-  async getUserById(id: number) {
+  getUserById(id: number) {
     return this.prisma.user.findUnique({
       where: { id },
       include: {

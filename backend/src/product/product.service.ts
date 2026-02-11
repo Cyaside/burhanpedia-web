@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, Product } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import slugify from 'slugify';
@@ -7,11 +7,30 @@ import slugify from 'slugify';
 export class ProductService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private buildSlug(name: string) {
-    return slugify(name, { lower: true, strict: true }) + '-' + Math.random().toString(36).slice(2, 6);
+  private async resolveSellerProfileId(userIdOrSellerId: number) {
+    const byUser = await this.prisma.sellerProfile.findUnique({
+      where: { userId: userIdOrSellerId },
+    });
+    if (byUser) return byUser.id;
+
+    const byId = await this.prisma.sellerProfile.findUnique({
+      where: { id: userIdOrSellerId },
+    });
+    if (byId) return byId.id;
+
+    throw new BadRequestException('Seller profile not found');
   }
 
-  async createProduct(data: any, sellerId: number) {
+  private buildSlug(name: string) {
+    return (
+      slugify(name, { lower: true, strict: true }) +
+      '-' +
+      Math.random().toString(36).slice(2, 6)
+    );
+  }
+
+  async createProduct(data: any, userId: number) {
+    const sellerId = await this.resolveSellerProfileId(userId);
     const slug = this.buildSlug(data.name);
     const product = await this.prisma.product.create({
       data: {
@@ -29,16 +48,28 @@ export class ProductService {
     return product;
   }
 
-  async addImages(productId: number, urls: string[]) {
+  addImages(productId: number, urls: string[]) {
     const createInputs = urls.map((url, index) => ({
       url,
       isPrimary: index === 0,
       productId,
     }));
-    return this.prisma.productImage.createMany({ data: createInputs, skipDuplicates: true });
+    return this.prisma.productImage.createMany({
+      data: createInputs,
+      skipDuplicates: true,
+    });
   }
 
-  async addVariant(productId: number, payload: { color?: string; size?: string; sku?: string; stock: number; priceDelta?: number }) {
+  addVariant(
+    productId: number,
+    payload: {
+      color?: string;
+      size?: string;
+      sku?: string;
+      stock: number;
+      priceDelta?: number;
+    },
+  ) {
     return this.prisma.productVariant.create({
       data: {
         productId,
@@ -51,7 +82,7 @@ export class ProductService {
     });
   }
 
-  async getAllProducts(params?: {
+  getAllProducts(params?: {
     q?: string;
     category?: string;
     rating?: number;
@@ -89,7 +120,7 @@ export class ProductService {
     });
   }
 
-  async getBySlug(slug: string) {
+  getBySlug(slug: string) {
     return this.prisma.product.findUnique({
       where: { slug },
       include: {
@@ -106,8 +137,9 @@ export class ProductService {
   }
 
   async getSellerProducts(sellerId: number) {
+    const resolvedSellerId = await this.resolveSellerProfileId(sellerId);
     return this.prisma.product.findMany({
-      where: { sellerId },
+      where: { sellerId: resolvedSellerId },
       include: { seller: true, images: true, variants: true },
     });
   }

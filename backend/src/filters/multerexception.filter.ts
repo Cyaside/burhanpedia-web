@@ -1,4 +1,10 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpStatus,
+  HttpException,
+} from '@nestjs/common';
 
 @Catch()
 export class MulterExceptionFilter implements ExceptionFilter {
@@ -20,6 +26,18 @@ export class MulterExceptionFilter implements ExceptionFilter {
         statusCode: HttpStatus.BAD_REQUEST,
         message: exception.message,
       });
+    }
+
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      const response = exception.getResponse();
+      return res
+        .status(status)
+        .json(
+          typeof response === 'string'
+            ? { statusCode: status, message: response }
+            : response,
+        );
     }
 
     // fallback

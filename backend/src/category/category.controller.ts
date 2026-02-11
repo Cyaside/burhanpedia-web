@@ -10,4 +10,3 @@ export class CategoryController {
     return this.service.list();
   }
 }
-

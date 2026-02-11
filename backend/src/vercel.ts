@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { buildCorsOptions } from './utils/cors';
 
 // Khusus buat vercel
 let cachedServer: any;
@@ -8,21 +9,18 @@ let cachedServer: any;
 async function bootstrapServer() {
   const app = await NestFactory.create(AppModule);
 
-  console.log(`🚀 Starting Burhanpedia Backend in ${process.env.NODE_ENV || 'development'} mode`);
+  console.log(
+    `🚀 Starting Burhanpedia Backend in ${process.env.NODE_ENV || 'development'} mode`,
+  );
   console.log(`📡 Server will listen on port ${process.env.PORT || 3000}`);
 
-  app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:3001',
-      'https://burhanpedia-web.vercel.app',
-    ],
-    credentials: true,
-  });
+  app.enableCors(buildCorsOptions());
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  );
 
-  await app.init(); 
+  await app.init();
   return app.getHttpAdapter().getInstance();
 }
 

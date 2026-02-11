@@ -8,8 +8,12 @@ export default defineConfig({
     path: 'prisma/migrations',
   },
   datasource: {
-    // Use process.env here to avoid throwing when DATABASE_URL is missing for commands
-    // that don't require a DB connection (e.g. `prisma generate`).
-    url: process.env.DATABASE_URL ?? '',
+    // Prisma v7 no longer supports `url`/`directUrl` in `schema.prisma`.
+    // Use this config to control which connection string the Prisma CLI uses.
+    //
+    // Recommended pattern:
+    // - `DATABASE_URL`            -> pooled/pgbouncer URL for runtime (serverless-friendly)
+    // - `PRISMA_MIGRATE_DATABASE_URL` -> direct URL for migrations (no pgbouncer)
+    url: process.env.PRISMA_MIGRATE_DATABASE_URL ?? process.env.DATABASE_URL ?? '',
   },
 });

@@ -1,6 +1,20 @@
-import {Controller,Get,Post,Request,Param,UseGuards,UseInterceptors,UploadedFile,UseFilters,BadRequestException, Query, Body, Patch,} from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Request,
+  Param,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  UseFilters,
+  BadRequestException,
+  Query,
+  Body,
+  NotFoundException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage} from 'multer';
+import { memoryStorage } from 'multer';
 import { ProductService } from './product.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { supabase } from '../supabaseClient';
@@ -10,12 +24,15 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
 const ALLOWED_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 function imageFileFilter(
-  req: any,
+  _req: any,
   file: Express.Multer.File,
-  cb: (error: Error | null, acceptFile: boolean) => void
+  cb: (error: Error | null, acceptFile: boolean) => void,
 ) {
   if (!ALLOWED_MIMETYPES.includes(file.mimetype)) {
-    return cb(new Error('Only image files (jpg, png, webp) are allowed'), false);
+    return cb(
+      new Error('Only image files (jpg, png, webp) are allowed'),
+      false,
+    );
   }
   cb(null, true);
 }
@@ -39,56 +56,55 @@ export class ProductController {
       fileFilter: imageFileFilter,
     }),
   )
-  async createProduct(@UploadedFile() file: Express.Multer.File, @Request() req: any) {
-    try {
-      const sellerId = req.user.userId;
-      const { name, price, stock } = req.body;
+  async createProduct(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: any,
+  ) {
+    const sellerUserId = req.user.userId;
+    const { name, price, stock } = req.body;
 
-      if (!name || !price || !stock) {
-        throw new BadRequestException('name, price, and stock are required');
-      }
-
-      let imageUrl = '';
-      if (file) {
-        const fileExt = (file.originalname.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-        const pathInBucket = `products/${sellerId}/${fileName}`;
-
-        const { error } = await supabase.storage
-          .from('product-images')
-          .upload(pathInBucket, file.buffer, {
-            contentType: file.mimetype,
-            upsert: false,
-          });
-
-        if (error) {
-          // apabila ada error dari supabase, lempar supaya masuk ke catch
-          throw new Error(`Image upload failed: ${error.message || JSON.stringify(error)}`);
-        }
-
-        // ambil public url (atau gunakan signed URL jika bucket private)
-        const { data } = supabase.storage.from('product-images').getPublicUrl(pathInBucket);
-        imageUrl = data?.publicUrl || '';
-      }
-
-      const productData = {
-        name,
-        price: Number(price),
-        stock: Number(stock),
-        imageUrl,
-        description: req.body.description,
-        categoryId: req.body.categoryId ? Number(req.body.categoryId) : undefined,
-      };
-
-      const product = await this.productService.createProduct(productData, sellerId);
-      return product;
-    } catch (error) {
-      return {
-        statusCode: 500,
-        message: error?.message || 'Failed to create product',
-        error,
-      };
+    if (!name || !price || !stock) {
+      throw new BadRequestException('name, price, and stock are required');
     }
+
+    let imageUrl = '';
+    if (file) {
+      const fileExt = (file.originalname.split('.').pop() || 'jpg').replace(
+        /[^a-zA-Z0-9]/g,
+        '',
+      );
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+      const pathInBucket = `products/${sellerUserId}/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('product-images')
+        .upload(pathInBucket, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false,
+        });
+
+      if (error) {
+        throw new BadRequestException(
+          `Image upload failed: ${error.message || JSON.stringify(error)}`,
+        );
+      }
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(pathInBucket);
+      imageUrl = data?.publicUrl || '';
+    }
+
+    const productData = {
+      name,
+      price: Number(price),
+      stock: Number(stock),
+      imageUrl,
+      description: req.body.description,
+      categoryId: req.body.categoryId ? Number(req.body.categoryId) : undefined,
+    };
+
+    return this.productService.createProduct(productData, sellerUserId);
   }
 
   @Get()
@@ -115,7 +131,11 @@ export class ProductController {
 
   @Get(':slug')
   async getBySlug(@Param('slug') slug: string) {
-    return this.productService.getBySlug(slug);
+    const product = await this.productService.getBySlug(slug);
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return product;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -127,9 +147,15 @@ export class ProductController {
       fileFilter: imageFileFilter,
     }),
   )
-  async uploadImage(@UploadedFile() file: Express.Multer.File, @Param('id') productId: string) {
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('id') productId: string,
+  ) {
     if (!file) throw new BadRequestException('Image required');
-    const fileExt = (file.originalname.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+    const fileExt = (file.originalname.split('.').pop() || 'jpg').replace(
+      /[^a-zA-Z0-9]/g,
+      '',
+    );
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
     const pathInBucket = `products/${productId}/${fileName}`;
     const { error } = await supabase.storage
@@ -139,16 +165,27 @@ export class ProductController {
         upsert: false,
       });
     if (error) throw new BadRequestException(error.message);
-    const { data } = supabase.storage.from('product-images').getPublicUrl(pathInBucket);
-    await this.productService.addImages(Number(productId), [data?.publicUrl || '']);
+    const { data } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(pathInBucket);
+    await this.productService.addImages(Number(productId), [
+      data?.publicUrl || '',
+    ]);
     return { url: data?.publicUrl };
   }
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/variants')
-  async addVariant(
+  addVariant(
     @Param('id') productId: string,
-    @Body() body: { color?: string; size?: string; sku?: string; stock: number; priceDelta?: number },
+    @Body()
+    body: {
+      color?: string;
+      size?: string;
+      sku?: string;
+      stock: number;
+      priceDelta?: number;
+    },
   ) {
     return this.productService.addVariant(Number(productId), body);
   }

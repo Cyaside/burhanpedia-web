@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WishlistService } from './wishlist.service';
 
@@ -17,4 +24,3 @@ export class WishlistController {
     return this.wishlistService.toggle(req.user.userId, Number(body.productId));
   }
 }
-

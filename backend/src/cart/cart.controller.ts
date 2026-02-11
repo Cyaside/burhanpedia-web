@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { CartService } from './cart.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -13,7 +23,10 @@ export class CartController {
   }
 
   @Post()
-  async add(@Request() req: any, @Body() body: { productId: number; variantId?: number; quantity?: number }) {
+  async add(
+    @Request() req: any,
+    @Body() body: { productId: number; variantId?: number; quantity?: number },
+  ) {
     return this.cartService.add(req.user.userId, {
       productId: Number(body.productId),
       variantId: body.variantId ? Number(body.variantId) : undefined,
@@ -22,8 +35,16 @@ export class CartController {
   }
 
   @Patch(':id')
-  async update(@Request() req: any, @Param('id') id: string, @Body() body: { quantity: number }) {
-    return this.cartService.updateQuantity(req.user.userId, Number(id), Number(body.quantity));
+  async update(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { quantity: number },
+  ) {
+    return this.cartService.updateQuantity(
+      req.user.userId,
+      Number(id),
+      Number(body.quantity),
+    );
   }
 
   @Delete(':id')
@@ -31,4 +52,3 @@ export class CartController {
     return this.cartService.remove(req.user.userId, Number(id));
   }
 }
-

@@ -8,11 +8,8 @@
   "scripts": {
     "build": "prisma generate && nest build",
     "vercel-build": "prisma generate && prisma migrate deploy && nest build",
-
     "postinstall": "prisma generate",
-
     "migrate:deploy": "prisma migrate deploy",
-
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -32,6 +29,7 @@
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@supabase/supabase-js": "^2.55.0",
     "bcryptjs": "^3.0.2",
