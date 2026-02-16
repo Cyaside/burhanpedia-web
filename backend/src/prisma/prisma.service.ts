@@ -4,16 +4,48 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 function buildPgConfig(databaseUrl: string) {
-  const usesSslMode = /(^|[?&])sslmode=require(&|$)/i.test(databaseUrl);
-  const looksLocal = /localhost|127\.0\.0\.1/i.test(databaseUrl);
+  const parseDbUrl = () => {
+    try {
+      return new URL(databaseUrl);
+    } catch {
+      return null;
+    }
+  };
+
+  const parsedUrl = parseDbUrl();
+  const host = parsedUrl?.hostname ?? '';
+  const sslMode = parsedUrl?.searchParams.get('sslmode')?.toLowerCase();
+  const sslParam = parsedUrl?.searchParams.get('ssl')?.toLowerCase();
+
+  const looksLocal =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host.endsWith('.local');
+
+  const managedHostPattern =
+    /(supabase\.com|supabase\.co|neon\.tech|railway\.app|render\.com|rds\.amazonaws\.com)$/i;
+  const isManagedHost = managedHostPattern.test(host);
+
+  const sslRequestedByParams =
+    sslMode !== undefined ||
+    (sslParam !== undefined && !['0', 'false', 'off'].includes(sslParam));
+
   const shouldUseSsl =
-    usesSslMode || (process.env.NODE_ENV === 'production' && !looksLocal);
+    sslRequestedByParams ||
+    isManagedHost ||
+    (process.env.NODE_ENV === 'production' && !looksLocal);
+
+  const rejectUnauthorizedOverride =
+    process.env.DATABASE_SSL_REJECT_UNAUTHORIZED;
+  const rejectUnauthorized =
+    rejectUnauthorizedOverride !== undefined
+      ? rejectUnauthorizedOverride.toLowerCase() === 'true'
+      : sslMode === 'verify-ca' || sslMode === 'verify-full';
 
   return {
     connectionString: databaseUrl,
-    // Supabase/managed Postgres commonly uses self-signed certs.
-    // This mirrors typical Node `pg` guidance for those providers.
-    ...(shouldUseSsl ? { ssl: { rejectUnauthorized: false } } : {}),
+    ...(shouldUseSsl ? { ssl: { rejectUnauthorized } } : {}),
   };
 }
 

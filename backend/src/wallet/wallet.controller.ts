@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WalletService } from './wallet.service';
-import { RequestWithUser } from '../auth/types/jwt.types';
+import type { RequestWithUser } from '../auth/types/jwt.types';
 import { TopUpDto } from './dto/wallet.dto';
 
 @UseGuards(JwtAuthGuard)

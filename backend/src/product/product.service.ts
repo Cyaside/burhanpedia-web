@@ -223,7 +223,12 @@ export class ProductService {
       data.description = payload.description;
     if (payload.price !== undefined) data.price = payload.price;
     if (payload.stock !== undefined) data.stock = payload.stock;
-    if (payload.categoryId !== undefined) data.categoryId = payload.categoryId;
+    if (payload.categoryId !== undefined) {
+      data.category =
+        payload.categoryId === null
+          ? { disconnect: true }
+          : { connect: { id: payload.categoryId } };
+    }
     if (payload.imageUrl !== undefined) data.imageUrl = payload.imageUrl;
 
     return this.prisma.product.update({

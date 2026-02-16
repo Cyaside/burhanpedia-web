@@ -10,7 +10,7 @@ import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RequestWithUser } from './types/jwt.types';
+import type { RequestWithUser } from './types/jwt.types';
 import {
   AdminProfile,
   BuyerProfile,
@@ -24,9 +24,9 @@ type UserProfileResponse = Pick<User, 'id' | 'email' | 'name'> & {
   adminProfile: AdminProfile | null;
 };
 type RegisterResponse = Omit<User, 'password'> & {
-  buyerProfile?: BuyerProfile;
-  sellerProfile?: SellerProfile;
-  adminProfile?: AdminProfile;
+  buyerProfile?: BuyerProfile | null;
+  sellerProfile?: SellerProfile | null;
+  adminProfile?: AdminProfile | null;
 };
 
 @Controller('auth')

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WishlistService } from './wishlist.service';
-import { RequestWithUser } from '../auth/types/jwt.types';
+import type { RequestWithUser } from '../auth/types/jwt.types';
 import { ToggleWishlistDto } from './dto/wishlist.dto';
 
 @UseGuards(JwtAuthGuard)

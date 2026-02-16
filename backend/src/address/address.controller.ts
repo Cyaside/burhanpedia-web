@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AddressService } from './address.service';
-import { RequestWithUser } from '../auth/types/jwt.types';
+import type { RequestWithUser } from '../auth/types/jwt.types';
 import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto';
 import { Address } from '@prisma/client';
 

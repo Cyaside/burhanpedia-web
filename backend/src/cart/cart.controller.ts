@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RequestWithUser } from '../auth/types/jwt.types';
+import type { RequestWithUser } from '../auth/types/jwt.types';
 import { AddToCartDto, UpdateCartDto } from './dto/cart.dto';
 
 @UseGuards(JwtAuthGuard)
