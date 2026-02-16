@@ -1,14 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, type AppRouterInstance } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 export function getAuthToken() {
   if (typeof window === "undefined") return null
   return localStorage.getItem("token")
 }
 
-export function requireAuth(router: AppRouterInstance, redirectTo = "/login") {
+export function requireAuth(router: ReturnType<typeof useRouter>, redirectTo = "/login") {
   const token = getAuthToken()
   if (!token) {
     router.push(redirectTo)
