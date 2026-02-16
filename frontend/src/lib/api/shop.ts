@@ -1,5 +1,13 @@
 import { api } from "./client"
-import { Product, CartItem, Order, Address } from "@/types/shop"
+import {
+  Product,
+  CartItem,
+  Order,
+  Address,
+  WalletTransaction,
+  SellerTransaction,
+  SellerOrderItem,
+} from "@/types/shop"
 
 export function fetchProducts(params: Record<string, string | number | undefined> = {}) {
   const query = new URLSearchParams()
@@ -50,3 +58,40 @@ export function fetchOrders() {
   return api.get<Order[]>("/orders")
 }
 
+export function fetchWalletTransactions() {
+  return api.get<WalletTransaction[]>("/wallet/transactions")
+}
+
+export function topUpWallet(payload: { amount: number; note?: string }) {
+  return api.post<{ balance: number; transaction: WalletTransaction }>("/wallet/topup", payload)
+}
+
+export function fetchSellerBalance() {
+  return api.get<{ balance: number }>("/seller/balance")
+}
+
+export function fetchSellerTransactions() {
+  return api.get<SellerTransaction[]>("/seller/transactions")
+}
+
+export function fetchSellerOrders() {
+  return api.get<SellerOrderItem[]>("/seller/orders")
+}
+
+export function updateProduct(
+  productId: number,
+  payload: {
+    name?: string
+    description?: string
+    price?: number
+    stock?: number
+    categoryId?: number | null
+    imageUrl?: string
+  }
+) {
+  return api.patch<Product>(`/products/${productId}`, payload)
+}
+
+export function deleteProduct(productId: number) {
+  return api.del<{ success: boolean }>(`/products/${productId}`)
+}

@@ -12,20 +12,24 @@ import { Badge } from "@/components/ui/badge"
 import { CheckCircle } from "lucide-react"
 import { MobileDock } from "@/components/navigation/MobileDock"
 import SiteHeader from "@/components/navigation/SiteHeader"
+import { useAuthGuard } from "@/lib/auth"
 
 export default function CheckoutPage() {
   const { items, load } = useCartStore()
   const [addressId, setAddressId] = useState<number | null>(null)
   const [placing, setPlacing] = useState(false)
   const [orderId, setOrderId] = useState<number | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { token, checking } = useAuthGuard()
 
   useEffect(() => {
-    load()
-  }, [load])
+    if (token) load()
+  }, [load, token])
 
   const { data: addresses = [] } = useQuery<Address[]>({
     queryKey: ["addresses"],
     queryFn: fetchAddresses,
+    enabled: !!token,
   })
 
   useEffect(() => {
@@ -41,17 +45,31 @@ export default function CheckoutPage() {
   async function handlePlaceOrder() {
     if (!addressId) return
     setPlacing(true)
+    setErrorMessage(null)
     try {
       const order = await createOrder({ addressId })
       setOrderId(order.id)
     } catch (err) {
-      console.error(err)
+      const message = err instanceof Error ? err.message : "Failed to place order"
+      setErrorMessage(message)
     } finally {
       setPlacing(false)
     }
   }
 
   const success = orderId !== null
+
+  if (checking) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Checking session...</p>
+      </div>
+    )
+  }
+
+  if (!token) {
+    return null
+  }
 
   return (
     <div className="bg-background">
@@ -70,7 +88,15 @@ export default function CheckoutPage() {
             <section className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
               <h2 className="text-lg font-semibold text-foreground">Shipping address</h2>
               <RadioGroup value={addressId?.toString()} onValueChange={(v) => setAddressId(Number(v))} className="mt-4 space-y-3">
-                {addresses.length === 0 && <p className="text-sm text-muted-foreground">Add an address first in profile.</p>}
+                {addresses.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Add an address first in{" "}
+                    <Link href="/profile" className="underline">
+                      profile
+                    </Link>
+                    .
+                  </p>
+                )}
                 {addresses.map((addr) => (
                   <label key={addr.id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 p-3">
                     <RadioGroupItem value={addr.id.toString()} />
@@ -129,6 +155,16 @@ export default function CheckoutPage() {
             <Button className="mt-4 w-full rounded-full" disabled={!addressId || placing || success} onClick={handlePlaceOrder}>
               {success ? "Order placed" : placing ? "Processing..." : "Place order"}
             </Button>
+            {errorMessage && (
+              <div className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                <p>{errorMessage}</p>
+                {errorMessage.toLowerCase().includes("balance") && (
+                  <Link href="/dashboard" className="underline">
+                    Top up your balance in the dashboard
+                  </Link>
+                )}
+              </div>
+            )}
             <Button asChild variant="ghost" className="mt-2 w-full rounded-full">
               <Link href="/cart">Back to cart</Link>
             </Button>

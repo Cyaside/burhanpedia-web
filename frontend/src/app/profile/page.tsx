@@ -8,10 +8,32 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Heart, Package, UserRound } from "lucide-react"
 import SiteHeader from "@/components/navigation/SiteHeader"
+import { useAuthGuard } from "@/lib/auth"
 
 export default function ProfilePage() {
-  const { data: orders = [] } = useQuery({ queryKey: ["orders"], queryFn: fetchOrders })
-  const { data: wishlist = [] } = useQuery({ queryKey: ["wishlist"], queryFn: fetchWishlist })
+  const { token, checking } = useAuthGuard()
+  const { data: orders = [] } = useQuery({
+    queryKey: ["orders"],
+    queryFn: fetchOrders,
+    enabled: !!token,
+  })
+  const { data: wishlist = [] } = useQuery({
+    queryKey: ["wishlist"],
+    queryFn: fetchWishlist,
+    enabled: !!token,
+  })
+
+  if (checking) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Checking session...</p>
+      </div>
+    )
+  }
+
+  if (!token) {
+    return null
+  }
 
   return (
     <div className="bg-background">

@@ -38,6 +38,7 @@ model BuyerProfile {
   addresses Address[]
   orders    Order[]
   reviews   Review[]
+  walletTransactions WalletTransaction[]
 }
 
 model SellerProfile {
@@ -46,6 +47,7 @@ model SellerProfile {
   balance  Float     @default(0)
   user     User      @relation(fields: [userId], references: [id])
   products Product[]
+  sellerTransactions SellerTransaction[]
 }
 
 model AdminProfile {
@@ -162,6 +164,7 @@ model Order {
   address Address?     @relation(fields: [addressId], references: [id])
   items   OrderItem[]
   payment Payment?
+  sellerTransactions SellerTransaction[]
 }
 
 model OrderItem {
@@ -200,4 +203,26 @@ model Review {
 
   product Product      @relation(fields: [productId], references: [id])
   buyer   BuyerProfile @relation(fields: [buyerId], references: [id])
+}
+
+model WalletTransaction {
+  id        Int      @id @default(autoincrement())
+  buyerId   Int
+  type      String
+  amount    Float
+  note      String?
+  createdAt DateTime @default(now())
+  buyer     BuyerProfile @relation(fields: [buyerId], references: [id])
+}
+
+model SellerTransaction {
+  id        Int      @id @default(autoincrement())
+  sellerId  Int
+  orderId   Int?
+  amount    Float
+  type      String
+  note      String?
+  createdAt DateTime @default(now())
+  seller    SellerProfile @relation(fields: [sellerId], references: [id])
+  order     Order? @relation(fields: [orderId], references: [id])
 }

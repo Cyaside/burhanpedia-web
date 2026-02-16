@@ -1,13 +1,36 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma, Product } from '@prisma/client';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  Category,
+  Prisma,
+  Product,
+  ProductImage,
+  ProductVariant,
+  SellerProfile,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import slugify from 'slugify';
+
+type CreateProductInput = {
+  name: string;
+  price: number;
+  stock: number;
+  imageUrl: string;
+  description?: string;
+  categoryId?: number;
+};
 
 @Injectable()
 export class ProductService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async resolveSellerProfileId(userIdOrSellerId: number) {
+  private async resolveSellerProfileId(
+    userIdOrSellerId: number,
+  ): Promise<number> {
     const byUser = await this.prisma.sellerProfile.findUnique({
       where: { userId: userIdOrSellerId },
     });
@@ -21,7 +44,7 @@ export class ProductService {
     throw new BadRequestException('Seller profile not found');
   }
 
-  private buildSlug(name: string) {
+  private buildSlug(name: string): string {
     return (
       slugify(name, { lower: true, strict: true }) +
       '-' +
@@ -29,7 +52,27 @@ export class ProductService {
     );
   }
 
-  async createProduct(data: any, userId: number) {
+  private async assertOwnership(
+    userId: number,
+    productId: number,
+  ): Promise<{ sellerId: number; product: Product }> {
+    const sellerId = await this.resolveSellerProfileId(userId);
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    if (product.sellerId !== sellerId) {
+      throw new ForbiddenException('You do not own this product');
+    }
+    return { sellerId, product };
+  }
+
+  async createProduct(
+    data: CreateProductInput,
+    userId: number,
+  ): Promise<Product> {
     const sellerId = await this.resolveSellerProfileId(userId);
     const slug = this.buildSlug(data.name);
     const product = await this.prisma.product.create({
@@ -48,7 +91,7 @@ export class ProductService {
     return product;
   }
 
-  addImages(productId: number, urls: string[]) {
+  addImages(productId: number, urls: string[]): Promise<Prisma.BatchPayload> {
     const createInputs = urls.map((url, index) => ({
       url,
       isPrimary: index === 0,
@@ -69,7 +112,7 @@ export class ProductService {
       stock: number;
       priceDelta?: number;
     },
-  ) {
+  ): Promise<ProductVariant> {
     return this.prisma.productVariant.create({
       data: {
         productId,
@@ -120,7 +163,17 @@ export class ProductService {
     });
   }
 
-  getBySlug(slug: string) {
+  getBySlug(slug: string): Promise<
+    | (Product & {
+        category: Category | null;
+        images: ProductImage[];
+        variants: ProductVariant[];
+        reviews: Prisma.ReviewGetPayload<{
+          include: { buyer: { include: { user: true } } };
+        }>[];
+      })
+    | null
+  > {
     return this.prisma.product.findUnique({
       where: { slug },
       include: {
@@ -136,11 +189,73 @@ export class ProductService {
     });
   }
 
-  async getSellerProducts(sellerId: number) {
+  async getSellerProducts(sellerId: number): Promise<
+    (Product & {
+      seller: SellerProfile;
+      category: Category | null;
+      images: ProductImage[];
+      variants: ProductVariant[];
+    })[]
+  > {
     const resolvedSellerId = await this.resolveSellerProfileId(sellerId);
     return this.prisma.product.findMany({
       where: { sellerId: resolvedSellerId },
-      include: { seller: true, images: true, variants: true },
+      include: { seller: true, category: true, images: true, variants: true },
     });
+  }
+
+  async updateProduct(
+    productId: number,
+    userId: number,
+    payload: {
+      name?: string;
+      description?: string | null;
+      price?: number;
+      stock?: number;
+      categoryId?: number | null;
+      imageUrl?: string;
+    },
+  ): Promise<Product> {
+    await this.assertOwnership(userId, productId);
+    const data: Prisma.ProductUpdateInput = {};
+    if (payload.name !== undefined) data.name = payload.name;
+    if (payload.description !== undefined)
+      data.description = payload.description;
+    if (payload.price !== undefined) data.price = payload.price;
+    if (payload.stock !== undefined) data.stock = payload.stock;
+    if (payload.categoryId !== undefined) data.categoryId = payload.categoryId;
+    if (payload.imageUrl !== undefined) data.imageUrl = payload.imageUrl;
+
+    return this.prisma.product.update({
+      where: { id: productId },
+      data,
+    });
+  }
+
+  async deleteProduct(
+    productId: number,
+    userId: number,
+  ): Promise<{ success: true }> {
+    await this.assertOwnership(userId, productId);
+
+    const orderItems = await this.prisma.orderItem.count({
+      where: { productId },
+    });
+    if (orderItems > 0) {
+      throw new BadRequestException(
+        'Cannot delete product with existing orders',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.cartItem.deleteMany({ where: { productId } });
+      await tx.wishlist.deleteMany({ where: { productId } });
+      await tx.review.deleteMany({ where: { productId } });
+      await tx.productImage.deleteMany({ where: { productId } });
+      await tx.productVariant.deleteMany({ where: { productId } });
+      await tx.product.delete({ where: { id: productId } });
+    });
+
+    return { success: true };
   }
 }

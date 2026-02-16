@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WishlistService } from './wishlist.service';
+import { RequestWithUser } from '../auth/types/jwt.types';
+import { ToggleWishlistDto } from './dto/wishlist.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('wishlist')
@@ -15,12 +17,15 @@ export class WishlistController {
   constructor(private readonly wishlistService: WishlistService) {}
 
   @Get()
-  async list(@Request() req: any) {
-    return this.wishlistService.list(req.user.userId);
+  async list(@Request() req: RequestWithUser) {
+    return this.wishlistService.list(req.user.id);
   }
 
   @Post()
-  async toggle(@Request() req: any, @Body() body: { productId: number }) {
-    return this.wishlistService.toggle(req.user.userId, Number(body.productId));
+  async toggle(
+    @Request() req: RequestWithUser,
+    @Body() body: ToggleWishlistDto,
+  ) {
+    return this.wishlistService.toggle(req.user.id, body.productId);
   }
 }

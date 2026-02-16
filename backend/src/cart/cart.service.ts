@@ -1,18 +1,32 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { Prisma, CartItem } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+type CartItemWithRelations = Prisma.CartItemGetPayload<{
+  include: {
+    product: { include: { images: true; category: true } };
+    variant: true;
+  };
+}>;
+
+type CartItemWithUnitPrice = CartItemWithRelations & {
+  unitPrice: number;
+};
 
 @Injectable()
 export class CartService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private attachUnitPrice(item: any) {
+  private attachUnitPrice(item: CartItemWithRelations): CartItemWithUnitPrice {
     return {
       ...item,
       unitPrice: item.product.price + (item.variant?.priceDelta || 0),
     };
   }
 
-  private findCartItemWithRelations(id: number) {
+  private findCartItemWithRelations(
+    id: number,
+  ): Promise<CartItemWithRelations | null> {
     return this.prisma.cartItem.findUnique({
       where: { id },
       include: {
@@ -22,7 +36,7 @@ export class CartService {
     });
   }
 
-  private async getBuyerId(userId: number) {
+  private async getBuyerId(userId: number): Promise<number> {
     const profile = await this.prisma.buyerProfile.findUnique({
       where: { userId },
     });
@@ -32,7 +46,7 @@ export class CartService {
     return profile.id;
   }
 
-  async list(userId: number) {
+  async list(userId: number): Promise<CartItemWithUnitPrice[]> {
     const buyerId = await this.getBuyerId(userId);
     const items = await this.prisma.cartItem.findMany({
       where: { buyerId },
@@ -51,7 +65,7 @@ export class CartService {
       variantId?: number | null;
       quantity?: number;
     },
-  ) {
+  ): Promise<CartItemWithUnitPrice | CartItem> {
     const buyerId = await this.getBuyerId(userId);
     const quantity =
       payload.quantity && payload.quantity > 0 ? payload.quantity : 1;
@@ -82,7 +96,11 @@ export class CartService {
     return fullItem ? this.attachUnitPrice(fullItem) : created;
   }
 
-  async updateQuantity(userId: number, id: number, quantity: number) {
+  async updateQuantity(
+    userId: number,
+    id: number,
+    quantity: number,
+  ): Promise<CartItemWithUnitPrice | CartItem> {
     if (quantity < 1)
       throw new BadRequestException('Quantity must be at least 1');
     const buyerId = await this.getBuyerId(userId);
@@ -97,7 +115,7 @@ export class CartService {
     return fullItem ? this.attachUnitPrice(fullItem) : updated;
   }
 
-  async remove(userId: number, id: number) {
+  async remove(userId: number, id: number): Promise<{ success: true }> {
     const buyerId = await this.getBuyerId(userId);
     const item = await this.prisma.cartItem.findUnique({ where: { id } });
     if (!item || item.buyerId !== buyerId)

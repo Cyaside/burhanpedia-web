@@ -2,11 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { buildCorsOptions } from './utils/cors';
+import type { Request, Response } from 'express';
 
 // Khusus buat vercel
-let cachedServer: any;
+type ExpressHandler = (req: Request, res: Response) => unknown;
+let cachedServer: ExpressHandler | null = null;
 
-async function bootstrapServer() {
+async function bootstrapServer(): Promise<ExpressHandler> {
   const app = await NestFactory.create(AppModule);
 
   console.log(
@@ -21,10 +23,14 @@ async function bootstrapServer() {
   );
 
   await app.init();
-  return app.getHttpAdapter().getInstance();
+  const instance = app.getHttpAdapter().getInstance() as ExpressHandler;
+  return instance;
 }
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: Request,
+  res: Response,
+): Promise<unknown> {
   if (!cachedServer) {
     cachedServer = await bootstrapServer();
   }

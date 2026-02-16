@@ -86,3 +86,35 @@ export interface Order {
   items: OrderItem[]
   address?: Address | null
 }
+
+export interface WalletTransaction {
+  id: number
+  type: string
+  amount: number
+  note?: string | null
+  createdAt: string
+}
+
+export interface SellerTransaction {
+  id: number
+  sellerId: number
+  orderId?: number | null
+  amount: number
+  type: string
+  note?: string | null
+  createdAt: string
+}
+
+export interface SellerOrderItem {
+  id: number
+  orderId: number
+  quantity: number
+  unitPrice: number
+  product: Product
+  variant?: ProductVariant | null
+  order?: {
+    id: number
+    createdAt: string
+    buyer?: { user?: { name?: string; email?: string } }
+  }
+}

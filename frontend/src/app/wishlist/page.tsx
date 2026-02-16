@@ -5,13 +5,27 @@ import { useWishlistStore } from "@/store/wishlist"
 import { ProductCard } from "@/components/shop/ProductCard"
 import { MobileDock } from "@/components/navigation/MobileDock"
 import SiteHeader from "@/components/navigation/SiteHeader"
+import { useAuthGuard } from "@/lib/auth"
 
 export default function WishlistPage() {
   const { items, load } = useWishlistStore()
+  const { token, checking } = useAuthGuard()
 
   useEffect(() => {
-    load()
-  }, [load])
+    if (token) load()
+  }, [load, token])
+
+  if (checking) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Checking session...</p>
+      </div>
+    )
+  }
+
+  if (!token) {
+    return null
+  }
 
   return (
     <div className="bg-background">

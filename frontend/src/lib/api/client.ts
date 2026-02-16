@@ -13,9 +13,27 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...options,
     headers: hdrs,
   })
+  if (res.status === 401) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token")
+      window.location.assign("/login")
+    }
+    throw new Error("Unauthorized")
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "")
-    throw new Error(text || res.statusText)
+    let message = text || res.statusText
+    try {
+      const parsed = JSON.parse(text)
+      if (parsed?.message) {
+        message = Array.isArray(parsed.message) ? parsed.message.join(", ") : parsed.message
+      } else if (parsed?.error) {
+        message = parsed.error
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+    throw new Error(message || res.statusText)
   }
   const contentType = res.headers.get("content-type") || ""
   if (contentType.includes("application/json")) {

@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Request,
@@ -11,6 +12,8 @@ import {
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RequestWithUser } from '../auth/types/jwt.types';
+import { AddToCartDto, UpdateCartDto } from './dto/cart.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('cart')
@@ -18,37 +21,33 @@ export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  async list(@Request() req: any) {
-    return this.cartService.list(req.user.userId);
+  async list(@Request() req: RequestWithUser) {
+    return this.cartService.list(req.user.id);
   }
 
   @Post()
-  async add(
-    @Request() req: any,
-    @Body() body: { productId: number; variantId?: number; quantity?: number },
-  ) {
-    return this.cartService.add(req.user.userId, {
-      productId: Number(body.productId),
-      variantId: body.variantId ? Number(body.variantId) : undefined,
-      quantity: body.quantity ? Number(body.quantity) : 1,
+  async add(@Request() req: RequestWithUser, @Body() body: AddToCartDto) {
+    return this.cartService.add(req.user.id, {
+      productId: body.productId,
+      variantId: body.variantId,
+      quantity: body.quantity,
     });
   }
 
   @Patch(':id')
   async update(
-    @Request() req: any,
-    @Param('id') id: string,
-    @Body() body: { quantity: number },
+    @Request() req: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateCartDto,
   ) {
-    return this.cartService.updateQuantity(
-      req.user.userId,
-      Number(id),
-      Number(body.quantity),
-    );
+    return this.cartService.updateQuantity(req.user.id, id, body.quantity);
   }
 
   @Delete(':id')
-  async remove(@Request() req: any, @Param('id') id: string) {
-    return this.cartService.remove(req.user.userId, Number(id));
+  async remove(
+    @Request() req: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.cartService.remove(req.user.id, id);
   }
 }

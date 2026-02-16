@@ -13,6 +13,7 @@ import { useCartStore } from "@/store/cart"
 import { useWishlistStore } from "@/store/wishlist"
 import { MobileDock } from "@/components/navigation/MobileDock"
 import SiteHeader from "@/components/navigation/SiteHeader"
+import { requireAuth } from "@/lib/auth"
 
 export default function ProductDetailPage() {
   const params = useParams()
@@ -45,6 +46,17 @@ export default function ProductDetailPage() {
   }
 
   const price = product.price + (variants.find((v) => v.id === variantId)?.priceDelta || 0)
+
+  const handleAddToCart = () => {
+    if (!requireAuth(router)) return
+    addToCart({ productId: product.id, variantId, quantity: 1 })
+  }
+
+  const handleBuyNow = () => {
+    if (!requireAuth(router)) return
+    addToCart({ productId: product.id, variantId, quantity: 1 })
+    router.push("/checkout")
+  }
 
   return (
     <div className="bg-background">
@@ -89,7 +101,10 @@ export default function ProductDetailPage() {
               <button
                 aria-label="Wishlist"
                 className="rounded-full border border-border/70 p-2 text-muted-foreground hover:text-primary"
-                onClick={() => toggleWishlist(product.id)}
+                onClick={() => {
+                  if (!requireAuth(router)) return
+                  void toggleWishlist(product.id)
+                }}
               >
                 <Heart className="size-5" />
               </button>
@@ -110,7 +125,7 @@ export default function ProductDetailPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
                 className="gap-2 rounded-full px-6"
-                onClick={() => addToCart({ productId: product.id, variantId, quantity: 1 })}
+                onClick={handleAddToCart}
               >
                 <ShoppingCart className="size-4" />
                 Add to cart
@@ -118,10 +133,7 @@ export default function ProductDetailPage() {
               <Button
                 variant="outline"
                 className="gap-2 rounded-full px-6"
-                onClick={() => {
-                  addToCart({ productId: product.id, variantId, quantity: 1 })
-                  router.push("/checkout")
-                }}
+                onClick={handleBuyNow}
               >
                 <ShoppingBag className="size-4" />
                 Buy now

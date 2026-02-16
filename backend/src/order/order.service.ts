@@ -1,22 +1,31 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { BuyerProfile, Order, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+type OrderWithRelations = Prisma.OrderGetPayload<{
+  include: {
+    items: { include: { product: true } };
+    address: true;
+    payment: true;
+  };
+}>;
 
 @Injectable()
 export class OrderService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async getBuyerId(userId: number) {
+  private async getBuyerProfile(userId: number): Promise<BuyerProfile> {
     const profile = await this.prisma.buyerProfile.findUnique({
       where: { userId },
     });
     if (!profile) throw new BadRequestException('Buyer profile not found');
-    return profile.id;
+    return profile;
   }
 
-  async list(userId: number) {
-    const buyerId = await this.getBuyerId(userId);
+  async list(userId: number): Promise<OrderWithRelations[]> {
+    const buyer = await this.getBuyerProfile(userId);
     return this.prisma.order.findMany({
-      where: { buyerId },
+      where: { buyerId: buyer.id },
       include: {
         items: { include: { product: true } },
         address: true,
@@ -26,10 +35,13 @@ export class OrderService {
     });
   }
 
-  async createFromCart(userId: number, addressId: number) {
-    const buyerId = await this.getBuyerId(userId);
+  async createFromCart(
+    userId: number,
+    addressId: number,
+  ): Promise<OrderWithRelations> {
+    const buyer = await this.getBuyerProfile(userId);
     const cartItems = await this.prisma.cartItem.findMany({
-      where: { buyerId },
+      where: { buyerId: buyer.id },
       include: { product: true, variant: true },
     });
     if (cartItems.length === 0) throw new BadRequestException('Cart is empty');
@@ -43,10 +55,14 @@ export class OrderService {
     const shippingFee = 20000;
     const total = subTotal + shippingFee;
 
+    if (buyer.balance < total) {
+      throw new BadRequestException('Insufficient balance');
+    }
+
     const order = await this.prisma.$transaction(async (tx) => {
       const createdOrder = await tx.order.create({
         data: {
-          buyerId,
+          buyerId: buyer.id,
           addressId,
           status: 'pending',
           subTotal,
@@ -73,14 +89,55 @@ export class OrderService {
         include: { items: { include: { product: true } }, payment: true },
       });
 
-      await tx.cartItem.deleteMany({ where: { buyerId } });
+      await tx.buyerProfile.update({
+        where: { id: buyer.id },
+        data: { balance: { decrement: total } },
+      });
+      await tx.walletTransaction.create({
+        data: {
+          buyerId: buyer.id,
+          type: 'PURCHASE',
+          amount: total,
+          note: `Order #${createdOrder.id}`,
+        },
+      });
+
+      const sellerTotals = new Map<number, number>();
+      for (const item of cartItems) {
+        const sellerId = item.product.sellerId;
+        const lineTotal =
+          item.quantity *
+          (item.product.price + (item.variant?.priceDelta || 0));
+        sellerTotals.set(
+          sellerId,
+          (sellerTotals.get(sellerId) || 0) + lineTotal,
+        );
+      }
+
+      for (const [sellerId, amount] of sellerTotals.entries()) {
+        await tx.sellerProfile.update({
+          where: { id: sellerId },
+          data: { balance: { increment: amount } },
+        });
+        await tx.sellerTransaction.create({
+          data: {
+            sellerId,
+            orderId: createdOrder.id,
+            type: 'SALE',
+            amount,
+            note: `Order #${createdOrder.id}`,
+          },
+        });
+      }
+
+      await tx.cartItem.deleteMany({ where: { buyerId: buyer.id } });
       return createdOrder;
     });
 
     return order;
   }
 
-  updateStatus(id: number, status: string) {
+  updateStatus(id: number, status: string): Promise<Order> {
     return this.prisma.order.update({ where: { id }, data: { status } });
   }
 }

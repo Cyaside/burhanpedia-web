@@ -2,13 +2,14 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import React from "react"
+import React, { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { Heart, Menu, Moon, Search, ShoppingBag, ShoppingCart, Sun, UserRound } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useTheme } from "next-themes"
+import { getAuthToken } from "@/lib/auth"
 
 export default function SiteHeader() {
   const pathname = usePathname()
@@ -16,6 +17,11 @@ export default function SiteHeader() {
   const isAuthPage = pathname === "/login" || pathname === "/register"
   const { theme, setTheme } = useTheme()
   const [query, setQuery] = React.useState("")
+  const [hasToken, setHasToken] = React.useState(false)
+
+  useEffect(() => {
+    setHasToken(!!getAuthToken())
+  }, [pathname])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -64,9 +70,15 @@ export default function SiteHeader() {
               <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Cart">
                 <Link href="/cart"><ShoppingCart className="size-4" /></Link>
               </Button>
-              <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Profile">
-                <Link href="/profile"><UserRound className="size-4" /></Link>
-              </Button>
+              {hasToken ? (
+                <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Profile">
+                  <Link href="/profile"><UserRound className="size-4" /></Link>
+                </Button>
+              ) : (
+                <Button asChild size="sm" className="hidden sm:inline-flex rounded-full">
+                  <Link href="/login">Sign in</Link>
+                </Button>
+              )}
             </>
           )}
           <Button

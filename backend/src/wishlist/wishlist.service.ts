@@ -1,11 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+type ProductWithRelations = Prisma.ProductGetPayload<{
+  include: { category: true; images: true };
+}>;
 
 @Injectable()
 export class WishlistService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async getBuyerId(userId: number) {
+  private async getBuyerId(userId: number): Promise<number> {
     const profile = await this.prisma.buyerProfile.findUnique({
       where: { userId },
     });
@@ -13,7 +18,7 @@ export class WishlistService {
     return profile.id;
   }
 
-  async list(userId: number) {
+  async list(userId: number): Promise<ProductWithRelations[]> {
     const buyerId = await this.getBuyerId(userId);
     return this.prisma.wishlist
       .findMany({
@@ -23,7 +28,10 @@ export class WishlistService {
       .then((items) => items.map((i) => i.product));
   }
 
-  async toggle(userId: number, productId: number) {
+  async toggle(
+    userId: number,
+    productId: number,
+  ): Promise<{ success: true; removed: boolean }> {
     const buyerId = await this.getBuyerId(userId);
     const existing = await this.prisma.wishlist.findFirst({
       where: { buyerId, productId },

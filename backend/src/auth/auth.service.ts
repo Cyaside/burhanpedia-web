@@ -4,9 +4,26 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import * as bcrypt from 'bcryptjs';
+import { JwtPayload } from './types/jwt.types';
+
+type UserSafe = Omit<User, 'password'>;
+type UserWithProfiles = Prisma.UserGetPayload<{
+  include: {
+    buyerProfile: true;
+    sellerProfile: true;
+    adminProfile: true;
+  };
+}>;
+type ProfileResults = {
+  buyerProfile?: UserWithProfiles['buyerProfile'];
+  sellerProfile?: UserWithProfiles['sellerProfile'];
+  adminProfile?: UserWithProfiles['adminProfile'];
+};
+type RegisterResult = UserSafe & ProfileResults;
 
 @Injectable()
 export class AuthService {
@@ -15,7 +32,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto): Promise<RegisterResult> {
     const { email, password, name, profileTypes } = registerDto;
 
     // Check if user already exists
@@ -40,11 +57,7 @@ export class AuthService {
     });
 
     // Create profiles as requested
-    const profileResults: {
-      buyerProfile?: any;
-      sellerProfile?: any;
-      adminProfile?: any;
-    } = {};
+    const profileResults: ProfileResults = {};
     if (profileTypes.includes('BUYER')) {
       profileResults.buyerProfile = await this.prisma.buyerProfile.create({
         data: { userId: user.id },
@@ -66,7 +79,9 @@ export class AuthService {
     return { ...result, ...profileResults };
   }
 
-  async login(loginDto: LoginDto) {
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ user: UserSafe; access_token: string }> {
     const { email, password } = loginDto;
 
     const user = await this.prisma.user.findUnique({
@@ -83,9 +98,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = {
+    const payload: JwtPayload = {
       email: user.email,
       sub: user.id,
+      role: 'USER',
     };
 
     const { password: _password, ...result } = user;
@@ -96,7 +112,10 @@ export class AuthService {
     };
   }
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<UserSafe | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -109,7 +128,7 @@ export class AuthService {
     return null;
   }
 
-  getUserById(id: number) {
+  getUserById(id: number): Promise<UserWithProfiles | null> {
     return this.prisma.user.findUnique({
       where: { id },
       include: {

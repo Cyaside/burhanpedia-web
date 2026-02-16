@@ -5,6 +5,8 @@ import { Product } from "@/types/shop"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useWishlistStore } from "@/store/wishlist"
+import { useRouter } from "next/navigation"
+import { requireAuth } from "@/lib/auth"
 
 interface Props {
   product: Product
@@ -13,6 +15,7 @@ interface Props {
 
 export function ProductCard({ product, onAdd }: Props) {
   const toggleWishlist = useWishlistStore((s) => s.toggle)
+  const router = useRouter()
 
   return (
     <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
@@ -42,7 +45,10 @@ export function ProductCard({ product, onAdd }: Props) {
           <button
             className="rounded-full border border-border/70 p-1.5 text-muted-foreground hover:text-primary"
             aria-label="Toggle wishlist"
-            onClick={() => toggleWishlist(product.id)}
+            onClick={() => {
+              if (!requireAuth(router)) return
+              void toggleWishlist(product.id)
+            }}
           >
             <Heart className="size-4" />
           </button>
@@ -54,7 +60,14 @@ export function ProductCard({ product, onAdd }: Props) {
               {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(product.price)}
             </p>
           </div>
-          <Button size="sm" className="gap-2 rounded-full" onClick={() => onAdd?.(product.id)}>
+          <Button
+            size="sm"
+            className="gap-2 rounded-full"
+            onClick={() => {
+              if (!requireAuth(router)) return
+              onAdd?.(product.id)
+            }}
+          >
             <ShoppingCart className="size-4" />
             Add
           </Button>
@@ -63,4 +76,3 @@ export function ProductCard({ product, onAdd }: Props) {
     </div>
   )
 }
-

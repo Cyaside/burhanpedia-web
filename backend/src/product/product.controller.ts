@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Request,
   Param,
   UseGuards,
@@ -9,22 +11,26 @@ import {
   UploadedFile,
   UseFilters,
   BadRequestException,
+  ParseIntPipe,
   Query,
   Body,
   NotFoundException,
 } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ProductService } from './product.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { supabase } from '../supabaseClient';
 import { MulterExceptionFilter } from '../filters/multerexception.filter';
+import { RequestWithUser } from '../auth/types/jwt.types';
+import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
 const ALLOWED_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 function imageFileFilter(
-  _req: any,
+  _req: ExpressRequest,
   file: Express.Multer.File,
   cb: (error: Error | null, acceptFile: boolean) => void,
 ) {
@@ -58,10 +64,11 @@ export class ProductController {
   )
   async createProduct(
     @UploadedFile() file: Express.Multer.File,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
+    @Body() body: CreateProductDto,
   ) {
-    const sellerUserId = req.user.userId;
-    const { name, price, stock } = req.body;
+    const sellerUserId = req.user.id;
+    const { name, price, stock } = body;
 
     if (!name || !price || !stock) {
       throw new BadRequestException('name, price, and stock are required');
@@ -100,8 +107,8 @@ export class ProductController {
       price: Number(price),
       stock: Number(stock),
       imageUrl,
-      description: req.body.description,
-      categoryId: req.body.categoryId ? Number(req.body.categoryId) : undefined,
+      description: body.description,
+      categoryId: body.categoryId ? Number(body.categoryId) : undefined,
     };
 
     return this.productService.createProduct(productData, sellerUserId);
@@ -125,8 +132,8 @@ export class ProductController {
   }
 
   @Get('seller/:sellerId')
-  async getSellerProducts(@Param('sellerId') sellerId: number) {
-    return this.productService.getSellerProducts(Number(sellerId));
+  async getSellerProducts(@Param('sellerId', ParseIntPipe) sellerId: number) {
+    return this.productService.getSellerProducts(sellerId);
   }
 
   @Get(':slug')
@@ -188,5 +195,54 @@ export class ProductController {
     },
   ) {
     return this.productService.addVariant(Number(productId), body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  updateProduct(
+    @Param('id', ParseIntPipe) productId: number,
+    @Request() req: RequestWithUser,
+    @Body() body: UpdateProductDto,
+  ) {
+    const price = body.price !== undefined ? Number(body.price) : undefined;
+    const stock = body.stock !== undefined ? Number(body.stock) : undefined;
+    const categoryId =
+      body.categoryId === null
+        ? null
+        : body.categoryId !== undefined
+          ? Number(body.categoryId)
+          : undefined;
+
+    if (price !== undefined && Number.isNaN(price)) {
+      throw new BadRequestException('price must be a number');
+    }
+    if (stock !== undefined && Number.isNaN(stock)) {
+      throw new BadRequestException('stock must be a number');
+    }
+    if (
+      categoryId !== undefined &&
+      categoryId !== null &&
+      Number.isNaN(categoryId)
+    ) {
+      throw new BadRequestException('categoryId must be a number');
+    }
+
+    return this.productService.updateProduct(productId, req.user.id, {
+      name: body.name,
+      description: body.description,
+      price,
+      stock,
+      categoryId,
+      imageUrl: body.imageUrl,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  deleteProduct(
+    @Param('id', ParseIntPipe) productId: number,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.productService.deleteProduct(productId, req.user.id);
   }
 }

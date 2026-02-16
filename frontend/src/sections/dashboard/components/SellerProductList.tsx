@@ -4,6 +4,8 @@ import { motion } from "framer-motion"
 
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Pencil, Trash2 } from "lucide-react"
 
 interface Product {
   id: number
@@ -16,9 +18,12 @@ interface Product {
 interface SellerProductListProps {
   products: Product[]
   loading: boolean
+  onEdit?: (product: Product) => void
+  onDelete?: (productId: number) => void
+  editingId?: number | null
 }
 
-const SellerProductList: React.FC<SellerProductListProps> = ({ products, loading }) => {
+const SellerProductList: React.FC<SellerProductListProps> = ({ products, loading, onEdit, onDelete, editingId }) => {
   let content
 
   if (loading) {
@@ -45,12 +50,12 @@ const SellerProductList: React.FC<SellerProductListProps> = ({ products, loading
         {products.map((product) => (
           <motion.div
             key={product.id}
-            className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
+            className={`flex flex-col gap-4 rounded-2xl border border-border/60 bg-white p-4 shadow-sm sm:flex-row sm:items-center ${editingId === product.id ? "ring-2 ring-emerald-400/60" : ""}`}
             whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(15, 23, 42, 0.08)" }}
             transition={{ type: "spring", stiffness: 260 }}
           >
             <Image
-              src={product.imageUrl}
+              src={product.imageUrl || "/images/fallback-product.png"}
               alt={product.name}
               width={96}
               height={96}
@@ -61,7 +66,7 @@ const SellerProductList: React.FC<SellerProductListProps> = ({ products, loading
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-base font-semibold text-slate-900">{product.name}</div>
-                  <div className="text-sm text-muted-foreground">Price: ${product.price}</div>
+                  <div className="text-sm text-muted-foreground">Price: Rp {product.price.toLocaleString("id-ID")}</div>
                 </div>
                 <Badge variant={product.stock > 0 ? "green" : "red"}>
                   {product.stock > 0 ? "In stock" : "Out of stock"}
@@ -69,6 +74,22 @@ const SellerProductList: React.FC<SellerProductListProps> = ({ products, loading
               </div>
               <div className="mt-2 text-sm text-muted-foreground">Stock: {product.stock}</div>
             </div>
+            {(onEdit || onDelete) && (
+              <div className="flex items-center gap-2">
+                {onEdit && (
+                  <Button variant="outline" size="sm" className="gap-1" onClick={() => onEdit(product)}>
+                    <Pencil className="size-3.5" />
+                    Edit
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button variant="ghost" size="sm" className="gap-1 text-destructive" onClick={() => onDelete(product.id)}>
+                    <Trash2 className="size-3.5" />
+                    Delete
+                  </Button>
+                )}
+              </div>
+            )}
           </motion.div>
         ))}
       </motion.div>

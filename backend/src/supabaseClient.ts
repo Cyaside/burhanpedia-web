@@ -23,7 +23,8 @@ let supabaseClient: SupabaseClient;
 if (supabaseUrl && supabaseKey) {
   supabaseClient = createClient(supabaseUrl, supabaseKey);
 } else {
-  const handler: ProxyHandler<any> = {
+  type EmptyRecord = Record<string, never>;
+  const handler: ProxyHandler<EmptyRecord> = {
     get() {
       throw makeMissingEnvError();
     },
@@ -34,7 +35,10 @@ if (supabaseUrl && supabaseKey) {
       throw makeMissingEnvError();
     },
   };
-  supabaseClient = new Proxy({}, handler) as unknown as SupabaseClient;
+  supabaseClient = new Proxy<EmptyRecord>(
+    {},
+    handler,
+  ) as unknown as SupabaseClient;
 }
 
 export const supabase = supabaseClient;

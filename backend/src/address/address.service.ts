@@ -1,11 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Address } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto';
 
 @Injectable()
 export class AddressService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async getBuyerId(userId: number) {
+  private async getBuyerId(userId: number): Promise<number> {
     const profile = await this.prisma.buyerProfile.findUnique({
       where: { userId },
     });
@@ -13,7 +15,7 @@ export class AddressService {
     return profile.id;
   }
 
-  async list(userId: number) {
+  async list(userId: number): Promise<Address[]> {
     const buyerId = await this.getBuyerId(userId);
     return this.prisma.address.findMany({
       where: { buyerId },
@@ -21,7 +23,7 @@ export class AddressService {
     });
   }
 
-  async create(userId: number, payload: any) {
+  async create(userId: number, payload: CreateAddressDto): Promise<Address> {
     const buyerId = await this.getBuyerId(userId);
     if (payload.isDefault) {
       await this.prisma.address.updateMany({
@@ -34,7 +36,11 @@ export class AddressService {
     });
   }
 
-  async update(userId: number, id: number, payload: any) {
+  async update(
+    userId: number,
+    id: number,
+    payload: UpdateAddressDto,
+  ): Promise<Address> {
     const buyerId = await this.getBuyerId(userId);
     const address = await this.prisma.address.findUnique({ where: { id } });
     if (!address || address.buyerId !== buyerId)
@@ -48,7 +54,7 @@ export class AddressService {
     return this.prisma.address.update({ where: { id }, data: payload });
   }
 
-  async remove(userId: number, id: number) {
+  async remove(userId: number, id: number): Promise<{ success: true }> {
     const buyerId = await this.getBuyerId(userId);
     const address = await this.prisma.address.findUnique({ where: { id } });
     if (!address || address.buyerId !== buyerId)

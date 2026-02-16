@@ -9,13 +9,27 @@ import { Minus, Plus, Trash } from "lucide-react"
 import Link from "next/link"
 import { MobileDock } from "@/components/navigation/MobileDock"
 import SiteHeader from "@/components/navigation/SiteHeader"
+import { useAuthGuard } from "@/lib/auth"
 
 export default function CartPage() {
   const { items, load, update, remove, loading } = useCartStore()
+  const { token, checking } = useAuthGuard()
 
   useEffect(() => {
-    load()
-  }, [load])
+    if (token) load()
+  }, [load, token])
+
+  if (checking) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Checking session...</p>
+      </div>
+    )
+  }
+
+  if (!token) {
+    return null
+  }
 
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
   const shipping = subtotal > 0 ? 20000 : 0

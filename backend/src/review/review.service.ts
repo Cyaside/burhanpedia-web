@@ -1,11 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma, Review } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+type ReviewWithBuyer = Prisma.ReviewGetPayload<{
+  include: { buyer: { include: { user: true } } };
+}>;
 
 @Injectable()
 export class ReviewService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async getBuyerId(userId: number) {
+  private async getBuyerId(userId: number): Promise<number> {
     const profile = await this.prisma.buyerProfile.findUnique({
       where: { userId },
     });
@@ -13,7 +18,7 @@ export class ReviewService {
     return profile.id;
   }
 
-  list(productId: number) {
+  list(productId: number): Promise<ReviewWithBuyer[]> {
     return this.prisma.review.findMany({
       where: { productId },
       include: { buyer: { include: { user: true } } },
@@ -24,7 +29,7 @@ export class ReviewService {
   async create(
     userId: number,
     payload: { productId: number; rating: number; comment?: string },
-  ) {
+  ): Promise<Review> {
     const buyerId = await this.getBuyerId(userId);
     const review = await this.prisma.review.create({
       data: {

@@ -19,9 +19,25 @@ interface SellerProductFormProps {
   submitting: boolean
   error: string | null
   categories?: { id: number; name: string }[]
+  mode?: "create" | "edit"
+  showImage?: boolean
+  imageRequired?: boolean
+  onCancel?: () => void
 }
 
-const SellerProductForm: React.FC<SellerProductFormProps> = ({ form, onChange, onSubmit, loading, submitting, error, categories = [] }) => (
+const SellerProductForm: React.FC<SellerProductFormProps> = ({
+  form,
+  onChange,
+  onSubmit,
+  loading,
+  submitting,
+  error,
+  categories = [],
+  mode = "create",
+  showImage = true,
+  imageRequired = true,
+  onCancel,
+}) => (
   <form onSubmit={onSubmit} className="grid gap-4">
     <div className="grid gap-4 md:grid-cols-2">
       <div>
@@ -94,22 +110,31 @@ const SellerProductForm: React.FC<SellerProductFormProps> = ({ form, onChange, o
           className="mt-1"
         />
       </div>
-      <div>
-        <Label htmlFor="image">Product image</Label>
-        <Input
-          id="image"
-          name="image"
-          type="file"
-          accept="image/*"
-          onChange={onChange}
-          required
-          className="mt-1"
-        />
-      </div>
+      {showImage && (
+        <div>
+          <Label htmlFor="image">Product image</Label>
+          <Input
+            id="image"
+            name="image"
+            type="file"
+            accept="image/*"
+            onChange={onChange}
+            required={imageRequired}
+            className="mt-1"
+          />
+        </div>
+      )}
     </div>
-    <Button type="submit" disabled={submitting || loading} className="w-full gap-2">
-      {submitting ? "Adding..." : "Add product"}
-    </Button>
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <Button type="submit" disabled={submitting || loading} className="w-full gap-2">
+        {submitting ? (mode === "edit" ? "Saving..." : "Adding...") : mode === "edit" ? "Save changes" : "Add product"}
+      </Button>
+      {mode === "edit" && onCancel && (
+        <Button type="button" variant="outline" className="w-full" onClick={onCancel}>
+          Cancel
+        </Button>
+      )}
+    </div>
     {error && <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
   </form>
 )
