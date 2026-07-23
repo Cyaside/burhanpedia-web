@@ -7,11 +7,8 @@ import { buildCorsOptions } from './utils/cors';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Log utk environment
-  console.log(
-    `🚀 Starting Burhanpedia Backend in ${process.env.NODE_ENV || 'development'} mode`,
-  );
-  console.log(`📡 Server will listen on port ${process.env.PORT || 3000}`);
+  app.setGlobalPrefix('api/v1');
+  app.enableShutdownHooks();
 
   app.enableCors(buildCorsOptions());
 
@@ -19,10 +16,12 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = Number(process.env.PORT ?? 3000);
+  await app.listen(port);
 }
 bootstrap().catch((err: unknown) => {
   console.error(err);

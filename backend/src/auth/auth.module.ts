@@ -12,6 +12,7 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [
     PassportModule,
     ConfigModule,
+    PrismaModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: {
@@ -19,7 +20,6 @@ import { PrismaModule } from '../prisma/prisma.module';
       },
     }),
   ],
-  imports: [PrismaModule],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, LocalStrategy],
   exports: [AuthService],
