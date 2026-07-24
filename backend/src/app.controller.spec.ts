@@ -15,8 +15,12 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('returns service metadata', () => {
+      expect(appController.getInfo()).toEqual({
+        name: 'Burhanpedia API',
+        version: '1',
+        status: 'ok',
+      });
     });
   });
 });

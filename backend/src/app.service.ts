@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return 'Hello World!';
+  getInfo(): { name: string; version: string; status: 'ok' } {
+    return { name: 'Burhanpedia API', version: '1', status: 'ok' };
   }
 }

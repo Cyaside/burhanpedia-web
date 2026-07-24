@@ -5,6 +5,9 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22 <25"
+  },
   "scripts": {
     "build": "nest build",
     "vercel-build": "nest build",
@@ -14,6 +17,8 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "worker": "node dist/worker",
+    "worker:dev": "nest start --entryFile worker --watch",
     "lint": "eslint \"{src,test,scripts}/**/*.ts\"",
     "lint:fix": "npm run lint -- --fix",
     "test": "jest",
