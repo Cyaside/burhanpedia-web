@@ -81,8 +81,8 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
       const client = await this.pool.connect();
       try {
         await client.query(`BEGIN ISOLATION LEVEL ${isolationLevel}`);
-        await client.query('SET LOCAL statement_timeout = $1', [
-          this.statementTimeoutMs,
+        await client.query("SELECT set_config('statement_timeout', $1, true)", [
+          `${this.statementTimeoutMs}ms`,
         ]);
         const result = await operation(client);
         await client.query('COMMIT');
