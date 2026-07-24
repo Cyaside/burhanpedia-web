@@ -17,7 +17,7 @@ services:
       retries: 20
       start_period: 5s
     volumes:
-      - burhanpedia_postgres_data:/var/lib/postgresql/data
+      - burhanpedia_postgres_data:/var/lib/postgresql
 
 volumes:
   burhanpedia_postgres_data:
