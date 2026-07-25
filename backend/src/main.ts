@@ -3,7 +3,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { buildCorsOptions } from './utils/cors';
 
-// Ganti yang di vercel.json dari vercel.ts ke main.ts(ini) kalau mw ganti
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
