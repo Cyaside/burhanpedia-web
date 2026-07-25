@@ -14,6 +14,20 @@ permissions:
 jobs:
   contract:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: burhanpedia_test
+          POSTGRES_USER: burhanpedia
+          POSTGRES_PASSWORD: burhanpedia_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U burhanpedia -d burhanpedia_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +36,12 @@ jobs:
       - name: Install and build backend
         working-directory: backend
         run: npm ci && npm run build
+      - name: Verify database from migrations
+        working-directory: backend
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://burhanpedia:burhanpedia_test@127.0.0.1:5432/burhanpedia_test
+        run: npm run test:database
       - name: Install and build frontend
         working-directory: frontend
         env:

@@ -22,6 +22,8 @@
     "db:migrate": "ts-node scripts/database/migrate.ts",
     "db:seed": "ts-node scripts/database/seed.ts",
     "db:reset": "ts-node scripts/database/reset.ts",
+    "db:verify": "ts-node scripts/database/verify.ts",
+    "test:database": "npm run db:migrate && npm run db:seed && npm run db:verify",
     "lint": "eslint \"{src,test,scripts}/**/*.ts\"",
     "lint:fix": "npm run lint -- --fix",
     "test": "jest",

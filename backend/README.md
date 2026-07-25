@@ -36,3 +36,6 @@ npm run build
 ```
 
 Database diakses langsung melalui `pg`. SQL hanya boleh berada pada repository, migration, seed, atau database infrastructure.
+
+Panduan migration, backup, reset, dan pemulihan tersedia di
+[`docs/runbooks/database.md`](../docs/runbooks/database.md).
