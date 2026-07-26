@@ -1,6 +1,8 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import { Public } from '../common/security/public.decorator';
 
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly database: DatabaseService) {}

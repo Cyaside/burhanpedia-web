@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { validateEnvironment } from './config/environment';
 import { RequestIdMiddleware } from './common/http/request-id.middleware';
 import { OriginGuard } from './common/security/origin.guard';
+import { IdentityModule } from './modules/identity/identity.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { OriginGuard } from './common/security/origin.guard';
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     DatabaseModule,
     HealthModule,
+    IdentityModule,
   ],
   controllers: [AppController],
   providers: [
