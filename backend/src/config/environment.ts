@@ -4,6 +4,9 @@ const DEFAULTS = {
   DATABASE_CONNECTION_TIMEOUT_MS: '5000',
   DATABASE_IDLE_TIMEOUT_MS: '30000',
   DATABASE_STATEMENT_TIMEOUT_MS: '10000',
+  JWT_ACCESS_TTL_SECONDS: '900',
+  REFRESH_TOKEN_TTL_DAYS: '30',
+  FRONTEND_URL: 'http://localhost:3001',
 } as const;
 
 function requireNonEmpty(config: Record<string, unknown>, key: string): string {
@@ -54,5 +57,29 @@ export function validateEnvironment(
     'DATABASE_STATEMENT_TIMEOUT_MS',
     DEFAULTS.DATABASE_STATEMENT_TIMEOUT_MS,
   );
+  const jwtSecret = requireNonEmpty(config, 'JWT_ACCESS_SECRET');
+  if (jwtSecret.length < 32) {
+    throw new Error('JWT_ACCESS_SECRET must contain at least 32 characters');
+  }
+  config.JWT_ACCESS_SECRET = jwtSecret;
+  config.JWT_ACCESS_TTL_SECONDS = positiveInteger(
+    config.JWT_ACCESS_TTL_SECONDS,
+    'JWT_ACCESS_TTL_SECONDS',
+    DEFAULTS.JWT_ACCESS_TTL_SECONDS,
+  );
+  config.REFRESH_TOKEN_TTL_DAYS = positiveInteger(
+    config.REFRESH_TOKEN_TTL_DAYS,
+    'REFRESH_TOKEN_TTL_DAYS',
+    DEFAULTS.REFRESH_TOKEN_TTL_DAYS,
+  );
+  config.FRONTEND_URL =
+    typeof config.FRONTEND_URL === 'string' && config.FRONTEND_URL !== ''
+      ? config.FRONTEND_URL
+      : DEFAULTS.FRONTEND_URL;
+  const cookieSecure = config.COOKIE_SECURE ?? 'false';
+  if (cookieSecure !== 'true' && cookieSecure !== 'false') {
+    throw new Error('COOKIE_SECURE must be true or false');
+  }
+  config.COOKIE_SECURE = cookieSecure;
   return config;
 }

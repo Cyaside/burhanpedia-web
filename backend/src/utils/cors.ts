@@ -4,24 +4,18 @@ interface CorsOptions {
 }
 
 export function buildCorsOrigins(): string[] {
-  const defaults = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'https://burhanpedia-web.vercel.app',
-  ];
-
-  const configured = [
-    process.env.FRONTEND_URL,
-    process.env.NEXT_PUBLIC_FRONTEND_URL,
-  ];
+  const configured = [process.env.FRONTEND_URL];
+  const developmentOrigins =
+    process.env.NODE_ENV === 'production'
+      ? []
+      : ['http://localhost:3000', 'http://localhost:3001'];
 
   const additional = (process.env.ADDITIONAL_ORIGINS ?? '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  const origins = [...defaults, ...configured, ...additional].filter(
+  const origins = [...developmentOrigins, ...configured, ...additional].filter(
     (origin): origin is string =>
       typeof origin === 'string' && origin.trim().length > 0,
   );
@@ -31,7 +25,7 @@ export function buildCorsOrigins(): string[] {
 export function buildCorsOptions(): CorsOptions {
   const origins = buildCorsOrigins();
   return {
-    origin: origins.length ? origins : true,
+    origin: origins,
     credentials: true,
   };
 }
