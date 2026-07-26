@@ -23,7 +23,9 @@ describe('identity session lifecycle', () => {
   const email = `identity-${Date.now()}@burhanpedia.test`;
 
   beforeAll(async () => {
-    const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const module = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
     app = module.createNestApplication();
     app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
@@ -52,6 +54,14 @@ describe('identity session lifecycle', () => {
       .expect(400);
   });
 
+  it('rejects browser mutations from an unapproved origin', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .set('origin', 'https://malicious.example')
+      .send({ email, password: 'VerySecurePassword123!' })
+      .expect(403);
+  });
+
   it('registers, authenticates, rotates, and detects refresh reuse', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/auth/register')
@@ -72,7 +82,7 @@ describe('identity session lifecycle', () => {
     const loginCookies = cookies(login);
     expect(loginCookies.bp_access).toBeDefined();
     expect(loginCookies.bp_refresh).toBeDefined();
-    expect(login.headers['set-cookie']?.join(';')).toContain('HttpOnly');
+    expect(String(login.headers['set-cookie'])).toContain('HttpOnly');
 
     await request(app.getHttpServer())
       .get('/api/v1/me')
@@ -105,5 +115,19 @@ describe('identity session lifecycle', () => {
       .get('/api/v1/me')
       .set('Cookie', rotatedCookies.bp_access)
       .expect(401);
+  });
+
+  it('rejects authenticated mutations without an origin', async () => {
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .set('origin', origin)
+      .send({ email, password: 'VerySecurePassword123!' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/me/roles/active')
+      .set('Cookie', cookies(login).bp_access)
+      .send({ role: 'SELLER' })
+      .expect(403);
   });
 });

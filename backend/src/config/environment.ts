@@ -81,5 +81,14 @@ export function validateEnvironment(
     throw new Error('COOKIE_SECURE must be true or false');
   }
   config.COOKIE_SECURE = cookieSecure;
+  if (config.NODE_ENV === 'production' && cookieSecure !== 'true') {
+    throw new Error('COOKIE_SECURE must be true in production');
+  }
+  if (
+    config.NODE_ENV === 'production' &&
+    config.FRONTEND_URL === DEFAULTS.FRONTEND_URL
+  ) {
+    throw new Error('FRONTEND_URL must be configured in production');
+  }
   return config;
 }

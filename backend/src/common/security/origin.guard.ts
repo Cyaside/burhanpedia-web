@@ -13,6 +13,13 @@ export class OriginGuard implements CanActivate {
     if (SAFE_METHODS.has(request.method)) return true;
 
     const origin = request.header('origin');
+    if (!origin && request.header('cookie')) {
+      throw new ForbiddenException({
+        code: 'ORIGIN_REQUIRED',
+        detail:
+          'A request origin is required for cookie-authenticated mutations.',
+      });
+    }
     if (!origin) return true;
     if (!this.allowedOrigins.has(origin)) {
       throw new ForbiddenException({

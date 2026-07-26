@@ -24,4 +24,15 @@ describe('validateEnvironment', () => {
     expect(result.REFRESH_TOKEN_TTL_DAYS).toBe('30');
     expect(result.COOKIE_SECURE).toBe('false');
   });
+
+  it('requires secure cookies in production', () => {
+    expect(() =>
+      validateEnvironment({
+        ...validEnvironment,
+        NODE_ENV: 'production',
+        FRONTEND_URL: 'https://burhanpedia.example',
+        COOKIE_SECURE: 'false',
+      }),
+    ).toThrow('COOKIE_SECURE must be true');
+  });
 });
