@@ -4,15 +4,19 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Heart, Home, Search, ShoppingCart, UserRound } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getAuthToken } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
 import { useEffect, useState } from "react"
 
 export function MobileDock() {
   const pathname = usePathname()
-  const [hasToken, setHasToken] = useState(false)
+  const [hasSession, setHasSession] = useState(false)
 
   useEffect(() => {
-    setHasToken(!!getAuthToken())
+    let active = true
+    getCurrentUser()
+      .then(() => { if (active) setHasSession(true) })
+      .catch(() => { if (active) setHasSession(false) })
+    return () => { active = false }
   }, [pathname])
 
   const items = [
@@ -20,7 +24,7 @@ export function MobileDock() {
     { href: "/products", label: "Search", icon: Search },
     { href: "/cart", label: "Cart", icon: ShoppingCart },
     { href: "/wishlist", label: "Wishlist", icon: Heart },
-    { href: hasToken ? "/profile" : "/login", label: hasToken ? "Profile" : "Login", icon: UserRound },
+    { href: hasSession ? "/profile" : "/login", label: hasSession ? "Profile" : "Login", icon: UserRound },
   ]
 
   return (

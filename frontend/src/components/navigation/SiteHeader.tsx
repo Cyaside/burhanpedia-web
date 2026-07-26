@@ -9,7 +9,7 @@ import { Heart, Menu, Moon, Search, ShoppingBag, ShoppingCart, Sun, UserRound } 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useTheme } from "next-themes"
-import { getAuthToken } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
 
 export default function SiteHeader() {
   const pathname = usePathname()
@@ -17,10 +17,14 @@ export default function SiteHeader() {
   const isAuthPage = pathname === "/login" || pathname === "/register"
   const { theme, setTheme } = useTheme()
   const [query, setQuery] = React.useState("")
-  const [hasToken, setHasToken] = React.useState(false)
+  const [hasSession, setHasSession] = React.useState(false)
 
   useEffect(() => {
-    setHasToken(!!getAuthToken())
+    let active = true
+    getCurrentUser()
+      .then(() => { if (active) setHasSession(true) })
+      .catch(() => { if (active) setHasSession(false) })
+    return () => { active = false }
   }, [pathname])
 
   function handleSubmit(e: React.FormEvent) {
@@ -70,7 +74,7 @@ export default function SiteHeader() {
               <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Cart">
                 <Link href="/cart"><ShoppingCart className="size-4" /></Link>
               </Button>
-              {hasToken ? (
+              {hasSession ? (
                 <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Profile">
                   <Link href="/profile"><UserRound className="size-4" /></Link>
                 </Button>

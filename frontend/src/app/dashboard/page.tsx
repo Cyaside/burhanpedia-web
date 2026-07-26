@@ -1,162 +1,96 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { getApiUrl } from "@/lib/config"
-import AdminDashboard from "@/sections/dashboard/admindashboard"
-import SellerDashboard from "@/sections/dashboard/sellerdashboard"
-import BuyerDashboard from "@/sections/dashboard/buyerdashboard"
-import DashboardShell, { Role } from "@/sections/dashboard/components/DashboardShell"
+import { useState } from "react"
+import { api } from "@/lib/api/client"
+import { AppRole, useAuthGuard } from "@/lib/auth"
+import { Button } from "@/components/ui/button"
 
-interface BuyerProfile {
-  id: number
-  balance?: number
-  voucher?: string | null
+const roleDescriptions: Record<AppRole, string> = {
+  BUYER: "Jelajahi produk, kelola belanja, dan pantau pesanan Anda.",
+  SELLER: "Kelola toko, produk, stok, dan pesanan yang masuk.",
+  DRIVER: "Lihat pengiriman yang tersedia dan pantau pekerjaan Anda.",
+  ADMIN: "Kelola dan awasi operasional marketplace.",
 }
 
-interface SellerProfile {
-  id: number
-  balance?: number
-}
-
-interface AdminProfile {
-  id: number
-}
-
-interface UserProfile {
-  id: number
-  name: string
-  email: string
-  buyerProfile?: BuyerProfile | null
-  sellerProfile?: SellerProfile | null
-  adminProfile?: AdminProfile | null
-}
-
-interface Coupon {
-  id: number
-  code: string
-  discount: string
-  expiry: string
-}
-
-const fallbackCoupons: Coupon[] = [
-  {
-    id: 1,
-    code: "WELCOME10",
-    discount: "10% Off",
-    expiry: "2026-12-31",
-  },
-  {
-    id: 2,
-    code: "MEGA32",
-    discount: "32% Off",
-    expiry: "2026-09-30",
-  },
-]
-
-function deriveRoles(user: UserProfile): Role[] {
-  const roles: Role[] = []
-  if (user.buyerProfile) roles.push("BUYER")
-  if (user.sellerProfile) roles.push("SELLER")
-  if (user.adminProfile) roles.push("ADMIN")
-  return roles.length ? roles : ["BUYER"]
-}
-
-export default function Dashboard() {
-  const [user, setUser] = useState<UserProfile | null>(null)
-  const [roles, setRoles] = useState<Role[]>([])
-  const [activeRole, setActiveRole] = useState<Role>("BUYER")
-  const [loading, setLoading] = useState(true)
-  const [token, setToken] = useState<string | null>(null)
+export default function DashboardPage() {
   const router = useRouter()
+  const { user, checking } = useAuthGuard()
+  const [activeRole, setActiveRole] = useState<AppRole | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const fetchUserProfile = useCallback(
-    async (authToken: string) => {
-      try {
-        const response = await fetch(getApiUrl("/auth/profile"), {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        })
-
-        if (response.ok) {
-          const userData = (await response.json()) as UserProfile
-          setUser(userData)
-          const derivedRoles = deriveRoles(userData)
-          setRoles(derivedRoles)
-          setActiveRole((prev) => (derivedRoles.includes(prev) ? prev : derivedRoles[0]))
-        } else {
-          localStorage.removeItem("token")
-          router.push("/login")
-        }
-      } catch (error) {
-        console.error("Error fetching user profile:", error)
-        localStorage.removeItem("token")
-        router.push("/login")
-      } finally {
-        setLoading(false)
-      }
-    },
-    [router]
-  )
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token")
-
-    if (!storedToken) {
-      router.push("/login")
-      return
+  async function switchRole(role: AppRole) {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await api.post("/me/roles/active", { role })
+      setActiveRole(role)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Gagal mengganti peran.")
+    } finally {
+      setBusy(false)
     }
-
-    setToken(storedToken)
-    fetchUserProfile(storedToken)
-  }, [router, fetchUserProfile])
-
-  const handleLogout = () => {
-    localStorage.removeItem("token")
-    router.push("/login")
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-slate-50">
-        <div className="text-sm text-muted-foreground">Loading dashboard...</div>
-      </div>
-    )
+  async function logout() {
+    setBusy(true)
+    try {
+      await api.post("/auth/logout")
+      router.replace("/login")
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Gagal keluar dari akun.")
+      setBusy(false)
+    }
   }
 
-  if (!user) {
-    return null
+  if (checking || !user) {
+    return <main className="mx-auto max-w-4xl px-6 py-12">Memeriksa sesi...</main>
   }
 
-  let dashboardContent: React.ReactNode = null
-
-  if (activeRole === "ADMIN") {
-    dashboardContent = <AdminDashboard />
-  } else if (activeRole === "SELLER") {
-    dashboardContent = <SellerDashboard sellerId={user.id} token={token || ""} />
-  } else if (activeRole === "BUYER") {
-    const balance = typeof user.buyerProfile?.balance === "number" ? user.buyerProfile.balance : 250000
-    const coupons = fallbackCoupons
-    dashboardContent = (
-      <BuyerDashboard
-        name={user.name}
-        email={user.email}
-        balance={balance}
-        coupons={coupons}
-      />
-    )
-  }
+  const role = activeRole ?? user.activeRole
 
   return (
-    <DashboardShell
-      user={{ name: user.name, email: user.email }}
-      roles={roles}
-      activeRole={activeRole}
-      onRoleChange={setActiveRole}
-      onLogout={handleLogout}
-    >
-      {dashboardContent}
-    </DashboardShell>
+    <main className="mx-auto max-w-4xl space-y-8 px-6 py-12">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Akun Burhanpedia</p>
+          <h1 className="text-3xl font-semibold">Halo, {user.name}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+        </div>
+        <Button variant="outline" disabled={busy} onClick={logout}>Keluar</Button>
+      </div>
+
+      <section className="rounded-xl border border-border bg-card p-6">
+        <h2 className="text-lg font-semibold">Peran aktif: {role}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{roleDescriptions[role]}</p>
+        {user.roles.length > 1 && (
+          <div className="mt-4 flex flex-wrap gap-2" aria-label="Ganti peran aktif">
+            {user.roles.map((availableRole) => (
+              <Button
+                key={availableRole}
+                type="button"
+                variant={role === availableRole ? "default" : "outline"}
+                disabled={busy}
+                onClick={() => switchRole(availableRole)}
+              >
+                {availableRole}
+              </Button>
+            ))}
+          </div>
+        )}
+        {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
+      </section>
+
+      {role === "BUYER" && (
+        <div className="flex gap-3">
+          <Button asChild><Link href="/products">Lihat produk</Link></Button>
+          <Button asChild variant="outline"><Link href="/profile">Profil</Link></Button>
+        </div>
+      )}
+      {role === "SELLER" && <Button asChild><Link href="/seller/products">Kelola produk</Link></Button>}
+    </main>
   )
 }

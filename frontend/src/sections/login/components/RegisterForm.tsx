@@ -5,7 +5,7 @@ import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { ArrowRight, Loader2, Shield, ShoppingBag, Store, Home } from "lucide-react"
+import { ArrowRight, Loader2, ShoppingBag, Store, Truck, Home } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,17 +13,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { getApiUrl } from "@/lib/config"
+import { ApiError, api } from "@/lib/api/client"
 
-const profileTypesSchema = z.array(z.enum(["BUYER", "SELLER", "ADMIN"])).min(1, "Choose at least one role")
+const rolesSchema = z.array(z.enum(["BUYER", "SELLER", "DRIVER"])).min(1, "Choose at least one role")
 
 const registerSchema = z
   .object({
     name: z.string().min(2, "Your name is too short"),
     email: z.string().email("Enter a valid email"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string().min(6, "Confirm your password"),
-    profileTypes: profileTypesSchema,
+    password: z.string().min(12, "Password must be at least 12 characters"),
+    confirmPassword: z.string().min(12, "Confirm your password"),
+    roles: rolesSchema,
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],
@@ -43,37 +43,25 @@ export function RegisterForm() {
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     mode: "onBlur",
-    defaultValues: { profileTypes: ["BUYER"] },
+    defaultValues: { roles: ["BUYER"] },
   })
 
-  const selectedRoles = watch("profileTypes")
+  const selectedRoles = watch("roles")
 
   async function onSubmit(values: RegisterValues) {
     try {
-      const response = await fetch(getApiUrl("/auth/register"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: values.name,
-          email: values.email,
-          password: values.password,
-          profileTypes: values.profileTypes,
-        }),
+      const data = await api.post<{ name: string }>("/auth/register", {
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        roles: values.roles,
       })
-
-      if (response.ok) {
-        const data = await response.json()
-        toast.success("Account created successfully", { description: `Welcome, ${data.name}` })
-        router.push("/login")
-      } else {
-        const errorData = await response.json()
-        toast.error("Registration failed", { description: errorData.message || "Failed to create account" })
-      }
+      toast.success("Account created successfully", { description: `Welcome, ${data.name}` })
+      router.push("/login")
     } catch (error) {
-      console.error("Registration error:", error)
-      toast.error("Registration failed", { description: "An error occurred during registration" })
+      toast.error("Registration failed", {
+        description: error instanceof ApiError ? error.message : "An error occurred during registration",
+      })
     }
   }
 
@@ -87,15 +75,15 @@ export function RegisterForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label>Register as</Label>
-            <Tabs value={selectedRoles[0]} onValueChange={(v: string) => setValue("profileTypes", [v as "BUYER" | "SELLER" | "ADMIN"]) }>
+            <Tabs value={selectedRoles[0]} onValueChange={(v: string) => setValue("roles", [v as "BUYER" | "SELLER" | "DRIVER"]) }>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="BUYER" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
                 <TabsTrigger value="SELLER" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
-                <TabsTrigger value="ADMIN" aria-label="Admin"><Shield className="mr-1 size-4" />Admin</TabsTrigger>
+                <TabsTrigger value="DRIVER" aria-label="Driver"><Truck className="mr-1 size-4" />Driver</TabsTrigger>
               </TabsList>
             </Tabs>
             <p className="text-xs text-muted-foreground">You can add more roles later from your dashboard.</p>
-            <input type="hidden" {...register("profileTypes.0")} />
+            <input type="hidden" {...register("roles.0")} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>

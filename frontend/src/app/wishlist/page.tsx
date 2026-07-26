@@ -9,11 +9,11 @@ import { useAuthGuard } from "@/lib/auth"
 
 export default function WishlistPage() {
   const { items, load } = useWishlistStore()
-  const { token, checking } = useAuthGuard()
+  const { isAuthenticated, checking } = useAuthGuard()
 
   useEffect(() => {
-    if (token) load()
-  }, [load, token])
+    if (isAuthenticated) void load()
+  }, [load, isAuthenticated])
 
   if (checking) {
     return (
@@ -23,7 +23,7 @@ export default function WishlistPage() {
     )
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return null
   }
 

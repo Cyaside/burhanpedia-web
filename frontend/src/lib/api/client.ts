@@ -1,62 +1,74 @@
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+import { getApiUrl } from "@/lib/config"
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-  // Use the Headers API to safely set header values (avoids TS index errors)
-  const hdrs = new Headers(options.headers as HeadersInit)
-  if (!(options.body instanceof FormData)) {
-    hdrs.set("Content-Type", "application/json")
+interface ProblemDetails {
+  title?: string
+  detail?: string
+  code?: string
+}
+
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string
+  ) {
+    super(message)
   }
-  if (token) hdrs.set("Authorization", `Bearer ${token}`)
+}
 
-  const res = await fetch(`${baseUrl}${path}`, {
-    ...options,
-    headers: hdrs,
+let refreshPromise: Promise<boolean> | null = null
+
+async function refreshSession(): Promise<boolean> {
+  refreshPromise ??= fetch(getApiUrl("/auth/refresh"), {
+    method: "POST",
+    credentials: "include",
   })
-  if (res.status === 401) {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token")
-      window.location.assign("/login")
-    }
-    throw new Error("Unauthorized")
+    .then((response) => response.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshPromise = null
+    })
+  return refreshPromise
+}
+
+async function request<T>(path: string, options: RequestInit = {}, canRefresh = true): Promise<T> {
+  const headers = new Headers(options.headers)
+  if (options.body && !(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json")
   }
-  if (!res.ok) {
-    const text = await res.text().catch(() => "")
-    let message = text || res.statusText
-    try {
-      const parsed = JSON.parse(text)
-      if (parsed?.message) {
-        message = Array.isArray(parsed.message) ? parsed.message.join(", ") : parsed.message
-      } else if (parsed?.error) {
-        message = parsed.error
-      }
-    } catch {
-      // ignore JSON parse errors
-    }
-    throw new Error(message || res.statusText)
+  const response = await fetch(getApiUrl(path), {
+    ...options,
+    headers,
+    credentials: "include",
+  })
+  if (response.status === 401 && canRefresh && !path.startsWith("/auth/")) {
+    if (await refreshSession()) return request<T>(path, options, false)
   }
-  const contentType = res.headers.get("content-type") || ""
-  if (contentType.includes("application/json")) {
-    return (await res.json()) as T
+  if (!response.ok) {
+    const problem = (await response.json().catch(() => ({}))) as ProblemDetails
+    throw new ApiError(
+      response.status,
+      problem.code ?? "REQUEST_FAILED",
+      problem.detail ?? problem.title ?? response.statusText
+    )
   }
-  const bodyText = await res.text().catch(() => "")
-  throw new Error(`Expected JSON response but received: ${bodyText.slice(0,200)}`)
+  if (response.status === 204) return undefined as T
+  return (await response.json()) as T
 }
 
 export const api = {
-  get: request,
+  get: <T>(path: string, init: RequestInit = {}) => request<T>(path, init),
   post: <T>(path: string, body?: unknown, init: RequestInit = {}) =>
     request<T>(path, {
-      method: "POST",
-      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
       ...init,
+      method: "POST",
+      body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
     }),
   patch: <T>(path: string, body?: unknown, init: RequestInit = {}) =>
     request<T>(path, {
-      method: "PATCH",
-      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
       ...init,
+      method: "PATCH",
+      body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
     }),
-  del: <T>(path: string, init: RequestInit = {}) =>
-    request<T>(path, { method: "DELETE", ...init }),
+  del: <T>(path: string, init: RequestInit = {}) => request<T>(path, { ...init, method: "DELETE" }),
 }

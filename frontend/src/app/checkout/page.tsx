@@ -20,16 +20,16 @@ export default function CheckoutPage() {
   const [placing, setPlacing] = useState(false)
   const [orderId, setOrderId] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const { token, checking } = useAuthGuard()
+  const { isAuthenticated, checking } = useAuthGuard()
 
   useEffect(() => {
-    if (token) load()
-  }, [load, token])
+    if (isAuthenticated) void load()
+  }, [load, isAuthenticated])
 
   const { data: addresses = [] } = useQuery<Address[]>({
     queryKey: ["addresses"],
     queryFn: fetchAddresses,
-    enabled: !!token,
+    enabled: isAuthenticated,
   })
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function CheckoutPage() {
     )
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return null
   }
 

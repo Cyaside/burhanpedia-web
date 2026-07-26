@@ -11,16 +11,16 @@ import SiteHeader from "@/components/navigation/SiteHeader"
 import { useAuthGuard } from "@/lib/auth"
 
 export default function ProfilePage() {
-  const { token, checking } = useAuthGuard()
+  const { isAuthenticated, checking } = useAuthGuard()
   const { data: orders = [] } = useQuery({
     queryKey: ["orders"],
     queryFn: fetchOrders,
-    enabled: !!token,
+    enabled: isAuthenticated,
   })
   const { data: wishlist = [] } = useQuery({
     queryKey: ["wishlist"],
     queryFn: fetchWishlist,
-    enabled: !!token,
+    enabled: isAuthenticated,
   })
 
   if (checking) {
@@ -31,7 +31,7 @@ export default function ProfilePage() {
     )
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return null
   }
 

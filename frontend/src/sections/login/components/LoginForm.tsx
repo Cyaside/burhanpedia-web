@@ -12,7 +12,7 @@ import { CardContent, CardDescription, CardHeader, CardTitle } from "@/component
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { getApiUrl } from "@/lib/config"
+import { ApiError, api } from "@/lib/api/client"
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -34,29 +34,13 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginValues) {
     try {
-      const response = await fetch(getApiUrl("/auth/login"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: values.email,
-          password: values.password,
-        }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        localStorage.setItem("token", data.access_token)
-        toast.success("Logged in successfully", { description: `Welcome back, ${data.user.name}` })
-        router.push("/dashboard")
-      } else {
-        const errorData = await response.json()
-        toast.error("Login failed", { description: errorData.message || "Invalid credentials" })
-      }
+      const data = await api.post<{ user: { name: string } }>("/auth/login", values)
+      toast.success("Logged in successfully", { description: `Welcome back, ${data.user.name}` })
+      router.push("/dashboard")
     } catch (error) {
-      console.error("Login error:", error)
-      toast.error("Login failed", { description: "An error occurred during login" })
+      toast.error("Login failed", {
+        description: error instanceof ApiError ? error.message : "An error occurred during login",
+      })
     }
   }
 

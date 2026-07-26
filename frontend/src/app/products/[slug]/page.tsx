@@ -13,7 +13,7 @@ import { useCartStore } from "@/store/cart"
 import { useWishlistStore } from "@/store/wishlist"
 import { MobileDock } from "@/components/navigation/MobileDock"
 import SiteHeader from "@/components/navigation/SiteHeader"
-import { requireAuth } from "@/lib/auth"
+import { ensureAuthenticated } from "@/lib/auth"
 
 export default function ProductDetailPage() {
   const params = useParams()
@@ -47,14 +47,14 @@ export default function ProductDetailPage() {
 
   const price = product.price + (variants.find((v) => v.id === variantId)?.priceDelta || 0)
 
-  const handleAddToCart = () => {
-    if (!requireAuth(router)) return
-    addToCart({ productId: product.id, variantId, quantity: 1 })
+  const handleAddToCart = async () => {
+    if (!(await ensureAuthenticated(router))) return
+    await addToCart({ productId: product.id, variantId, quantity: 1 })
   }
 
-  const handleBuyNow = () => {
-    if (!requireAuth(router)) return
-    addToCart({ productId: product.id, variantId, quantity: 1 })
+  const handleBuyNow = async () => {
+    if (!(await ensureAuthenticated(router))) return
+    await addToCart({ productId: product.id, variantId, quantity: 1 })
     router.push("/checkout")
   }
 
@@ -101,8 +101,8 @@ export default function ProductDetailPage() {
               <button
                 aria-label="Wishlist"
                 className="rounded-full border border-border/70 p-2 text-muted-foreground hover:text-primary"
-                onClick={() => {
-                  if (!requireAuth(router)) return
+                onClick={async () => {
+                  if (!(await ensureAuthenticated(router))) return
                   void toggleWishlist(product.id)
                 }}
               >

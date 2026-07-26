@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useWishlistStore } from "@/store/wishlist"
 import { useRouter } from "next/navigation"
-import { requireAuth } from "@/lib/auth"
+import { ensureAuthenticated } from "@/lib/auth"
 
 interface Props {
   product: Product
@@ -45,8 +45,8 @@ export function ProductCard({ product, onAdd }: Props) {
           <button
             className="rounded-full border border-border/70 p-1.5 text-muted-foreground hover:text-primary"
             aria-label="Toggle wishlist"
-            onClick={() => {
-              if (!requireAuth(router)) return
+            onClick={async () => {
+              if (!(await ensureAuthenticated(router))) return
               void toggleWishlist(product.id)
             }}
           >
@@ -63,8 +63,8 @@ export function ProductCard({ product, onAdd }: Props) {
           <Button
             size="sm"
             className="gap-2 rounded-full"
-            onClick={() => {
-              if (!requireAuth(router)) return
+            onClick={async () => {
+              if (!(await ensureAuthenticated(router))) return
               onAdd?.(product.id)
             }}
           >

@@ -2,36 +2,56 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { api } from "@/lib/api/client"
 
-export function getAuthToken() {
-  if (typeof window === "undefined") return null
-  return localStorage.getItem("token")
+export type AppRole = "BUYER" | "SELLER" | "DRIVER" | "ADMIN"
+
+export interface CurrentUser {
+  id: string
+  name: string
+  email: string
+  roles: AppRole[]
+  activeRole: AppRole
 }
 
-export function requireAuth(router: ReturnType<typeof useRouter>, redirectTo = "/login") {
-  const token = getAuthToken()
-  if (!token) {
+export function getCurrentUser() {
+  return api.get<CurrentUser>("/me")
+}
+
+export async function ensureAuthenticated(
+  router: ReturnType<typeof useRouter>,
+  redirectTo = "/login"
+): Promise<boolean> {
+  try {
+    await getCurrentUser()
+    return true
+  } catch {
     router.push(redirectTo)
     return false
   }
-  return true
 }
 
 export function useAuthGuard(redirectTo = "/login") {
   const router = useRouter()
-  const [token, setToken] = useState<string | null>(null)
+  const [user, setUser] = useState<CurrentUser | null>(null)
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    const stored = getAuthToken()
-    if (!stored) {
-      router.push(redirectTo)
-      setChecking(false)
-      return
+    let active = true
+    getCurrentUser()
+      .then((currentUser) => {
+        if (active) setUser(currentUser)
+      })
+      .catch(() => {
+        if (active) router.replace(redirectTo)
+      })
+      .finally(() => {
+        if (active) setChecking(false)
+      })
+    return () => {
+      active = false
     }
-    setToken(stored)
-    setChecking(false)
-  }, [router, redirectTo])
+  }, [redirectTo, router])
 
-  return { token, checking, isAuthed: !!token }
+  return { user, checking, isAuthenticated: !!user }
 }
