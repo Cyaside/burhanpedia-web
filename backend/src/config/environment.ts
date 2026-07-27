@@ -90,5 +90,22 @@ export function validateEnvironment(
   ) {
     throw new Error('FRONTEND_URL must be configured in production');
   }
+  const storageKeys = [
+    'S3_REGION',
+    'S3_BUCKET',
+    'S3_ACCESS_KEY_ID',
+    'S3_SECRET_ACCESS_KEY',
+    'S3_PUBLIC_BASE_URL',
+  ];
+  const configuredStorageKeys = storageKeys.filter(
+    (key) => typeof config[key] === 'string' && config[key] !== '',
+  );
+  if (
+    (configuredStorageKeys.length > 0 &&
+      configuredStorageKeys.length !== storageKeys.length) ||
+    (config.NODE_ENV === 'production' && configuredStorageKeys.length === 0)
+  ) {
+    throw new Error('All S3 storage environment variables must be configured');
+  }
   return config;
 }

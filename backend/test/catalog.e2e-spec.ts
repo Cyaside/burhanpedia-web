@@ -1,8 +1,12 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { createHash } from 'node:crypto';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
+import sharp from 'sharp';
 import { AppModule } from '../src/app.module';
+import { STORAGE_PORT } from '../src/modules/storage/storage.port';
+import type { StoragePort } from '../src/modules/storage/storage.port';
 
 describe('catalog and seller ownership', () => {
   let app: INestApplication;
@@ -14,11 +18,34 @@ describe('catalog and seller ownership', () => {
   let productId: string;
   let productVersion: number;
   let variantId: string;
+  let imageBytes: Buffer;
 
   beforeAll(async () => {
+    imageBytes = await sharp({
+      create: {
+        width: 300,
+        height: 300,
+        channels: 3,
+        background: '#ffffff',
+      },
+    })
+      .png()
+      .toBuffer();
+    const storage: StoragePort = {
+      signUpload: (key, contentType) =>
+        Promise.resolve({
+          url: `https://storage.example/${key}`,
+          headers: { 'Content-Type': contentType },
+        }),
+      load: () => Promise.resolve(imageBytes),
+      publicUrl: (key) => `https://storage.example/${key}`,
+    };
     const module = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(STORAGE_PORT)
+      .useValue(storage)
+      .compile();
     app = module.createNestApplication();
     app.setGlobalPrefix('api/v1');
     app.use(cookieParser());
@@ -176,5 +203,67 @@ describe('catalog and seller ownership', () => {
       .set('Cookie', otherCookie)
       .send({ quantityDelta: 1, reason: 'Unauthorized adjustment' })
       .expect(404);
+  });
+
+  it('signs and verifies product images before publication', async () => {
+    const checksumSha256 = createHash('sha256')
+      .update(imageBytes)
+      .digest('hex');
+    const requested = await request(app.getHttpServer())
+      .post(`/api/v1/seller/products/${productId}/images/uploads`)
+      .set('origin', origin)
+      .set('Cookie', accessCookie)
+      .send({
+        contentType: 'image/png',
+        byteSize: imageBytes.length,
+        checksumSha256,
+      })
+      .expect(201);
+    expect(requested.body.url).toContain('https://storage.example/');
+    const uploadId = requested.body.uploadId as string;
+
+    const completed = await request(app.getHttpServer())
+      .post(
+        `/api/v1/seller/products/${productId}/images/uploads/${uploadId}/complete`,
+      )
+      .set('origin', origin)
+      .set('Cookie', accessCookie)
+      .send({ altText: 'Desk lamp on a table' })
+      .expect(201);
+    expect(completed.body.altText).toBe('Desk lamp on a table');
+
+    const retry = await request(app.getHttpServer())
+      .post(
+        `/api/v1/seller/products/${productId}/images/uploads/${uploadId}/complete`,
+      )
+      .set('origin', origin)
+      .set('Cookie', accessCookie)
+      .send({ altText: 'Desk lamp on a table' })
+      .expect(201);
+    expect(retry.body.id).toBe(completed.body.id);
+
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/products/${productId}`)
+      .expect(200);
+    expect(detail.body.images).toHaveLength(1);
+
+    const invalid = await request(app.getHttpServer())
+      .post(`/api/v1/seller/products/${productId}/images/uploads`)
+      .set('origin', origin)
+      .set('Cookie', accessCookie)
+      .send({
+        contentType: 'image/png',
+        byteSize: imageBytes.length,
+        checksumSha256: '0'.repeat(64),
+      })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(
+        `/api/v1/seller/products/${productId}/images/uploads/${invalid.body.uploadId as string}/complete`,
+      )
+      .set('origin', origin)
+      .set('Cookie', accessCookie)
+      .send({ altText: 'Invalid image' })
+      .expect(422);
   });
 });

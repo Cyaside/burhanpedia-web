@@ -25,6 +25,6 @@ import {
     SellerService,
     SellerRepository,
   ],
-  exports: [CatalogRepository],
+  exports: [CatalogRepository, SellerRepository],
 })
 export class CatalogModule {}

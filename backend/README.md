@@ -18,6 +18,15 @@ npm run db:seed
 npm run start:dev
 ```
 
+Untuk upload gambar lokal, jalankan `docker compose up -d minio minio-init`.
+Isi `S3_*` pada `.env` sesuai `.env.example`; bucket dibuat otomatis dan
+hanya objek gambar yang dapat dibaca publik. Kredensial contoh hanya untuk
+development, jangan digunakan di production. Upload berlangsung dua tahap:
+seller meminta signed PUT URL, mengirim file langsung ke storage dengan
+`Content-Type` yang dikembalikan, lalu memanggil endpoint complete. API akan
+memeriksa ukuran, SHA-256, format dan dimensi gambar sebelum memasukkannya
+ke katalog.
+
 API menggunakan prefix `http://localhost:3000/api/v1`.
 
 Worker dijalankan pada terminal lain:
