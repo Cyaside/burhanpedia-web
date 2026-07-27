@@ -10,6 +10,7 @@ import { validateEnvironment } from './config/environment';
 import { RequestIdMiddleware } from './common/http/request-id.middleware';
 import { OriginGuard } from './common/security/origin.guard';
 import { IdentityModule } from './modules/identity/identity.module';
+import { CatalogModule } from './modules/catalog/catalog.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { IdentityModule } from './modules/identity/identity.module';
     DatabaseModule,
     HealthModule,
     IdentityModule,
+    CatalogModule,
   ],
   controllers: [AppController],
   providers: [
