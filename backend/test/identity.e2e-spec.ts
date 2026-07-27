@@ -83,6 +83,7 @@ describe('identity session lifecycle', () => {
     expect(loginCookies.bp_access).toBeDefined();
     expect(loginCookies.bp_refresh).toBeDefined();
     expect(String(login.headers['set-cookie'])).toContain('HttpOnly');
+    expect(login.body.user.roles).toEqual(['BUYER', 'SELLER']);
 
     await request(app.getHttpServer())
       .get('/api/v1/me')

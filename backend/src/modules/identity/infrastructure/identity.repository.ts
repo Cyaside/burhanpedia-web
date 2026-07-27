@@ -73,7 +73,7 @@ export class IdentityRepository {
   async findCredentials(email: string): Promise<UserCredentialsRow | null> {
     const result = await this.database.query<UserCredentialsRow>(
       `SELECT u.id, u.email, u.name, u.password_hash,
-              array_agg(ur.role ORDER BY ur.role)::app_role[] AS roles
+              array_agg(ur.role::text ORDER BY ur.role) AS roles
        FROM users u
        JOIN user_roles ur ON ur.user_id = u.id AND ur.status = 'ACTIVE'
        WHERE u.email = $1 AND u.status = 'ACTIVE'
@@ -129,9 +129,9 @@ export class IdentityRepository {
               s.active_role, s.expires_at, s.revoked_at,
               s.replaced_by_session_id, u.id, u.email, u.name,
               u.password_hash,
-              ARRAY(SELECT ur.role FROM user_roles ur
+              ARRAY(SELECT ur.role::text FROM user_roles ur
                     WHERE ur.user_id = u.id AND ur.status = 'ACTIVE'
-                    ORDER BY ur.role)::app_role[] AS roles
+                    ORDER BY ur.role) AS roles
        FROM sessions s
        JOIN users u ON u.id = s.user_id AND u.status = 'ACTIVE'
        WHERE s.id = $1
@@ -233,9 +233,9 @@ export class IdentityRepository {
       `SELECT s.id AS session_id, s.active_role, u.id, u.email, u.name,
               u.password_hash, s.family_id, s.refresh_token_hash, s.expires_at,
               s.revoked_at, s.replaced_by_session_id,
-              ARRAY(SELECT ur.role FROM user_roles ur
+              ARRAY(SELECT ur.role::text FROM user_roles ur
                     WHERE ur.user_id = u.id AND ur.status = 'ACTIVE'
-                    ORDER BY ur.role)::app_role[] AS roles
+                    ORDER BY ur.role) AS roles
        FROM sessions s
        JOIN users u ON u.id = s.user_id AND u.status = 'ACTIVE'
        WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > now()
