@@ -1,0 +1,180 @@
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import cookieParser from 'cookie-parser';
+import request from 'supertest';
+import { AppModule } from '../src/app.module';
+
+describe('catalog and seller ownership', () => {
+  let app: INestApplication;
+  const origin = 'http://localhost:3001';
+  const suffix = Date.now().toString(36);
+  const email = `catalog-${suffix}@burhanpedia.test`;
+  let accessCookie: string;
+  let storeId: string;
+  let productId: string;
+  let productVersion: number;
+  let variantId: string;
+
+  beforeAll(async () => {
+    const module = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = module.createNestApplication();
+    app.setGlobalPrefix('api/v1');
+    app.use(cookieParser());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    await app.init();
+  });
+
+  afterAll(async () => app.close());
+
+  it('creates a seller store and two products with variants', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .set('origin', origin)
+      .send({
+        name: 'Catalog Seller',
+        email,
+        password: 'VerySecurePassword123!',
+        roles: ['SELLER'],
+      })
+      .expect(201);
+
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .set('origin', origin)
+      .send({ email, password: 'VerySecurePassword123!' })
+      .expect(200);
+    accessCookie = String(login.headers['set-cookie']).split(';')[0];
+
+    const store = await request(app.getHttpServer())
+      .post('/api/v1/stores')
+      .set('origin', origin)
+      .set('Cookie', accessCookie)
+      .send({ slug: `test-store-${suffix}`, name: `Test Store ${suffix}` })
+      .expect(201);
+    storeId = store.body.id as string;
+
+    for (const [index, name] of ['Desk Lamp', 'Reading Lamp'].entries()) {
+      const product = await request(app.getHttpServer())
+        .post('/api/v1/seller/products')
+        .set('origin', origin)
+        .set('Cookie', accessCookie)
+        .send({
+          slug: `lamp-${index}-${suffix}`,
+          name,
+          description: 'A practical LED lamp for reading.',
+          variants: [
+            {
+              sku: `LAMP-${index}-${suffix}`,
+              name: 'Default',
+              priceAmount: String(125_000 + index * 25_000),
+              attributes: { color: 'black' },
+              onHand: 5,
+            },
+          ],
+        })
+        .expect(201);
+      if (index === 0) {
+        productId = product.body.id as string;
+        productVersion = product.body.version as number;
+      }
+      await request(app.getHttpServer())
+        .patch(`/api/v1/seller/products/${product.body.id as string}`)
+        .set('origin', origin)
+        .set('Cookie', accessCookie)
+        .send({ version: product.body.version, status: 'ACTIVE' })
+        .expect(200);
+    }
+  });
+
+  it('returns keyset-paginated search and one-query product detail', async () => {
+    const first = await request(app.getHttpServer())
+      .get('/api/v1/products')
+      .query({ q: 'Lamp', storeId, sort: 'price_asc', limit: 1 })
+      .expect(200);
+    expect(first.body.items).toHaveLength(1);
+    expect(first.body.items[0].minPriceAmount).toBe('125000');
+    expect(first.body.nextCursor).toEqual(expect.any(String));
+
+    const second = await request(app.getHttpServer())
+      .get('/api/v1/products')
+      .query({
+        q: 'Lamp',
+        storeId,
+        sort: 'price_asc',
+        limit: 1,
+        cursor: first.body.nextCursor,
+      })
+      .expect(200);
+    expect(second.body.items).toHaveLength(1);
+    expect(second.body.items[0].id).not.toBe(first.body.items[0].id);
+    expect(second.body.nextCursor).toBeNull();
+
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/products/${productId}`)
+      .expect(200);
+    expect(detail.body.variants).toHaveLength(1);
+    expect(detail.body.variants[0].availableQuantity).toBe(5);
+    variantId = detail.body.variants[0].id as string;
+
+    await request(app.getHttpServer())
+      .get('/api/v1/products')
+      .query({ sort: 'newest', cursor: first.body.nextCursor })
+      .expect(400);
+  });
+
+  it('enforces ownership, version checks, and nonnegative inventory', async () => {
+    await request(app.getHttpServer())
+      .patch(`/api/v1/seller/products/${productId}`)
+      .set('origin', origin)
+      .set('Cookie', accessCookie)
+      .send({ version: productVersion, name: 'Stale update' })
+      .expect(409);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/seller/variants/${variantId}/inventory/adjustments`)
+      .set('origin', origin)
+      .set('Cookie', accessCookie)
+      .send({ quantityDelta: -6, reason: 'Count correction' })
+      .expect(422);
+
+    const adjustment = await request(app.getHttpServer())
+      .post(`/api/v1/seller/variants/${variantId}/inventory/adjustments`)
+      .set('origin', origin)
+      .set('Cookie', accessCookie)
+      .send({ quantityDelta: -2, reason: 'Count correction' })
+      .expect(201);
+    expect(adjustment.body.onHand).toBe(3);
+
+    const otherEmail = `other-${email}`;
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .set('origin', origin)
+      .send({
+        name: 'Other Seller',
+        email: otherEmail,
+        password: 'VerySecurePassword123!',
+        roles: ['SELLER'],
+      })
+      .expect(201);
+    const otherLogin = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .set('origin', origin)
+      .send({ email: otherEmail, password: 'VerySecurePassword123!' })
+      .expect(200);
+    const otherCookie = String(otherLogin.headers['set-cookie']).split(';')[0];
+    await request(app.getHttpServer())
+      .post(`/api/v1/seller/variants/${variantId}/inventory/adjustments`)
+      .set('origin', origin)
+      .set('Cookie', otherCookie)
+      .send({ quantityDelta: 1, reason: 'Unauthorized adjustment' })
+      .expect(404);
+  });
+});
