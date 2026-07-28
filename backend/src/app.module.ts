@@ -12,6 +12,7 @@ import { OriginGuard } from './common/security/origin.guard';
 import { IdentityModule } from './modules/identity/identity.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { CommerceModule } from './modules/commerce/commerce.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { StorageModule } from './modules/storage/storage.module';
     IdentityModule,
     CatalogModule,
     StorageModule,
+    CommerceModule,
   ],
   controllers: [AppController],
   providers: [
