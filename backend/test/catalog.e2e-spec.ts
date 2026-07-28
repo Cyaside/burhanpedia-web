@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import sharp from 'sharp';
 import { AppModule } from '../src/app.module';
+import { DatabaseService } from '../src/database/database.service';
 import { STORAGE_PORT } from '../src/modules/storage/storage.port';
 import type { StoragePort } from '../src/modules/storage/storage.port';
 
@@ -122,6 +123,7 @@ describe('catalog and seller ownership', () => {
   });
 
   it('returns keyset-paginated search and one-query product detail', async () => {
+    const querySpy = jest.spyOn(app.get(DatabaseService), 'query');
     const first = await request(app.getHttpServer())
       .get('/api/v1/products')
       .query({ q: 'Lamp', storeId, sort: 'price_asc', limit: 1 })
@@ -129,6 +131,8 @@ describe('catalog and seller ownership', () => {
     expect(first.body.items).toHaveLength(1);
     expect(first.body.items[0].minPriceAmount).toBe('125000');
     expect(first.body.nextCursor).toEqual(expect.any(String));
+    expect(querySpy).toHaveBeenCalledTimes(1);
+    querySpy.mockClear();
 
     const second = await request(app.getHttpServer())
       .get('/api/v1/products')
@@ -149,11 +153,38 @@ describe('catalog and seller ownership', () => {
       .expect(200);
     expect(detail.body.variants).toHaveLength(1);
     expect(detail.body.variants[0].availableQuantity).toBe(5);
+    expect(querySpy).toHaveBeenCalledTimes(2);
     variantId = detail.body.variants[0].id as string;
+    querySpy.mockRestore();
 
     await request(app.getHttpServer())
       .get('/api/v1/products')
       .query({ sort: 'newest', cursor: first.body.nextCursor })
+      .expect(400);
+  });
+
+  it('paginates seller products without exposing another store', async () => {
+    const first = await request(app.getHttpServer())
+      .get('/api/v1/seller/products')
+      .set('Cookie', accessCookie)
+      .query({ limit: 1 })
+      .expect(200);
+    expect(first.body.items).toHaveLength(1);
+    expect(first.body.nextCursor).toEqual(expect.any(String));
+
+    const second = await request(app.getHttpServer())
+      .get('/api/v1/seller/products')
+      .set('Cookie', accessCookie)
+      .query({ limit: 1, cursor: first.body.nextCursor })
+      .expect(200);
+    expect(second.body.items).toHaveLength(1);
+    expect(second.body.items[0].id).not.toBe(first.body.items[0].id);
+    expect(second.body.nextCursor).toBeNull();
+
+    await request(app.getHttpServer())
+      .get('/api/v1/seller/products')
+      .set('Cookie', accessCookie)
+      .query({ cursor: 'invalid' })
       .expect(400);
   });
 

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -62,9 +63,49 @@ export class SellerService {
     }
   }
 
-  async myProducts(userId: string) {
-    const rows = await this.sellers.sellerProducts(userId);
-    return { items: rows.map((row) => this.present(row)) };
+  async myProducts(userId: string, limit: number, cursor?: string) {
+    let decoded: { createdAt: string; id: string } | undefined;
+    if (cursor) {
+      try {
+        const value: unknown = JSON.parse(
+          Buffer.from(cursor, 'base64url').toString('utf8'),
+        );
+        if (
+          typeof value !== 'object' ||
+          value === null ||
+          !('createdAt' in value) ||
+          typeof value.createdAt !== 'string' ||
+          Number.isNaN(Date.parse(value.createdAt)) ||
+          !('id' in value) ||
+          typeof value.id !== 'string' ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            value.id,
+          )
+        )
+          throw new Error('Invalid cursor');
+        decoded = { createdAt: value.createdAt, id: value.id };
+      } catch {
+        throw new BadRequestException({
+          code: 'INVALID_CURSOR',
+          detail: 'The seller cursor is invalid.',
+        });
+      }
+    }
+    const rows = await this.sellers.sellerProducts(userId, limit + 1, decoded);
+    const hasMore = rows.length > limit;
+    const items = rows.slice(0, limit);
+    const last = hasMore ? items[items.length - 1] : null;
+    return {
+      items: items.map((row) => this.present(row)),
+      nextCursor: last
+        ? Buffer.from(
+            JSON.stringify({
+              createdAt: last.created_at.toISOString(),
+              id: last.id,
+            }),
+          ).toString('base64url')
+        : null,
+    };
   }
 
   async updateProduct(

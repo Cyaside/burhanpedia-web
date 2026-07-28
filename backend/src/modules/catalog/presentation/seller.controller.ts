@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CurrentUser } from '../../../common/security/current-user.decorator';
 import { Public } from '../../../common/security/public.decorator';
@@ -19,6 +20,7 @@ import {
   CreateVariantDto,
   UpdateProductDto,
 } from '../application/seller.dto';
+import { SellerProductsQueryDto } from '../application/seller-products-query.dto';
 import { SellerService } from '../application/seller.service';
 
 @Controller('stores')
@@ -52,8 +54,15 @@ export class SellerCatalogController {
   }
 
   @Get('products')
-  products(@CurrentUser() principal: SessionPrincipal) {
-    return this.sellers.myProducts(principal.userId);
+  products(
+    @CurrentUser() principal: SessionPrincipal,
+    @Query() query: SellerProductsQueryDto,
+  ) {
+    return this.sellers.myProducts(
+      principal.userId,
+      query.limit ?? 24,
+      query.cursor,
+    );
   }
 
   @Post('products')

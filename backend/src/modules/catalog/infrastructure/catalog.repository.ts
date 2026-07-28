@@ -53,7 +53,7 @@ export class CatalogRepository {
   async list(input: ListInput): Promise<CatalogRow[]> {
     const conditions = [
       "p.status = 'ACTIVE'",
-      "s.status = 'ACTIVE'",
+      "(SELECT s.status FROM stores s WHERE s.id = p.store_id) = 'ACTIVE'",
       'p.min_price_amount IS NOT NULL',
     ];
     const values: unknown[] = [];
@@ -93,23 +93,22 @@ export class CatalogRepository {
     const limit = add(input.limit);
 
     const result = await this.database.query<CatalogRow>(
-      `WITH page AS (
+      `WITH page AS MATERIALIZED (
          SELECT p.id, p.slug, p.name, p.description, p.store_id,
                 p.category_id, p.min_price_amount, p.rating_average,
-                p.rating_count, p.created_at,
-                s.slug AS store_slug, s.name AS store_name,
-                c.name AS category_name
+                p.rating_count, p.created_at
          FROM products p
-         JOIN stores s ON s.id = p.store_id
-         LEFT JOIN categories c ON c.id = p.category_id
          WHERE ${conditions.join(' AND ')}
          ORDER BY ${expression} ${direction}, p.id ${direction}
          LIMIT ${limit}
        )
-       SELECT page.*,
+       SELECT page.*, s.slug AS store_slug, s.name AS store_name,
+              c.name AS category_name,
               coalesce(stock.available_quantity, 0)::text AS available_quantity,
               coalesce(pictures.images, '[]'::jsonb) AS images
        FROM page
+       JOIN stores s ON s.id = page.store_id
+       LEFT JOIN categories c ON c.id = page.category_id
        LEFT JOIN LATERAL (
          SELECT sum(greatest(i.on_hand - i.reserved, 0)) AS available_quantity
          FROM product_variants v

@@ -125,7 +125,11 @@ export class SellerRepository {
     });
   }
 
-  async sellerProducts(userId: string): Promise<SellerProductRow[]> {
+  async sellerProducts(
+    userId: string,
+    limit: number,
+    cursor?: { createdAt: string; id: string },
+  ): Promise<SellerProductRow[]> {
     const result = await this.database.query<SellerProductRow>(
       `SELECT p.id, p.store_id, p.slug, p.name, p.description,
               p.status, p.version, p.min_price_amount, p.created_at
@@ -133,9 +137,10 @@ export class SellerRepository {
        JOIN stores s ON s.id = p.store_id
        JOIN seller_profiles sp ON sp.id = s.seller_profile_id
        WHERE sp.user_id = $1
+         AND ($3::timestamptz IS NULL OR (p.created_at, p.id) < ($3, $4::uuid))
        ORDER BY p.created_at DESC, p.id DESC
-       LIMIT 100`,
-      [userId],
+       LIMIT $2`,
+      [userId, limit, cursor?.createdAt ?? null, cursor?.id ?? null],
     );
     return result.rows;
   }
