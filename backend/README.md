@@ -27,6 +27,10 @@ seller meminta signed PUT URL, mengirim file langsung ke storage dengan
 memeriksa ukuran, SHA-256, format dan dimensi gambar sebelum memasukkannya
 ke katalog.
 
+Uji adapter terhadap MinIO lokal dengan `npm run smoke:storage` setelah
+`S3_*` terisi. Script ini mengirim gambar uji, membacanya kembali, lalu
+menghapus objek uji tersebut.
+
 API menggunakan prefix `http://localhost:3000/api/v1`.
 
 Worker dijalankan pada terminal lain:
@@ -43,6 +47,12 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+Benchmark katalog memakai database test terpisah. `npm run bench:catalog`
+memuat 10.000 user, 1.000 toko, 100.000 produk, dan 300.000 varian,
+menjalankan `EXPLAIN (ANALYZE, BUFFERS)` untuk daftar terbaru, harga, serta
+pencarian, lalu melakukan rollback. Set `DATABASE_URL`/`MIGRATION_DATABASE_URL`
+ke database test sebelum menjalankannya; jangan gunakan database produksi.
 
 Database diakses langsung melalui `pg`. SQL hanya boleh berada pada repository, migration, seed, atau database infrastructure.
 

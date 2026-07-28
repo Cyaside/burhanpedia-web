@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import sharp from 'sharp';
@@ -97,7 +98,22 @@ export class ImageUploadService {
       throw this.invalidUpload('The upload has expired or is not pending.');
     }
 
-    const bytes = await this.storage.load(object.storage_key, MAX_IMAGE_BYTES);
+    let bytes: Buffer;
+    try {
+      bytes = await this.storage.load(object.storage_key, MAX_IMAGE_BYTES);
+    } catch (error) {
+      if (error instanceof UnprocessableEntityException) throw error;
+      const status =
+        typeof error === 'object' && error !== null && '$metadata' in error
+          ? (error.$metadata as { httpStatusCode?: number }).httpStatusCode
+          : undefined;
+      if (status === 404)
+        throw this.invalidUpload('The uploaded object was not found.');
+      throw new ServiceUnavailableException({
+        code: 'STORAGE_UNAVAILABLE',
+        detail: 'Image storage is temporarily unavailable.',
+      });
+    }
     if (bytes.length !== Number(object.byte_size)) {
       throw this.invalidUpload('The uploaded size does not match the request.');
     }

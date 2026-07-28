@@ -23,6 +23,8 @@
     "db:seed": "ts-node scripts/database/seed.ts",
     "db:reset": "ts-node scripts/database/reset.ts",
     "db:verify": "ts-node scripts/database/verify.ts",
+    "bench:catalog": "ts-node scripts/database/catalog-benchmark.ts",
+    "smoke:storage": "ts-node scripts/storage-smoke.ts",
     "test:database": "npm run db:migrate && npm run db:seed && npm run db:verify",
     "lint": "eslint \"{src,test,scripts}/**/*.ts\"",
     "lint:fix": "npm run lint -- --fix",

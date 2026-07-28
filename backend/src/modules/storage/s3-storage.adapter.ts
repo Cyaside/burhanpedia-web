@@ -5,7 +5,11 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  ServiceUnavailableException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StoragePort } from './storage.port';
 
@@ -55,7 +59,10 @@ export class S3StorageAdapter implements StoragePort {
       new HeadObjectCommand({ Bucket: this.bucket, Key: key }),
     );
     if (!head.ContentLength || head.ContentLength > maximumBytes) {
-      throw new Error('Stored image exceeds the permitted size');
+      throw new UnprocessableEntityException({
+        code: 'INVALID_IMAGE_UPLOAD',
+        detail: 'The uploaded image size is invalid.',
+      });
     }
     const object = await client.send(
       new GetObjectCommand({ Bucket: this.bucket, Key: key }),
@@ -63,7 +70,10 @@ export class S3StorageAdapter implements StoragePort {
     if (!object.Body) throw new Error('Stored image has no content');
     const bytes = Buffer.from(await object.Body.transformToByteArray());
     if (bytes.length > maximumBytes) {
-      throw new Error('Stored image exceeds the permitted size');
+      throw new UnprocessableEntityException({
+        code: 'INVALID_IMAGE_UPLOAD',
+        detail: 'The uploaded image size is invalid.',
+      });
     }
     return bytes;
   }
