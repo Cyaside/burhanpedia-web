@@ -6,14 +6,15 @@ const nextConfig: NextConfig = {
     return [{ source: "/api/v1/:path*", destination: `${backendOrigin}/api/v1/:path*` }]
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "bpnxarzyaypcswtqeqpx.supabase.co",
-        port: "",
-        pathname: "/storage/v1/object/public/product-images/**",
-      },
-    ],
+    remotePatterns: (() => {
+      const base = new URL(process.env.IMAGE_PUBLIC_BASE_URL ?? "http://127.0.0.1:9000/burhanpedia-images")
+      return [{
+        protocol: base.protocol.slice(0, -1) as "http" | "https",
+        hostname: base.hostname,
+        port: base.port,
+        pathname: `${base.pathname.replace(/\/$/, "")}/**`,
+      }]
+    })(),
   },
 };
 

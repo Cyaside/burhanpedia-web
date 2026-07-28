@@ -9,19 +9,6 @@ import {
   SellerOrderItem,
 } from "@/types/shop"
 
-export function fetchProducts(params: Record<string, string | number | undefined> = {}) {
-  const query = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") query.append(key, String(value))
-  })
-  const qs = query.toString()
-  return api.get<Product[]>(`/products${qs ? `?${qs}` : ""}`)
-}
-
-export function fetchProduct(slug: string) {
-  return api.get<Product>(`/products/${slug}`)
-}
-
 export function fetchCart() {
   return api.get<CartItem[]>("/cart")
 }
@@ -76,22 +63,4 @@ export function fetchSellerTransactions() {
 
 export function fetchSellerOrders() {
   return api.get<SellerOrderItem[]>("/seller/orders")
-}
-
-export function updateProduct(
-  productId: number,
-  payload: {
-    name?: string
-    description?: string
-    price?: number
-    stock?: number
-    categoryId?: number | null
-    imageUrl?: string
-  }
-) {
-  return api.patch<Product>(`/products/${productId}`, payload)
-}
-
-export function deleteProduct(productId: number) {
-  return api.del<{ success: boolean }>(`/products/${productId}`)
 }
