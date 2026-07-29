@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { validateEnvironment } from '../config/environment';
 import { DatabaseModule } from '../database/database.module';
 import { WorkerService } from './worker.service';
+import { WorkerProcessor } from './worker.processor';
+import { OperationsModule } from '../modules/operations/operations.module';
 
 @Module({
   imports: [
@@ -12,7 +14,9 @@ import { WorkerService } from './worker.service';
       validate: validateEnvironment,
     }),
     DatabaseModule,
+    OperationsModule,
   ],
-  providers: [WorkerService],
+  providers: [WorkerProcessor, WorkerService],
+  exports: [WorkerProcessor],
 })
 export class WorkerModule {}
