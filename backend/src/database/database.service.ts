@@ -70,6 +70,10 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
     return this.pool.query<Row>(query, values);
   }
 
+  connect(): Promise<PoolClient> {
+    return this.pool.connect();
+  }
+
   async withTransaction<T>(
     operation: (client: PoolClient) => Promise<T>,
     options: TransactionOptions = {},

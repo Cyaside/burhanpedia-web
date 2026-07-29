@@ -8,10 +8,27 @@ import {
 import { WalletRepository } from './infrastructure/wallet.repository';
 import { WalletService } from './application/wallet.service';
 import { WalletController } from './presentation/wallet.controller';
+import { PricingEngine } from './domain/pricing.engine';
+import { CheckoutRepository } from './infrastructure/checkout.repository';
+import { CheckoutService } from './application/checkout.service';
+import { CheckoutController } from './presentation/checkout.controller';
 
 @Module({
-  controllers: [CartController, AddressController, WalletController],
-  providers: [CartRepository, CartService, WalletRepository, WalletService],
+  controllers: [
+    CartController,
+    AddressController,
+    WalletController,
+    CheckoutController,
+  ],
+  providers: [
+    CartRepository,
+    CartService,
+    WalletRepository,
+    WalletService,
+    PricingEngine,
+    CheckoutRepository,
+    CheckoutService,
+  ],
   exports: [CartRepository, WalletRepository],
 })
 export class CommerceModule {}
