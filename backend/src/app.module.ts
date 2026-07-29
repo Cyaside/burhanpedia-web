@@ -13,6 +13,7 @@ import { IdentityModule } from './modules/identity/identity.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
+import { OperationsModule } from './modules/operations/operations.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CommerceModule } from './modules/commerce/commerce.module';
     CatalogModule,
     StorageModule,
     CommerceModule,
+    OperationsModule,
   ],
   controllers: [AppController],
   providers: [
