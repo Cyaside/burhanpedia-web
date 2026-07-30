@@ -1,99 +1,102 @@
-"use client"
+"use client";
 
-import { useQuery } from "@tanstack/react-query"
-import { fetchOrders, fetchWishlist } from "@/lib/api/shop"
-import { Badge } from "@/components/ui/badge"
-import { MobileDock } from "@/components/navigation/MobileDock"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { Heart, Package, UserRound } from "lucide-react"
-import SiteHeader from "@/components/navigation/SiteHeader"
-import { useAuthGuard } from "@/lib/auth"
+import { useQuery } from "@tanstack/react-query";
+import { Package, Wallet } from "lucide-react";
+import SiteHeader from "@/components/navigation/SiteHeader";
+import { MobileDock } from "@/components/navigation/MobileDock";
+import { Badge } from "@/components/ui/badge";
+import { commerceApi, formatMoney } from "@/lib/api/commerce";
+import { useAuthGuard } from "@/lib/auth";
 
 export default function ProfilePage() {
-  const { isAuthenticated, checking } = useAuthGuard()
-  const { data: orders = [] } = useQuery({
+  const { isAuthenticated, checking, user } = useAuthGuard();
+  const orders = useQuery({
     queryKey: ["orders"],
-    queryFn: fetchOrders,
+    queryFn: commerceApi.orders,
     enabled: isAuthenticated,
-  })
-  const { data: wishlist = [] } = useQuery({
-    queryKey: ["wishlist"],
-    queryFn: fetchWishlist,
+  });
+  const wallet = useQuery({
+    queryKey: ["wallet"],
+    queryFn: commerceApi.wallet,
     enabled: isAuthenticated,
-  })
-
-  if (checking) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Checking session...</p>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return null
-  }
+  });
+  if (checking || !isAuthenticated) return null;
 
   return (
-    <div className="bg-background">
+    <div className="min-h-dvh bg-slate-50">
       <SiteHeader />
-      <main className="mx-auto min-h-dvh w-full max-w-5xl px-4 pb-24 pt-8 sm:px-6">
-        <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-            <UserRound className="size-5" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Profile</p>
-            <h1 className="text-2xl font-semibold text-foreground">Your account</h1>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <section className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-6">
+        <p className="text-sm text-slate-600">Akun pembeli</p>
+        <h1 className="text-2xl font-semibold">{user?.name}</h1>
+        <p className="text-sm text-slate-600">{user?.email}</p>
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
+          <section className="border bg-white p-5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Package className="size-4 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">Orders</h2>
-              </div>
-              <Badge variant="default">{orders.length}</Badge>
+              <h2 className="flex items-center gap-2 font-semibold">
+                <Package className="size-5" /> Riwayat pesanan
+              </h2>
+              <Badge variant="outline">{orders.data?.length ?? 0}</Badge>
             </div>
-            <div className="mt-4 space-y-3">
-              {orders.length === 0 && <p className="text-sm text-muted-foreground">No orders yet.</p>}
-              {orders.map((order) => (
-                <div key={order.id} className="rounded-xl border border-border/70 p-3 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-foreground">Order #{order.id}</span>
+            <div className="mt-4 divide-y">
+              {orders.isPending && (
+                <p className="py-4 text-sm text-slate-600">Memuat pesanan…</p>
+              )}
+              {orders.data?.map((order) => (
+                <article key={order.id} className="py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{order.number}</p>
+                      <p className="text-sm text-slate-600">
+                        {order.storeName} · {order.deliveryMethod}
+                      </p>
+                    </div>
                     <Badge variant="outline">{order.status}</Badge>
                   </div>
-                  <p className="text-muted-foreground">Total {order.total.toLocaleString("id-ID")}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {new Date(order.createdAt).toLocaleDateString("id-ID")}
-                  </p>
-                </div>
+                  <div className="mt-2 flex justify-between text-sm">
+                    <span>
+                      {new Date(order.placedAt).toLocaleDateString("id-ID")}
+                    </span>
+                    <strong>{formatMoney(order.totalAmount)}</strong>
+                  </div>
+                </article>
               ))}
+              {!orders.isPending && orders.data?.length === 0 && (
+                <p className="py-4 text-sm text-slate-600">
+                  Belum ada pesanan.
+                </p>
+              )}
             </div>
           </section>
-
-          <section className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Heart className="size-4 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">Wishlist</h2>
-              </div>
-              <Badge variant="default">{wishlist.length}</Badge>
-            </div>
-            <div className="mt-4 grid gap-3">
-              {wishlist.length === 0 && <p className="text-sm text-muted-foreground">No wishlist items.</p>}
-              {wishlist.map((item) => (
-                <div key={item.id} className="flex items-center justify-between rounded-xl border border-border/70 p-3 text-sm">
+          <section className="h-fit border bg-white p-5">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <Wallet className="size-5" /> Wallet
+            </h2>
+            <p className="mt-4 text-sm text-slate-600">Saldo tersedia</p>
+            <p className="text-2xl font-semibold">
+              {formatMoney(wallet.data?.balanceAmount ?? "0")}
+            </p>
+            <div className="mt-5 divide-y border-t">
+              {wallet.data?.items.slice(0, 8).map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex justify-between py-3 text-sm"
+                >
                   <div>
-                    <p className="font-semibold text-foreground">{item.name}</p>
-                    <p className="text-muted-foreground">{item.category?.name}</p>
+                    <p>{entry.description ?? entry.type}</p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(entry.createdAt).toLocaleDateString("id-ID")}
+                    </p>
                   </div>
-                  <Button asChild size="sm" variant="outline" className="rounded-full">
-                    <Link href={`/products/${item.slug}`}>View</Link>
-                  </Button>
+                  <strong
+                    className={
+                      Number(entry.amountDelta) >= 0
+                        ? "text-green-700"
+                        : "text-slate-900"
+                    }
+                  >
+                    {Number(entry.amountDelta) >= 0 ? "+" : ""}
+                    {formatMoney(entry.amountDelta)}
+                  </strong>
                 </div>
               ))}
             </div>
@@ -102,5 +105,5 @@ export default function ProfilePage() {
       </main>
       <MobileDock />
     </div>
-  )
+  );
 }
