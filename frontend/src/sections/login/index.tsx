@@ -21,4 +21,3 @@ export function RegisterSection() {
 
 export default LoginSection
 
-

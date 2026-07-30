@@ -6,4 +6,3 @@ export default function HomePage() {
   return <LandingSection />
 }
 
-

@@ -24,4 +24,3 @@
    const client = React.useMemo(getClient, [])
    return <QueryClientProvider client={client}>{children}</QueryClientProvider>
  }
-
