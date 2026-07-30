@@ -445,11 +445,17 @@ export class CheckoutRepository {
       NEXT_DAY: ['12 hours', '36 hours'],
       REGULAR: ['24 hours', '96 hours'],
     };
-    await client.query(
+    const delivery = await client.query<{ id: string }>(
       `INSERT INTO deliveries
        (order_id, method, fee_amount, pickup_deadline_at, delivery_deadline_at)
-       VALUES ($1,$2,$3,application_now() + $4::interval,application_now() + $5::interval)`,
+       VALUES ($1,$2,$3,application_now() + $4::interval,application_now() + $5::interval)
+       RETURNING id`,
       [orderId, method, total.shipping.toString(), ...intervals[method]],
+    );
+    await client.query(
+      `INSERT INTO delivery_status_history (delivery_id, to_status, note)
+       VALUES ($1,'WAITING_FOR_DRIVER','Checkout completed')`,
+      [delivery.rows[0].id],
     );
     return { id: orderId };
   }

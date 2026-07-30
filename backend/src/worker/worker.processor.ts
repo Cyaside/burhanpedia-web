@@ -14,8 +14,6 @@ interface ClaimedJob {
 
 interface ClaimedOutbox {
   id: string;
-  event_type: string;
-  payload: Record<string, unknown>;
   attempts: number;
 }
 
@@ -292,7 +290,7 @@ export class WorkerProcessor {
   private async publishOne(): Promise<boolean> {
     const event = await this.database.withTransaction(async (client) => {
       const result = await client.query<ClaimedOutbox>(
-        `SELECT id, event_type, payload, attempts FROM outbox_events
+        `SELECT id, attempts FROM outbox_events
          WHERE ((status IN ('PENDING','FAILED') AND available_at <= application_now())
                 OR (status = 'PROCESSING' AND locked_at < now() - interval '5 minutes'))
            AND attempts < 8
@@ -308,21 +306,30 @@ export class WorkerProcessor {
     });
     if (!event) return false;
     try {
-      await this.dispatch(event);
-      await this.database.query(
-        `UPDATE outbox_events SET status = 'PUBLISHED', published_at = now(),
-                locked_at = NULL, locked_by = NULL, last_error = NULL WHERE id = $1`,
-        [event.id],
-      );
+      await this.publish(event.id);
     } catch (error) {
       await this.failOutbox(event, error);
     }
     return true;
   }
 
-  private dispatch(event: ClaimedOutbox): Promise<void> {
-    this.logger.debug(`Published ${event.event_type} (${event.id})`);
-    return Promise.resolve();
+  private publish(eventId: string): Promise<void> {
+    return this.database.withTransaction(async (client) => {
+      await client.query(
+        `INSERT INTO published_events
+         (outbox_event_id, aggregate_type, aggregate_id, event_type, payload)
+         SELECT id, aggregate_type, aggregate_id, event_type, payload
+         FROM outbox_events WHERE id = $1
+         ON CONFLICT (outbox_event_id) DO NOTHING`,
+        [eventId],
+      );
+      await client.query(
+        `UPDATE outbox_events SET status = 'PUBLISHED', published_at = now(),
+                locked_at = NULL, locked_by = NULL, last_error = NULL
+         WHERE id = $1`,
+        [eventId],
+      );
+    });
   }
 
   private failOutbox(event: ClaimedOutbox, error: unknown) {

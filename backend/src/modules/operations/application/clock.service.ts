@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../../../database/database.service';
 
 @Injectable()
 export class ClockService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    private readonly database: DatabaseService,
+    private readonly config: ConfigService,
+  ) {}
 
   async current() {
     const result = await this.database.query<{
@@ -17,12 +21,20 @@ export class ClockService {
   }
 
   advance(userId: string, days: number) {
+    if (this.config.get<string>('NODE_ENV') === 'production') {
+      throw new ForbiddenException({
+        code: 'TIME_SIMULATION_DISABLED',
+        detail: 'Time simulation is unavailable in production.',
+      });
+    }
     return this.database.withTransaction(async (client) => {
       const clock = await client.query<{ now: Date; offset_seconds: string }>(
         `UPDATE system_clock
          SET frozen_at = NULL, offset_seconds = offset_seconds + ($1 * 86400),
              updated_at = now()
-         WHERE singleton RETURNING application_now() AS now, offset_seconds`,
+         WHERE singleton
+         RETURNING now() + make_interval(secs => offset_seconds) AS now,
+                   offset_seconds`,
         [days],
       );
       await client.query(

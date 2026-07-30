@@ -39,6 +39,13 @@ Worker dijalankan pada terminal lain:
 npm run worker:dev
 ```
 
+Worker memproses deadline pengiriman, refund idempotent, retry, dan dead-letter.
+Event bisnis dipublikasikan secara atomik ke tabel `published_events` sebagai
+feed internal yang durable; integrasi eksternal belum terpasang. Consumer
+berikutnya harus membaca feed tersebut dengan cursor dan memprosesnya secara
+idempotent. Simulasi hari berikutnya hanya tersedia di non-production;
+connection pool production selalu menggunakan waktu database nyata.
+
 ## Quality checks
 
 ```bash

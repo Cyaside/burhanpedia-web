@@ -314,10 +314,21 @@ export class OperationsRepository {
                 'quantity', i.quantity, 'unitPriceAmount', i.unit_price_amount::text,
                 'lineTotalAmount', i.line_total_amount::text
               )) AS items,
+              (SELECT jsonb_build_object(
+                'recipientName', a.recipient_name, 'phone', a.phone,
+                'line1', a.line1, 'line2', a.line2, 'city', a.city,
+                'province', a.province, 'postalCode', a.postal_code)
+               FROM order_addresses a WHERE a.order_id = o.id) AS address,
               (SELECT jsonb_agg(jsonb_build_object(
                 'from', h.from_status, 'to', h.to_status, 'reason', h.reason,
                 'createdAt', h.created_at) ORDER BY h.event_sequence)
-               FROM order_status_history h WHERE h.order_id = o.id) AS history
+               FROM order_status_history h WHERE h.order_id = o.id) AS history,
+              (SELECT jsonb_agg(jsonb_build_object(
+                'from', h.from_status, 'to', h.to_status, 'note', h.note,
+                'occurredAt', h.occurred_at) ORDER BY h.event_sequence)
+               FROM deliveries d JOIN delivery_status_history h
+                 ON h.delivery_id = d.id WHERE d.order_id = o.id)
+               AS "deliveryHistory"
        FROM orders o JOIN stores s ON s.id = o.store_id
        JOIN order_items i ON i.order_id = o.id
        JOIN buyer_profiles bp ON bp.id = o.buyer_profile_id

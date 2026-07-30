@@ -115,6 +115,10 @@ describe('seller delivery and overdue worker', () => {
       'DELIVERED',
       'COMPLETED',
     ]);
+    expect(details.body.address.city).toBe('Bandung');
+    expect(
+      details.body.deliveryHistory.map((entry: { to: string }) => entry.to),
+    ).toEqual(['WAITING_FOR_DRIVER', 'CLAIMED', 'IN_TRANSIT', 'DELIVERED']);
     const earningCount = await database.query<{ count: string }>(
       'SELECT count(*) FROM driver_earnings WHERE delivery_id = $1',
       [deliveryId],
@@ -127,12 +131,20 @@ describe('seller delivery and overdue worker', () => {
     const order = await checkout('overdue-flow', 'REGULAR');
     await process(order.id);
     const adminCookie = await login(`admin-${suffix}@burhanpedia.test`);
-    await request(app.getHttpServer())
+    const before = await request(app.getHttpServer())
+      .get('/api/v1/admin/clock')
+      .set('Cookie', adminCookie)
+      .expect(200);
+    const advanced = await request(app.getHttpServer())
       .post('/api/v1/admin/clock/advance')
       .set('origin', origin)
       .set('Cookie', adminCookie)
       .send({ days: 5 })
       .expect(201);
+    expect(
+      new Date(advanced.body.now as string).getTime() -
+        new Date(before.body.now as string).getTime(),
+    ).toBeGreaterThan(5 * 86_400_000 - 5_000);
 
     await worker.runOnce();
     await worker.runOnce();
@@ -191,6 +203,44 @@ describe('seller delivery and overdue worker', () => {
       'JOB',
       'OUTBOX',
     ]);
+  });
+
+  it('publishes outbox events durably and without duplicate feed entries', async () => {
+    const event = await database.query<{ id: string }>(
+      `INSERT INTO outbox_events
+       (aggregate_type, aggregate_id, event_type, payload)
+       VALUES ('TEST',gen_random_uuid(),'TEST_PUBLICATION',$1::jsonb)
+       RETURNING id`,
+      [JSON.stringify({ source: suffix })],
+    );
+    await worker.runOnce();
+    await database.query(
+      `UPDATE outbox_events SET status = 'PENDING', attempts = 0,
+              available_at = application_now() WHERE id = $1`,
+      [event.rows[0].id],
+    );
+    await worker.runOnce();
+    const publication = await database.query<{ count: string }>(
+      'SELECT count(*) FROM published_events WHERE outbox_event_id = $1',
+      [event.rows[0].id],
+    );
+    expect(publication.rows[0].count).toBe('1');
+  });
+
+  it('uses the real clock when the production session mode is set', async () => {
+    const client = await database.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query("SELECT set_config('app.clock_mode', 'real', true)");
+      const result = await client.query<{ offset_ms: string }>(
+        `SELECT abs(extract(epoch FROM application_now() - now()) * 1000)::text
+                AS offset_ms`,
+      );
+      expect(Number(result.rows[0].offset_ms)).toBeLessThan(1000);
+    } finally {
+      await client.query('ROLLBACK');
+      client.release();
+    }
   });
 
   async function createCatalog() {

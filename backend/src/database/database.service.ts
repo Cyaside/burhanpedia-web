@@ -47,6 +47,10 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
       ),
       statement_timeout: this.statementTimeoutMs,
       application_name: 'burhanpedia-api',
+      options:
+        config.get<string>('NODE_ENV') === 'production'
+          ? '-c app.clock_mode=real'
+          : undefined,
       ssl,
     });
     this.pool.on('error', (error) =>
