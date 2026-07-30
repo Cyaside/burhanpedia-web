@@ -38,6 +38,9 @@ export class OperationsService {
   }
 
   async jobs(limit: number, encodedCursor?: string) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
+      throw new BadRequestException('Limit must be between 1 and 50.');
+    }
     const cursor = encodedCursor ? this.decodeCursor(encodedCursor) : undefined;
     const rows = await this.operations.availableJobs(
       Math.min(limit, 50),
@@ -75,6 +78,12 @@ export class OperationsService {
         throw new ConflictException({
           code: result.status,
           detail: 'The delivery job has already been claimed.',
+        });
+      }
+      if (result.status === 'IDEMPOTENCY_CONFLICT') {
+        throw new ConflictException({
+          code: result.status,
+          detail: 'The idempotency key belongs to another delivery claim.',
         });
       }
       return result;
@@ -120,7 +129,13 @@ export class OperationsService {
         id?: string;
         createdAt?: string;
       };
-      if (!parsed.id || !parsed.createdAt) throw new Error('Invalid cursor');
+      if (
+        !parsed.id ||
+        !/^[0-9a-f-]{36}$/i.test(parsed.id) ||
+        !parsed.createdAt ||
+        Number.isNaN(Date.parse(parsed.createdAt))
+      )
+        throw new Error('Invalid cursor');
       return { id: parsed.id, createdAt: parsed.createdAt };
     } catch {
       throw new BadRequestException('The cursor is invalid.');

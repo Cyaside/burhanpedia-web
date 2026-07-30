@@ -166,6 +166,33 @@ describe('seller delivery and overdue worker', () => {
     ]);
   });
 
+  it('recovers exhausted worker locks into the dead-letter queue', async () => {
+    const outbox = await database.query<{ id: string }>(
+      `INSERT INTO outbox_events
+       (aggregate_type, aggregate_id, event_type, payload, status, attempts, locked_at)
+       VALUES ('TEST',gen_random_uuid(),'TEST_EVENT','{}','PROCESSING',8,
+               now() - interval '10 minutes') RETURNING id`,
+    );
+    const job = await database.query<{ id: string }>(
+      `INSERT INTO background_jobs
+       (job_type, deduplication_key, payload, status, attempts, max_attempts, locked_at)
+       VALUES ('TEST_DEAD',$1,'{}','RUNNING',3,3,now() - interval '10 minutes')
+       RETURNING id`,
+      [`dead-letter-${suffix}`],
+    );
+
+    await worker.runOnce();
+    const dead = await database.query<{ source_kind: string }>(
+      `SELECT source_kind FROM dead_letter_events
+       WHERE source_id = ANY($1::uuid[]) ORDER BY source_kind`,
+      [[outbox.rows[0].id, job.rows[0].id]],
+    );
+    expect(dead.rows.map(({ source_kind }) => source_kind)).toEqual([
+      'JOB',
+      'OUTBOX',
+    ]);
+  });
+
   async function createCatalog() {
     const cookie = await createUser('seller', AppRole.SELLER);
     const store = await request(app.getHttpServer())

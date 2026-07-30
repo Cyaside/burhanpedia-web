@@ -121,7 +121,11 @@ export class OperationsRepository {
          WHERE claim_idempotency_key = $1 AND claimed_by = $2`,
         [idempotencyKey, driver.rows[0].id],
       );
-      if (prior.rows[0]) return { status: 'OK' as const, ...prior.rows[0] };
+      if (prior.rows[0]) {
+        return prior.rows[0].id === jobId
+          ? { status: 'OK' as const, ...prior.rows[0] }
+          : { status: 'IDEMPOTENCY_CONFLICT' as const };
+      }
       const job = await client.query<{
         id: string;
         delivery_id: string;
@@ -257,7 +261,8 @@ export class OperationsRepository {
 
   async driverEarnings(userId: string) {
     const wallet = await this.database.query(
-      `SELECT w.id, w.balance_amount AS "balanceAmount", w.currency,
+      `SELECT w.id, coalesce(w.balance_amount,0)::text AS "balanceAmount",
+              coalesce(w.currency,'IDR') AS currency,
               coalesce(jsonb_agg(jsonb_build_object(
                 'id', e.id, 'deliveryId', e.delivery_id,
                 'amount', e.amount::text, 'earnedAt', e.earned_at

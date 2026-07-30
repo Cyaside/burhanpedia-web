@@ -12,6 +12,13 @@ interface ClaimedJob {
   max_attempts: number;
 }
 
+interface ClaimedOutbox {
+  id: string;
+  event_type: string;
+  payload: Record<string, unknown>;
+  attempts: number;
+}
+
 @Injectable()
 export class WorkerProcessor {
   private readonly logger = new Logger(WorkerProcessor.name);
@@ -23,6 +30,7 @@ export class WorkerProcessor {
   ) {}
 
   async runOnce(): Promise<{ jobs: number; outbox: number }> {
+    await this.recoverExhaustedLocks();
     let jobs = 0;
     for (let job = await this.claimJob(); job; job = await this.claimJob()) {
       jobs += 1;
@@ -44,7 +52,9 @@ export class WorkerProcessor {
       const result = await client.query<ClaimedJob>(
         `SELECT id, job_type, payload, attempts, max_attempts
          FROM background_jobs
-         WHERE status IN ('PENDING','FAILED') AND run_at <= application_now()
+         WHERE ((status IN ('PENDING','FAILED') AND run_at <= application_now())
+                OR (status = 'RUNNING' AND locked_at < now() - interval '5 minutes'))
+           AND attempts < max_attempts
          ORDER BY run_at, created_at, id
          FOR UPDATE SKIP LOCKED LIMIT 1`,
       );
@@ -279,21 +289,106 @@ export class WorkerProcessor {
     });
   }
 
-  private publishOne(): Promise<boolean> {
-    return this.database.withTransaction(async (client) => {
-      const event = await client.query<{ id: string }>(
-        `SELECT id FROM outbox_events
-         WHERE status IN ('PENDING','FAILED') AND available_at <= application_now()
+  private async publishOne(): Promise<boolean> {
+    const event = await this.database.withTransaction(async (client) => {
+      const result = await client.query<ClaimedOutbox>(
+        `SELECT id, event_type, payload, attempts FROM outbox_events
+         WHERE ((status IN ('PENDING','FAILED') AND available_at <= application_now())
+                OR (status = 'PROCESSING' AND locked_at < now() - interval '5 minutes'))
+           AND attempts < 8
          ORDER BY available_at, created_at, id FOR UPDATE SKIP LOCKED LIMIT 1`,
       );
-      if (!event.rows[0]) return false;
+      if (!result.rows[0]) return null;
       await client.query(
-        `UPDATE outbox_events SET status = 'PUBLISHED', attempts = attempts + 1,
-                locked_at = now(), locked_by = $2, published_at = now()
-         WHERE id = $1`,
-        [event.rows[0].id, this.workerId],
+        `UPDATE outbox_events SET status = 'PROCESSING', attempts = attempts + 1,
+                locked_at = now(), locked_by = $2 WHERE id = $1`,
+        [result.rows[0].id, this.workerId],
       );
-      return true;
+      return { ...result.rows[0], attempts: result.rows[0].attempts + 1 };
+    });
+    if (!event) return false;
+    try {
+      await this.dispatch(event);
+      await this.database.query(
+        `UPDATE outbox_events SET status = 'PUBLISHED', published_at = now(),
+                locked_at = NULL, locked_by = NULL, last_error = NULL WHERE id = $1`,
+        [event.id],
+      );
+    } catch (error) {
+      await this.failOutbox(event, error);
+    }
+    return true;
+  }
+
+  private dispatch(event: ClaimedOutbox): Promise<void> {
+    this.logger.debug(`Published ${event.event_type} (${event.id})`);
+    return Promise.resolve();
+  }
+
+  private failOutbox(event: ClaimedOutbox, error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return this.database.withTransaction(async (client) => {
+      const dead = event.attempts >= 8;
+      await client.query(
+        `UPDATE outbox_events SET status = $2, last_error = $3,
+                available_at = application_now() + make_interval(secs => least(300, power(2,$4)::integer)),
+                locked_at = NULL, locked_by = NULL WHERE id = $1`,
+        [
+          event.id,
+          dead ? 'DEAD' : 'FAILED',
+          message.slice(0, 1000),
+          event.attempts,
+        ],
+      );
+      if (dead) {
+        await client.query(
+          `INSERT INTO dead_letter_events
+           (source_kind, source_id, event_type, payload, attempts, final_error)
+           SELECT 'OUTBOX', id, event_type, payload, attempts, $2
+           FROM outbox_events WHERE id = $1
+           ON CONFLICT (source_kind, source_id) DO NOTHING`,
+          [event.id, message.slice(0, 1000)],
+        );
+      }
+    });
+  }
+
+  private recoverExhaustedLocks(): Promise<void> {
+    return this.database.withTransaction(async (client) => {
+      const jobs = await client.query<{ id: string }>(
+        `UPDATE background_jobs SET status = 'DEAD',
+                last_error = coalesce(last_error,'Worker stopped during final attempt'),
+                locked_at = NULL, locked_by = NULL
+         WHERE status = 'RUNNING' AND attempts >= max_attempts
+           AND locked_at < now() - interval '5 minutes' RETURNING id`,
+      );
+      for (const job of jobs.rows) {
+        await client.query(
+          `INSERT INTO dead_letter_events
+           (source_kind, source_id, event_type, payload, attempts, final_error)
+           SELECT 'JOB', id, job_type, payload, attempts, last_error
+           FROM background_jobs WHERE id = $1
+           ON CONFLICT (source_kind, source_id) DO NOTHING`,
+          [job.id],
+        );
+      }
+      const events = await client.query<{ id: string }>(
+        `UPDATE outbox_events SET status = 'DEAD',
+                last_error = coalesce(last_error,'Worker stopped during final attempt'),
+                locked_at = NULL, locked_by = NULL
+         WHERE status = 'PROCESSING' AND attempts >= 8
+           AND locked_at < now() - interval '5 minutes' RETURNING id`,
+      );
+      for (const event of events.rows) {
+        await client.query(
+          `INSERT INTO dead_letter_events
+           (source_kind, source_id, event_type, payload, attempts, final_error)
+           SELECT 'OUTBOX', id, event_type, payload, attempts, last_error
+           FROM outbox_events WHERE id = $1
+           ON CONFLICT (source_kind, source_id) DO NOTHING`,
+          [event.id],
+        );
+      }
     });
   }
 }
