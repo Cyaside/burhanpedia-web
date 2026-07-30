@@ -1,137 +1,169 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useCartStore } from "@/store/cart"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Minus, Plus, Trash } from "lucide-react"
-import Link from "next/link"
-import { MobileDock } from "@/components/navigation/MobileDock"
-import SiteHeader from "@/components/navigation/SiteHeader"
-import { useAuthGuard } from "@/lib/auth"
+import Image from "next/image";
+import Link from "next/link";
+import { Minus, Plus, Trash } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import SiteHeader from "@/components/navigation/SiteHeader";
+import { MobileDock } from "@/components/navigation/MobileDock";
+import { Button } from "@/components/ui/button";
+import { commerceApi, formatMoney } from "@/lib/api/commerce";
+import { useAuthGuard } from "@/lib/auth";
 
 export default function CartPage() {
-  const { items, load, update, remove, loading } = useCartStore()
-  const { isAuthenticated, checking } = useAuthGuard()
+  const { isAuthenticated, checking } = useAuthGuard();
+  const queryClient = useQueryClient();
+  const cart = useQuery({
+    queryKey: ["cart"],
+    queryFn: commerceApi.cart,
+    enabled: isAuthenticated,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, quantity }: { id: string; quantity: number }) =>
+      commerceApi.updateItem(id, quantity),
+    onSuccess: (data) => queryClient.setQueryData(["cart"], data),
+  });
+  const remove = useMutation({
+    mutationFn: commerceApi.removeItem,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
+  });
 
-  useEffect(() => {
-    if (isAuthenticated) void load()
-  }, [load, isAuthenticated])
-
-  if (checking) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Checking session...</p>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return null
-  }
-
-  const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
-  const shipping = subtotal > 0 ? 20000 : 0
-  const total = subtotal + shipping
+  if (checking || !isAuthenticated) return null;
+  const groups = cart.data?.groups ?? [];
+  const count = groups.reduce(
+    (total, group) =>
+      total + group.items.reduce((sum, item) => sum + item.quantity, 0),
+    0,
+  );
 
   return (
-    <div className="bg-background">
+    <div className="min-h-dvh bg-slate-50">
       <SiteHeader />
-      <main className="mx-auto min-h-dvh w-full max-w-5xl px-4 pb-24 pt-8 sm:px-6">
-        <div className="flex items-center justify-between">
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-6">
+        <div className="flex items-end justify-between border-b border-slate-200 pb-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Cart</p>
-            <h1 className="text-2xl font-semibold text-foreground">Your bag</h1>
+            <p className="text-sm text-slate-600">Keranjang</p>
+            <h1 className="text-2xl font-semibold">Belanjaan Anda</h1>
           </div>
-          <Badge variant="default">{items.length} items</Badge>
+          <p className="text-sm text-slate-600">{count} barang</p>
         </div>
-
-        {loading && <p className="mt-6 text-sm text-muted-foreground">Loading cart...</p>}
-
-        {!loading && items.length === 0 && (
-          <div className="mt-8 rounded-2xl border border-border/70 bg-card p-6 text-sm text-muted-foreground">
-            Your cart is empty. <Link href="/products" className="text-primary underline">Browse products</Link>
-          </div>
+        {cart.isPending && (
+          <p className="py-8 text-sm text-slate-600">Memuat keranjang…</p>
         )}
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-4">
-            {items.map((item) => (
-              <div key={item.id} className="flex gap-4 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
-                <Image
-                  src={item.product.images?.[0]?.url || "/images/fallback-product.png"}
-                  alt={item.product.name}
-                  width={120}
-                  height={120}
-                  className="h-24 w-24 rounded-xl object-cover"
-                />
-                <div className="flex flex-1 flex-col gap-2">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{item.product.name}</p>
-                      {item.variant && (
-                        <p className="text-xs text-muted-foreground">
-                          {item.variant.color} {item.variant.size}
-                        </p>
-                      )}
-                    </div>
-                    <button className="text-muted-foreground hover:text-destructive" onClick={() => remove(item.id)}>
-                      <Trash className="size-4" />
-                    </button>
-                  </div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.unitPrice)}
-                  </p>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-border/70 px-2 py-1">
-                    <button
-                      onClick={() => update(item.id, Math.max(1, item.quantity - 1))}
-                      className="rounded-full p-1 hover:bg-muted"
-                    >
-                      <Minus className="size-4" />
-                    </button>
-                    <span className="px-2 text-sm font-medium">{item.quantity}</span>
-                    <button
-                      onClick={() => update(item.id, item.quantity + 1)}
-                      className="rounded-full p-1 hover:bg-muted"
-                    >
-                      <Plus className="size-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">Summary</h2>
-            <div className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-semibold">
-                  {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(subtotal)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Shipping</span>
-                <span className="font-semibold">
-                  {shipping === 0 ? "Free" : shipping.toLocaleString("id-ID")}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-t border-border/60 pt-3 text-base font-semibold">
-                <span>Total</span>
-                <span>
-                  {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(total)}
-                </span>
-              </div>
-            </div>
-            <Button asChild className="mt-4 w-full rounded-full">
-              <Link href="/checkout">Go to checkout</Link>
+        {cart.isError && (
+          <p role="alert" className="py-8 text-sm text-red-700">
+            {cart.error.message}
+          </p>
+        )}
+        {!cart.isPending && groups.length === 0 && (
+          <div className="mt-6 border bg-white p-8 text-center">
+            <p className="text-slate-600">Keranjang masih kosong.</p>
+            <Button asChild className="mt-4">
+              <Link href="/products">Cari produk</Link>
             </Button>
           </div>
+        )}
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-4">
+            {groups.map((group) => (
+              <section key={group.id} className="border bg-white">
+                <div className="border-b px-4 py-3 font-medium">
+                  {group.name}
+                </div>
+                {group.items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex gap-4 border-b p-4 last:border-b-0"
+                  >
+                    <div className="relative size-24 shrink-0 overflow-hidden bg-slate-100">
+                      {item.product.imageUrl && (
+                        <Image
+                          src={item.product.imageUrl}
+                          alt={item.product.name}
+                          fill
+                          sizes="96px"
+                          className="object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{item.product.name}</p>
+                      <p className="text-sm text-slate-600">
+                        {item.variantName}
+                      </p>
+                      <p className="mt-1 font-semibold">
+                        {formatMoney(item.unitPriceAmount)}
+                      </p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          disabled={update.isPending || item.quantity === 1}
+                          onClick={() =>
+                            update.mutate({
+                              id: item.id,
+                              quantity: item.quantity - 1,
+                            })
+                          }
+                        >
+                          <Minus className="size-4" />
+                        </Button>
+                        <span className="w-8 text-center text-sm">
+                          {item.quantity}
+                        </span>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          disabled={
+                            update.isPending ||
+                            item.quantity >= item.availableQuantity
+                          }
+                          onClick={() =>
+                            update.mutate({
+                              id: item.id,
+                              quantity: item.quantity + 1,
+                            })
+                          }
+                        >
+                          <Plus className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Hapus barang"
+                          disabled={remove.isPending}
+                          onClick={() => remove.mutate(item.id)}
+                        >
+                          <Trash className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="font-semibold">
+                      {formatMoney(item.lineTotalAmount)}
+                    </p>
+                  </div>
+                ))}
+              </section>
+            ))}
+          </div>
+          {groups.length > 0 && (
+            <aside className="h-fit border bg-white p-5 lg:sticky lg:top-28">
+              <h2 className="font-semibold">Ringkasan</h2>
+              <div className="mt-4 flex justify-between border-b pb-4 text-sm">
+                <span>Subtotal</span>
+                <strong>{formatMoney(cart.data?.subtotalAmount ?? "0")}</strong>
+              </div>
+              <p className="mt-3 text-xs text-slate-600">
+                Ongkos kirim dan diskon dihitung oleh server pada checkout.
+              </p>
+              <Button asChild className="mt-4 w-full">
+                <Link href="/checkout">Lanjut checkout</Link>
+              </Button>
+            </aside>
+          )}
         </div>
       </main>
       <MobileDock />
     </div>
-  )
+  );
 }
