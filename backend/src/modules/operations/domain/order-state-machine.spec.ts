@@ -1,7 +1,4 @@
-import {
-  OrderStateMachine,
-  ORDER_STATUSES,
-} from './order-state-machine';
+import { OrderStateMachine, ORDER_STATUSES } from './order-state-machine';
 import type { OrderStatus } from './order-state-machine';
 import { ConflictException } from '@nestjs/common';
 

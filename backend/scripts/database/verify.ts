@@ -30,7 +30,7 @@ async function verify(): Promise<void> {
     const migrations = await client.query<{ count: string }>(
       'SELECT count(*) FROM schema_migrations',
     );
-    assert(Number(migrations.rows[0].count) >= 3);
+    assert(Number(migrations.rows[0].count) >= 7);
 
     const requiredIndexes = [
       'products_search_trgm_idx',
@@ -39,6 +39,9 @@ async function verify(): Promise<void> {
       'deliveries_available_idx',
       'outbox_events_pending_idx',
       'background_jobs_runnable_idx',
+      'delivery_jobs_available_idx',
+      'order_status_history_sequence_idx',
+      'voucher_redemptions_buyer_idx',
     ];
     const indexes = await client.query<{ indexname: string }>(
       `SELECT indexname FROM pg_indexes
