@@ -40,6 +40,17 @@ export interface Address {
   isDefault: boolean;
 }
 
+export interface CreateAddressInput {
+  label: string;
+  recipientName: string;
+  phone: string;
+  line1: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  isDefault: boolean;
+}
+
 export interface CheckoutInput {
   addressId: string;
   voucherCode?: string;
@@ -103,6 +114,8 @@ export const commerceApi = {
     api.patch<Cart>(`/cart/items/${id}`, { quantity }),
   removeItem: (id: string) => api.del<void>(`/cart/items/${id}`),
   addresses: () => api.get<Address[]>("/addresses"),
+  createAddress: (input: CreateAddressInput) =>
+    api.post<Address>("/addresses", input),
   quote: (input: CheckoutInput) =>
     api.post<PriceQuote>("/checkout/quote", input),
   checkout: (input: CheckoutInput, idempotencyKey: string) =>
@@ -111,12 +124,12 @@ export const commerceApi = {
     }),
   orders: () => api.get<OrderSummary[]>("/orders"),
   wallet: () => api.get<WalletHistory>("/wallet/entries"),
+  demoTopUp: (amount: number, idempotencyKey: string) =>
+    api.post("/wallet/top-ups", { amount }, {
+      headers: { "Idempotency-Key": idempotencyKey },
+    }),
 };
 
 export function formatMoney(amount: string): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(Number(amount));
+  return `Rp ${BigInt(amount).toLocaleString("id-ID")}`;
 }

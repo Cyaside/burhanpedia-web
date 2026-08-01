@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ComponentProps, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { commerceApi, DeliveryMethod, formatMoney } from "@/lib/api/commerce";
+import type { CreateAddressInput } from "@/lib/api/commerce";
 import { useAuthGuard } from "@/lib/auth";
 
 const methods: Array<{ value: DeliveryMethod; label: string }> = [
@@ -33,6 +35,34 @@ export default function CheckoutPage() {
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState("");
   const [delivery, setDelivery] = useState<Record<string, DeliveryMethod>>({});
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const checkoutAttempt = useRef<{ fingerprint: string; key: string } | null>(
+    null,
+  );
+  const createAddress = useMutation({
+    mutationFn: commerceApi.createAddress,
+    onSuccess: async (address) => {
+      setAddressId(address.id);
+      setShowAddressForm(false);
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+    },
+  });
+
+  function submitAddress(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const values = new FormData(event.currentTarget);
+    const input: CreateAddressInput = {
+      label: String(values.get("label") ?? "").trim(),
+      recipientName: String(values.get("recipientName") ?? "").trim(),
+      phone: String(values.get("phone") ?? "").trim(),
+      line1: String(values.get("line1") ?? "").trim(),
+      city: String(values.get("city") ?? "").trim(),
+      province: String(values.get("province") ?? "").trim(),
+      postalCode: String(values.get("postalCode") ?? "").trim(),
+      isDefault: (addresses.data?.length ?? 0) === 0,
+    };
+    createAddress.mutate(input);
+  }
 
   useEffect(() => {
     if (!addressId && addresses.data?.length)
@@ -66,14 +96,28 @@ export default function CheckoutPage() {
   );
   const canQuote = Boolean(addressId && input.deliveries.length);
   const quote = useQuery({
-    queryKey: ["checkout-quote", input],
+    queryKey: ["checkout-quote", input, cart.data?.version],
     queryFn: () => commerceApi.quote(input),
     enabled: isAuthenticated && canQuote,
     retry: false,
   });
   const checkout = useMutation({
-    mutationFn: () => commerceApi.checkout(input, `web-${crypto.randomUUID()}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
+    mutationFn: () => {
+      const fingerprint = JSON.stringify({ input, cartVersion: cart.data?.version });
+      if (checkoutAttempt.current?.fingerprint !== fingerprint) {
+        checkoutAttempt.current = {
+          fingerprint,
+          key: `web-${crypto.randomUUID()}`,
+        };
+      }
+      return commerceApi.checkout(input, checkoutAttempt.current.key);
+    },
+    onSuccess: () => {
+      checkoutAttempt.current = null;
+      void queryClient.invalidateQueries({ queryKey: ["cart"] });
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      void queryClient.invalidateQueries({ queryKey: ["wallet"] });
+    },
   });
 
   if (checking || !isAuthenticated) return null;
@@ -134,9 +178,60 @@ export default function CheckoutPage() {
                 ))}
                 {addresses.data?.length === 0 && (
                   <p className="text-sm text-slate-600">
-                    Belum ada alamat. Tambahkan melalui API/profile terlebih
-                    dahulu.
+                    Belum ada alamat pengiriman.
                   </p>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAddressForm((value) => !value)}
+                >
+                  {showAddressForm ? "Batal" : "Tambah alamat"}
+                </Button>
+                {showAddressForm && (
+                  <form
+                    onSubmit={submitAddress}
+                    className="grid gap-3 border-t pt-4 sm:grid-cols-2"
+                  >
+                    <AddressField
+                      name="label"
+                      label="Label alamat"
+                      placeholder="Rumah"
+                    />
+                    <AddressField name="recipientName" label="Nama penerima" />
+                    <AddressField
+                      name="phone"
+                      label="Nomor telepon"
+                      type="tel"
+                      pattern="\+?[0-9]{8,16}"
+                    />
+                    <AddressField
+                      name="postalCode"
+                      label="Kode pos"
+                      inputMode="numeric"
+                      pattern="[0-9]{5}"
+                    />
+                    <div className="sm:col-span-2">
+                      <AddressField name="line1" label="Alamat lengkap" />
+                    </div>
+                    <AddressField name="city" label="Kota" />
+                    <AddressField name="province" label="Provinsi" />
+                    <Button
+                      type="submit"
+                      disabled={createAddress.isPending}
+                      className="sm:col-span-2"
+                    >
+                      {createAddress.isPending ? "Menyimpan…" : "Simpan alamat"}
+                    </Button>
+                    {createAddress.isError && (
+                      <p
+                        role="alert"
+                        className="text-sm text-red-700 sm:col-span-2"
+                      >
+                        {createAddress.error.message}
+                      </p>
+                    )}
+                  </form>
                 )}
               </div>
             </section>
@@ -225,7 +320,7 @@ export default function CheckoutPage() {
             )}
             <Button
               className="mt-5 w-full"
-              disabled={!quote.data || checkout.isPending}
+              disabled={!quote.data || quote.isFetching || checkout.isPending}
               onClick={() => checkout.mutate()}
             >
               {checkout.isPending ? "Memproses…" : "Bayar dengan wallet"}
@@ -243,5 +338,18 @@ export default function CheckoutPage() {
       </main>
       <MobileDock />
     </div>
+  );
+}
+
+function AddressField({
+  name,
+  label,
+  ...props
+}: { name: string; label: string } & Omit<ComponentProps<"input">, "name">) {
+  return (
+    <label htmlFor={name} className="block text-sm font-medium">
+      {label}
+      <Input id={name} name={name} required className="mt-1" {...props} />
+    </label>
   );
 }

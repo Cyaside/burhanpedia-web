@@ -1,15 +1,41 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import type { FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, Wallet } from "lucide-react";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { commerceApi, formatMoney } from "@/lib/api/commerce";
 import { useAuthGuard } from "@/lib/auth";
 
 export default function ProfilePage() {
   const { isAuthenticated, checking, user } = useAuthGuard();
+  const queryClient = useQueryClient();
+  const [topUpAmount, setTopUpAmount] = useState("100000");
+  const topUpAttempt = useRef<{ amount: number; key: string } | null>(null);
+  const topUp = useMutation({
+    mutationFn: (amount: number) => {
+      if (topUpAttempt.current?.amount !== amount) {
+        topUpAttempt.current = { amount, key: `web-${crypto.randomUUID()}` };
+      }
+      return commerceApi.demoTopUp(amount, topUpAttempt.current.key);
+    },
+    onSuccess: () => {
+      topUpAttempt.current = null;
+      void queryClient.invalidateQueries({ queryKey: ["wallet"] });
+    },
+  });
+  function submitTopUp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const amount = Number(topUpAmount);
+    if (Number.isInteger(amount) && amount >= 10_000 && amount <= 100_000_000) {
+      topUp.mutate(amount);
+    }
+  }
   const orders = useQuery({
     queryKey: ["orders"],
     queryFn: commerceApi.orders,
@@ -75,6 +101,36 @@ export default function ProfilePage() {
             <p className="text-2xl font-semibold">
               {formatMoney(wallet.data?.balanceAmount ?? "0")}
             </p>
+            {process.env.NODE_ENV !== "production" && (
+              <form onSubmit={submitTopUp} className="mt-5 border-t pt-4">
+                <label htmlFor="top-up-amount" className="text-sm font-medium">
+                  Isi saldo demo
+                </label>
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    id="top-up-amount"
+                    type="number"
+                    min="10000"
+                    max="100000000"
+                    step="1000"
+                    required
+                    value={topUpAmount}
+                    onChange={(event) => setTopUpAmount(event.target.value)}
+                  />
+                  <Button type="submit" disabled={topUp.isPending}>
+                    {topUp.isPending ? "Memproses…" : "Isi"}
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Hanya untuk pengujian lokal, bukan pembayaran nyata.
+                </p>
+                {topUp.isError && (
+                  <p role="alert" className="mt-2 text-sm text-red-700">
+                    {topUp.error.message}
+                  </p>
+                )}
+              </form>
+            )}
             <div className="mt-5 divide-y border-t">
               {wallet.data?.items.slice(0, 8).map((entry) => (
                 <div
@@ -89,12 +145,12 @@ export default function ProfilePage() {
                   </div>
                   <strong
                     className={
-                      Number(entry.amountDelta) >= 0
+                      BigInt(entry.amountDelta) >= BigInt(0)
                         ? "text-green-700"
                         : "text-slate-900"
                     }
                   >
-                    {Number(entry.amountDelta) >= 0 ? "+" : ""}
+                    {BigInt(entry.amountDelta) >= BigInt(0) ? "+" : ""}
                     {formatMoney(entry.amountDelta)}
                   </strong>
                 </div>
