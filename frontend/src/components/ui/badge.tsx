@@ -18,7 +18,7 @@ export function Badge({ className, variant = "default", ...props }: BadgeProps) 
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium",
         stylesByVariant[variant],
         className
       )}
@@ -26,4 +26,3 @@ export function Badge({ className, variant = "default", ...props }: BadgeProps) 
     />
   )
 }
-

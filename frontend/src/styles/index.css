@@ -1,8 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -16,6 +12,10 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-success: var(--success);
+  --color-promo: var(--promo);
+  --color-brand-yellow: var(--brand-yellow);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -42,72 +42,42 @@
 }
 
 :root {
-  --radius: 14px;
-  --background: #f7f8fb;
-  --foreground: #0f172a;
+  --radius: 8px;
+  --background: #f8fafc;
+  --foreground: #111318;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #111318;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #2563eb;
-  --primary-foreground: #f8fbff;
-  --secondary: #e5e7eb;
-  --secondary-foreground: #0f172a;
-  --muted: #e5e7eb;
-  --muted-foreground: #4b5563;
-  --accent: #dbeafe;
-  --accent-foreground: #1d4ed8;
-  --destructive: #e5484d;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #2563eb;
-  --chart-1: #2563eb;
-  --chart-2: #1f2937;
-  --chart-3: #17b26a;
-  --chart-4: #eab308;
-  --chart-5: #0ea5e9;
+  --popover-foreground: #111318;
+  --primary: #1467c9;
+  --primary-foreground: #ffffff;
+  --primary-hover: #0f55a8;
+  --success: #2e7d32;
+  --promo: #d92d20;
+  --brand-yellow: #f4b740;
+  --secondary: #f2f4f7;
+  --secondary-foreground: #111318;
+  --muted: #f2f4f7;
+  --muted-foreground: #3f4652;
+  --accent: #eaf3ff;
+  --accent-foreground: #0f55a8;
+  --destructive: #d92d20;
+  --border: #e4e7ec;
+  --input: #d0d5dd;
+  --ring: #1467c9;
+  --chart-1: #1467c9;
+  --chart-2: #2e7d32;
+  --chart-3: #d92d20;
+  --chart-4: #f4b740;
+  --chart-5: #3f4652;
   --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #2563eb;
-  --sidebar-primary-foreground: #f8fbff;
-  --sidebar-accent: #eef2ff;
-  --sidebar-accent-foreground: #111827;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #2563eb;
-}
-
-.dark {
-  --background: #0e1116;
-  --foreground: #e5e7eb;
-  --card: #141820;
-  --card-foreground: #e5e7eb;
-  --popover: #141820;
-  --popover-foreground: #e5e7eb;
-  --primary: #3b82f6;
-  --primary-foreground: #0b1020;
-  --secondary: #1f2937;
-  --secondary-foreground: #e5e7eb;
-  --muted: #1f2937;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #bfdbfe;
-  --destructive: #f87171;
-  --border: #1f2937;
-  --input: #1f2937;
-  --ring: #3b82f6;
-  --chart-1: #60a5fa;
-  --chart-2: #e5e7eb;
-  --chart-3: #34d399;
-  --chart-4: #fbbf24;
-  --chart-5: #38bdf8;
-  --sidebar: #0f172a;
-  --sidebar-foreground: #e5e7eb;
-  --sidebar-primary: #60a5fa;
-  --sidebar-primary-foreground: #0b1020;
-  --sidebar-accent: #111827;
-  --sidebar-accent-foreground: #e5e7eb;
-  --sidebar-border: #1f2937;
-  --sidebar-ring: #60a5fa;
+  --sidebar-foreground: #111318;
+  --sidebar-primary: #1467c9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eaf3ff;
+  --sidebar-accent-foreground: #0f55a8;
+  --sidebar-border: #e4e7ec;
+  --sidebar-ring: #1467c9;
 }
 
 @layer base {
@@ -119,14 +89,18 @@
     font-family: var(--font-body), "Manrope", system-ui, sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading), "Space Grotesk", system-ui, sans-serif;
-    letter-spacing: -0.01em;
+    font-family: inherit;
+    letter-spacing: -0.015em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 
 @layer utilities {
   .font-heading {
-    font-family: var(--font-heading), "Space Grotesk", system-ui, sans-serif;
+    font-family: inherit;
   }
   .section-padding {
     padding-left: 1.25rem;
@@ -139,16 +113,24 @@
     }
   }
   .section-space {
-    padding-top: 4rem;
-    padding-bottom: 4rem;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
   }
   @media (min-width: 1024px) {
     .section-space {
-      padding-top: 5.5rem;
-      padding-bottom: 5.5rem;
+      padding-top: 3.5rem;
+      padding-bottom: 3.5rem;
     }
   }
-  .surface-card {
-    background: linear-gradient(180deg, #ffffff, #f7f8fb);
+  .page-container {
+    width: 100%;
+    max-width: 1360px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .page-container {
+      padding-inline: 1.5rem;
+    }
   }
 }
