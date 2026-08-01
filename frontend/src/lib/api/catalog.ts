@@ -29,6 +29,14 @@ export interface CatalogCategory {
   parentId: string | null
 }
 
+export interface PublicStore {
+  id: string
+  slug: string
+  name: string
+  description: string | null
+  status: string
+}
+
 export interface CatalogPage {
   items: CatalogProduct[]
   nextCursor: string | null
@@ -62,6 +70,10 @@ export function listCatalogCategories() {
   return api.get<CatalogCategory[]>("/categories")
 }
 
+export function getPublicStore(slug: string) {
+  return api.get<PublicStore>(`/stores/${encodeURIComponent(slug)}`)
+}
+
 export function formatRupiah(amount: string) {
-  return `Rp ${Number(amount).toLocaleString("id-ID")}`
+  return `Rp ${BigInt(amount).toLocaleString("id-ID")}`
 }
