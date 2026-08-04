@@ -20,7 +20,8 @@ describe('cart wallet and transactional checkout', () => {
   const origin = 'http://localhost:3001';
   const suffix = Date.now().toString(36);
   const password = 'VerySecurePassword123!';
-  const stores: Array<{ id: string; variantId: string }> = [];
+  const stores: Array<{ id: string; productId: string; variantId: string }> =
+    [];
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -143,6 +144,10 @@ describe('cart wallet and transactional checkout', () => {
       [first.body.id],
     );
     expect(paymentCount.rows[0].count).toBe('1');
+    const product = await request(app.getHttpServer())
+      .get(`/api/v1/products/${stores[0].productId}`)
+      .expect(200);
+    expect(product.body.soldCount).toBe(1);
   });
 
   it('allows only one concurrent checkout to buy the final stock', async () => {
@@ -293,6 +298,7 @@ describe('cart wallet and transactional checkout', () => {
       .expect(200);
     return {
       id: store.body.id as string,
+      productId: product.body.id as string,
       variantId: detail.body.variants[0].id as string,
     };
   }

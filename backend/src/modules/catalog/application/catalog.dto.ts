@@ -44,6 +44,13 @@ export class CatalogQueryDto {
   maxPrice?: string;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  minRating?: number;
+
+  @IsOptional()
   @IsIn(CATALOG_SORTS)
   sort?: CatalogSort;
 

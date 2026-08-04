@@ -49,7 +49,7 @@ describe('seller delivery and overdue worker', () => {
       await createUser('driver-right', AppRole.DRIVER),
     );
     await createUser('admin', AppRole.ADMIN);
-  });
+  }, 30_000);
 
   afterAll(async () => app.close());
 

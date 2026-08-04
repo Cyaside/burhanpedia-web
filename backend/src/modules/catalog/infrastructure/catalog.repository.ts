@@ -15,6 +15,7 @@ export interface CatalogRow {
   min_price_amount: string | null;
   rating_average: string;
   rating_count: number;
+  sold_count?: string;
   available_quantity: string;
   images: Array<{ url: string; alt: string }>;
   variants?: Array<{
@@ -33,6 +34,7 @@ interface ListInput {
   storeId?: string;
   minPrice?: string;
   maxPrice?: string;
+  minRating?: number;
   sort: CatalogSort;
   limit: number;
   cursor: { value: string; id: string } | null;
@@ -69,6 +71,10 @@ export class CatalogRepository {
       conditions.push(`p.min_price_amount >= ${add(input.minPrice)}::bigint`);
     if (input.maxPrice)
       conditions.push(`p.min_price_amount <= ${add(input.maxPrice)}::bigint`);
+    if (input.minRating)
+      conditions.push(
+        `p.rating_count > 0 AND p.rating_average >= ${add(input.minRating)}`,
+      );
     if (input.q) {
       const escaped = input.q.trim().replace(/[\\%_]/g, '\\$&');
       conditions.push(
@@ -136,7 +142,8 @@ export class CatalogRepository {
               c.name AS category_name,
               coalesce(variants.variants, '[]'::jsonb) AS variants,
               coalesce(variants.available_quantity, 0)::text AS available_quantity,
-              coalesce(pictures.images, '[]'::jsonb) AS images
+              coalesce(pictures.images, '[]'::jsonb) AS images,
+              coalesce(sales.sold_count, 0)::text AS sold_count
        FROM products p
        JOIN stores s ON s.id = p.store_id AND s.status = 'ACTIVE'
        LEFT JOIN categories c ON c.id = p.category_id
@@ -157,6 +164,14 @@ export class CatalogRepository {
                           ORDER BY img.position) AS images
          FROM product_images img WHERE img.product_id = p.id
        ) pictures ON true
+       LEFT JOIN LATERAL (
+         SELECT sum(oi.quantity) AS sold_count
+         FROM product_variants v
+         JOIN order_items oi ON oi.variant_id = v.id
+         JOIN orders o ON o.id = oi.order_id
+         WHERE v.product_id = p.id
+           AND o.status NOT IN ('CANCELED', 'RETURNED', 'REFUNDED')
+       ) sales ON true
        WHERE p.id = $1 AND p.status = 'ACTIVE'`,
       [id],
     );

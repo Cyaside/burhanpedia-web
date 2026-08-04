@@ -163,6 +163,26 @@ describe('catalog and seller ownership', () => {
       .expect(400);
   });
 
+  it('filters by price and minimum rated products', async () => {
+    const price = await request(app.getHttpServer())
+      .get('/api/v1/products')
+      .query({ storeId, minPrice: '140000', maxPrice: '160000' })
+      .expect(200);
+    expect(price.body.items).toHaveLength(1);
+    expect(price.body.items[0].minPriceAmount).toBe('150000');
+
+    const rated = await request(app.getHttpServer())
+      .get('/api/v1/products')
+      .query({ storeId, minRating: 4 })
+      .expect(200);
+    expect(rated.body.items).toHaveLength(0);
+
+    await request(app.getHttpServer())
+      .get('/api/v1/products')
+      .query({ minRating: 6 })
+      .expect(400);
+  });
+
   it('paginates seller products without exposing another store', async () => {
     const first = await request(app.getHttpServer())
       .get('/api/v1/seller/products')

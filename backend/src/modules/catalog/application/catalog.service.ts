@@ -73,6 +73,7 @@ export class CatalogService {
       minPriceAmount: row.min_price_amount,
       ratingAverage: Number(row.rating_average),
       ratingCount: row.rating_count,
+      soldCount: Number(row.sold_count ?? 0),
       availableQuantity: Number(row.available_quantity),
       images: row.images,
       variants: row.variants ?? [],
