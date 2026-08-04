@@ -50,7 +50,7 @@ export default function SiteHeader() {
       </div>
 
       <div className="page-container grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-3 py-3 md:grid-cols-[190px_minmax(0,1fr)_auto] md:gap-x-6">
-        <Link href="/" className="inline-flex w-fit items-center" aria-label="Beranda Burhanpedia">
+        <Link href="/" className="inline-flex min-h-11 w-fit items-center" aria-label="Beranda Burhanpedia">
           <Image src="/brand-wordmark.svg" alt="Burhanpedia" width={190} height={43} priority className="h-10 w-auto" />
         </Link>
 
@@ -82,13 +82,13 @@ export default function SiteHeader() {
 
       <nav aria-label="Kategori produk" className="border-t">
         <div className="page-container flex min-h-11 items-center gap-6 overflow-x-auto whitespace-nowrap text-sm font-medium">
-          <Link href="/products" className="text-primary hover:underline">Semua produk</Link>
+          <Link href="/products" className="inline-flex min-h-11 items-center text-primary hover:underline">Semua produk</Link>
           {categories.data?.filter((category) => !category.parentId).slice(0, 7).map((category) => (
-            <Link key={category.id} href={`/products?categoryId=${category.id}`} className="text-muted-foreground hover:text-primary">
+            <Link key={category.id} href={`/products?categoryId=${category.id}`} className="inline-flex min-h-11 items-center text-muted-foreground hover:text-primary">
               {category.name}
             </Link>
           ))}
-          <Link href="/#toko" className="text-muted-foreground hover:text-primary">Jelajahi toko</Link>
+          <Link href="/#toko" className="inline-flex min-h-11 items-center text-muted-foreground hover:text-primary">Jelajahi toko</Link>
         </div>
       </nav>
     </header>

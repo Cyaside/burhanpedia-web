@@ -10,6 +10,7 @@ export interface CatalogProduct {
   minPriceAmount: string
   ratingAverage: number
   ratingCount: number
+  soldCount: number
   availableQuantity: number
   images: { url: string; alt: string }[]
   variants: {
@@ -48,6 +49,7 @@ export interface CatalogFilters {
   storeId?: string
   minPrice?: string
   maxPrice?: string
+  minRating?: number
   sort?: "newest" | "price_asc" | "price_desc" | "name_asc"
   cursor?: string
   limit?: number

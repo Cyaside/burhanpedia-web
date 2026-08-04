@@ -29,7 +29,7 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
           <Link href={productHref} className="hover:text-primary hover:underline">{product.name}</Link>
         </h3>
         <p className="text-base font-bold">{formatRupiah(product.minPriceAmount)}</p>
-        <Link href={`/stores/${product.store.slug}`} className="block truncate text-xs text-muted-foreground hover:text-primary hover:underline">
+        <Link href={`/stores/${product.store.slug}`} className="flex min-h-11 items-center truncate text-xs text-muted-foreground hover:text-primary hover:underline">
           {product.store.name}
         </Link>
         <div className="flex min-h-5 items-center gap-1 text-xs text-muted-foreground">
