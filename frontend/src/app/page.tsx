@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, PackageCheck, ShieldCheck, Store, Truck } from "lucide-react";
+import { PackageCheck, ShieldCheck, Store, Truck } from "lucide-react";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
 import { CatalogProductCard } from "@/components/shop/CatalogProductCard";
 import { CatalogEmpty, CatalogError, ProductGridSkeleton } from "@/components/shop/CatalogFeedback";
+import { HomeDiscovery } from "@/components/shop/HomeDiscovery";
 import { listCatalog, listCatalogCategories } from "@/lib/api/catalog";
 import type { CatalogProduct } from "@/lib/api/catalog";
 
@@ -20,38 +21,12 @@ export default function HomePage() {
     <div className="min-h-dvh bg-background">
       <SiteHeader />
       <main className="page-container space-y-9 pb-24 pt-5 sm:space-y-11 sm:pt-7">
-        <section className="grid gap-4 border bg-white p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-7" aria-labelledby="home-heading">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-primary">Belanja di Burhanpedia</p>
-            <h1 id="home-heading" className="mt-2 max-w-2xl text-2xl font-bold leading-tight sm:text-3xl">
-              Temukan produk yang kamu butuhkan, tanpa ribet.
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-muted-foreground">Jelajahi pilihan dari berbagai toko dan lihat harga serta stok sebelum membeli.</p>
-          </div>
-          <Link href="/products" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover">
-            Jelajahi produk <ArrowRight aria-hidden="true" className="size-4" />
-          </Link>
-        </section>
-
-        <section aria-labelledby="category-heading">
-          <SectionHeading id="category-heading" title="Cari berdasarkan kategori" href="/products" />
-          {categories.isPending ? (
-            <div role="status" aria-label="Memuat kategori" className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-              {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-16 animate-pulse rounded-lg border bg-muted" />)}
-            </div>
-          ) : categories.isError ? (
-            <p role="alert" className="text-sm text-muted-foreground">Kategori belum dapat dimuat. Kamu tetap bisa melihat semua produk.</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-              {categories.data.filter((category) => !category.parentId).slice(0, 6).map((category) => (
-                <Link key={category.id} href={`/products?categoryId=${category.id}`} className="flex min-h-16 items-center justify-center rounded-lg border bg-white px-3 text-center text-sm font-semibold hover:border-primary hover:text-primary">
-                  {category.name}
-                </Link>
-              ))}
-              {categories.data.length === 0 && <p className="col-span-full text-sm text-muted-foreground">Kategori belum tersedia.</p>}
-            </div>
-          )}
-        </section>
+        <h1 className="sr-only">Burhanpedia — marketplace untuk kebutuhan sehari-hari</h1>
+        <HomeDiscovery
+          categories={categories.data?.filter((category) => !category.parentId)}
+          categoriesLoading={categories.isPending}
+          categoriesError={categories.isError}
+        />
 
         <ProductSection
           id="terbaru"
