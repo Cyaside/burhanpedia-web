@@ -40,3 +40,31 @@ export class ImageUploadController {
     );
   }
 }
+
+@RequireRoles(AppRole.SELLER)
+@Controller('seller/store/logo')
+export class StoreLogoUploadController {
+  constructor(private readonly uploads: ImageUploadService) {}
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('uploads')
+  requestUpload(
+    @CurrentUser() principal: SessionPrincipal,
+    @Body() dto: RequestImageUploadDto,
+  ) {
+    return this.uploads.requestStoreLogoUpload(principal.userId, dto);
+  }
+
+  @Post('uploads/:uploadId/complete')
+  completeUpload(
+    @CurrentUser() principal: SessionPrincipal,
+    @Param('uploadId', ParseUUIDPipe) uploadId: string,
+    @Body() dto: CompleteImageUploadDto,
+  ) {
+    return this.uploads.completeStoreLogoUpload(
+      principal.userId,
+      uploadId,
+      dto,
+    );
+  }
+}

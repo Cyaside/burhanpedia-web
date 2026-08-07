@@ -14,6 +14,7 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
 import { OperationsModule } from './modules/operations/operations.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { OperationsModule } from './modules/operations/operations.module';
     StorageModule,
     CommerceModule,
     OperationsModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [

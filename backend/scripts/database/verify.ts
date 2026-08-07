@@ -30,7 +30,7 @@ async function verify(): Promise<void> {
     const migrations = await client.query<{ count: string }>(
       'SELECT count(*) FROM schema_migrations',
     );
-    assert(Number(migrations.rows[0].count) >= 11);
+    assert(Number(migrations.rows[0].count) >= 12);
 
     const requiredIndexes = [
       'products_search_trgm_idx',
@@ -47,6 +47,8 @@ async function verify(): Promise<void> {
       'outbox_events_stale_lock_idx',
       'published_events_feed_idx',
       'order_items_variant_order_idx',
+      'stores_logo_storage_key_idx',
+      'product_reviews_buyer_history_idx',
     ];
     const indexes = await client.query<{ indexname: string }>(
       `SELECT indexname FROM pg_indexes
@@ -94,7 +96,7 @@ async function verify(): Promise<void> {
            WHERE id = $1`,
           [store.rows[0].id],
         ),
-      'stores_logo_pair_check',
+      'stores_logo_triplet_check',
     );
     const product = await client.query<{ id: string }>(
       `INSERT INTO products (store_id, slug, name)

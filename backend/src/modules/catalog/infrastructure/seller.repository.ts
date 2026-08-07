@@ -16,6 +16,8 @@ export interface StoreRow {
   logoUrl: string | null;
   logoAltText: string | null;
   status: string;
+  ratingAverage?: string;
+  ratingCount?: number;
 }
 
 export interface SellerProductRow {
@@ -53,8 +55,18 @@ export class SellerRepository {
   async storeBySlug(slug: string): Promise<StoreRow | null> {
     const result = await this.database.query<StoreRow>(
       `SELECT id, slug, name, description,
-              logo_url AS "logoUrl", logo_alt_text AS "logoAltText", status
-       FROM stores WHERE slug = $1 AND status = 'ACTIVE'`,
+              logo_url AS "logoUrl", logo_alt_text AS "logoAltText", status,
+              CASE WHEN coalesce(rating.rating_count, 0) = 0 THEN 0
+                   ELSE round(rating.rating_sum::numeric / rating.rating_count, 2)
+              END AS "ratingAverage",
+              coalesce(rating.rating_count, 0)::integer AS "ratingCount"
+       FROM stores s
+       LEFT JOIN LATERAL (
+         SELECT coalesce(sum(p.rating_sum), 0)::bigint AS rating_sum,
+                coalesce(sum(p.rating_count), 0)::integer AS rating_count
+         FROM products p WHERE p.store_id = s.id AND p.status = 'ACTIVE'
+       ) rating ON true
+       WHERE s.slug = $1 AND s.status = 'ACTIVE'`,
       [slug],
     );
     return result.rows[0] ?? null;

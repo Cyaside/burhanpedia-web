@@ -43,49 +43,45 @@ VALUES
 ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id;
 
 INSERT INTO stores
-  (id, seller_profile_id, slug, name, description, logo_url, logo_alt_text, status)
+  (id, seller_profile_id, slug, name, description, status)
 VALUES
   (
     '22000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000001',
     'nada-lokal', 'Nada Lokal', 'Perangkat audio untuk bekerja, bermain, dan menikmati musik.',
-    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F3A7.png',
-    'Mark headphone Nada Lokal', 'ACTIVE'
+    'ACTIVE'
   ),
   (
     '22000000-0000-4000-8000-000000000002', '21000000-0000-4000-8000-000000000002',
     'lemari-sore', 'Lemari Sore', 'Pilihan pakaian kasual dengan warna yang mudah dipadukan.',
-    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F457.png',
-    'Mark gaun Lemari Sore', 'ACTIVE'
+    'ACTIVE'
   ),
   (
     '22000000-0000-4000-8000-000000000003', '21000000-0000-4000-8000-000000000003',
     'dapur-nusa', 'Dapur Nusa', 'Peralatan memasak praktis untuk dapur sehari-hari.',
-    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F373.png',
-    'Mark wajan Dapur Nusa', 'ACTIVE'
+    'ACTIVE'
   ),
   (
     '22000000-0000-4000-8000-000000000004', '21000000-0000-4000-8000-000000000004',
     'ruang-kreasi', 'Ruang Kreasi', 'Perlengkapan hobi dan alat untuk proyek kreatif.',
-    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F3A8.png',
-    'Mark palet warna Ruang Kreasi', 'ACTIVE'
+    'ACTIVE'
   ),
   (
     '22000000-0000-4000-8000-000000000005', '21000000-0000-4000-8000-000000000005',
     'sehat-harian', 'Sehat Harian', 'Pilihan perawatan diri untuk rutinitas harian.',
-    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F9F4.png',
-    'Mark botol perawatan Sehat Harian', 'ACTIVE'
+    'ACTIVE'
   )
 ON CONFLICT (id) DO UPDATE SET
   seller_profile_id = EXCLUDED.seller_profile_id,
   slug = EXCLUDED.slug,
   name = EXCLUDED.name,
   description = EXCLUDED.description,
-  logo_url = EXCLUDED.logo_url,
-  logo_alt_text = EXCLUDED.logo_alt_text,
+  logo_storage_key = NULL,
+  logo_url = NULL,
+  logo_alt_text = NULL,
   status = 'ACTIVE';
 
 INSERT INTO products
-  (id, store_id, category_id, slug, name, description, status, rating_average, rating_count, created_at)
+  (id, store_id, category_id, slug, name, description, status, created_at)
 VALUES
   (
     '30000000-0000-4000-8000-000000000001',
@@ -94,7 +90,7 @@ VALUES
     'headphone-studio-monitor-x1',
     'Headphone Studio Monitor X1',
     'Headphone over-ear untuk mendengarkan musik dan bekerja dengan bantalan yang nyaman.',
-    'ACTIVE', 4.80, 128, '2026-07-31T12:45:00Z'
+    'ACTIVE', '2026-07-31T12:45:00Z'
   ),
   (
     '30000000-0000-4000-8000-000000000002',
@@ -103,7 +99,7 @@ VALUES
     'paket-fashion-netral',
     'Paket Fashion Netral 3 Pcs',
     'Padu padan pakaian bernuansa netral untuk gaya kasual sehari-hari.',
-    'ACTIVE', 4.60, 74, '2026-07-30T12:45:00Z'
+    'ACTIVE', '2026-07-30T12:45:00Z'
   ),
   (
     '30000000-0000-4000-8000-000000000003',
@@ -112,7 +108,7 @@ VALUES
     'set-peralatan-masak-enamel',
     'Set Peralatan Masak Enamel',
     'Set peralatan masak untuk dapur rumah dengan desain sederhana dan mudah dirawat.',
-    'ACTIVE', 4.90, 96, '2026-07-29T12:45:00Z'
+    'ACTIVE', '2026-07-29T12:45:00Z'
   ),
   (
     '30000000-0000-4000-8000-000000000004',
@@ -121,7 +117,7 @@ VALUES
     'kamera-compact-classic',
     'Kamera Compact Classic',
     'Kamera compact bergaya klasik untuk dokumentasi perjalanan dan aktivitas kreatif.',
-    'ACTIVE', 4.70, 51, '2026-07-28T12:45:00Z'
+    'ACTIVE', '2026-07-28T12:45:00Z'
   ),
   (
     '30000000-0000-4000-8000-000000000005',
@@ -130,7 +126,7 @@ VALUES
     'paket-perawatan-diri-natural',
     'Paket Perawatan Diri Natural',
     'Rangkaian perawatan diri harian dalam satu paket praktis.',
-    'ACTIVE', 4.85, 83, '2026-07-27T12:45:00Z'
+    'ACTIVE', '2026-07-27T12:45:00Z'
   )
 ON CONFLICT (id) DO UPDATE SET
   store_id = EXCLUDED.store_id,
@@ -138,8 +134,9 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
   status = 'ACTIVE',
-  rating_average = EXCLUDED.rating_average,
-  rating_count = EXCLUDED.rating_count;
+  rating_average = 0,
+  rating_count = 0,
+  rating_sum = 0;
 
 INSERT INTO product_variants
   (id, product_id, sku, name, attributes, price_amount, compare_at_amount, status)
@@ -208,3 +205,103 @@ ON CONFLICT (id) DO UPDATE SET
   public_url = EXCLUDED.public_url,
   alt_text = EXCLUDED.alt_text,
   position = EXCLUDED.position;
+
+INSERT INTO users (id, email, name, password_hash, email_verified_at)
+VALUES
+  (
+    '20000000-0000-4000-8000-000000000010',
+    'buyer.demo@burhanpedia.local',
+    'Ayu Pembeli',
+    '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg',
+    '2026-07-23T13:00:00Z'
+  ),
+  (
+    '20000000-0000-4000-8000-000000000011',
+    'driver.demo@burhanpedia.local',
+    'Bima Pengemudi',
+    '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg',
+    '2026-07-23T13:00:00Z'
+  )
+ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  name = EXCLUDED.name,
+  password_hash = EXCLUDED.password_hash,
+  status = 'ACTIVE',
+  email_verified_at = EXCLUDED.email_verified_at;
+
+INSERT INTO user_roles (user_id, role, status)
+VALUES
+  ('20000000-0000-4000-8000-000000000010', 'BUYER', 'ACTIVE'),
+  ('20000000-0000-4000-8000-000000000011', 'DRIVER', 'ACTIVE')
+ON CONFLICT (user_id, role) DO UPDATE SET status = 'ACTIVE';
+
+INSERT INTO buyer_profiles (id, user_id)
+VALUES ('21000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000010')
+ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id;
+
+INSERT INTO driver_profiles (id, user_id, is_available)
+VALUES ('21000000-0000-4000-8000-000000000011', '20000000-0000-4000-8000-000000000011', false)
+ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id, is_available = false;
+
+INSERT INTO carts (id, buyer_profile_id, status)
+VALUES ('40000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000010', 'CHECKED_OUT')
+ON CONFLICT (id) DO UPDATE SET status = 'CHECKED_OUT';
+
+INSERT INTO checkout_groups
+  (id, buyer_profile_id, cart_id, idempotency_key, subtotal_amount,
+   discount_amount, shipping_amount, total_amount, request_fingerprint)
+VALUES
+  (
+    '41000000-0000-4000-8000-000000000001',
+    '21000000-0000-4000-8000-000000000010',
+    '40000000-0000-4000-8000-000000000001',
+    'development-verified-reviews', 6415000, 0, 0, 6415000,
+    '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
+  )
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO orders
+  (id, checkout_group_id, buyer_profile_id, store_id, order_number, status,
+   subtotal_amount, discount_amount, shipping_amount, total_amount,
+   placed_at, completed_at)
+VALUES
+  ('42000000-0000-4000-8000-000000000001', '41000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000010', '22000000-0000-4000-8000-000000000001', 'BP-DEMO-0001', 'COMPLETED', 899000, 0, 0, 899000, '2026-07-24T12:10:00Z', '2026-07-26T13:20:00Z'),
+  ('42000000-0000-4000-8000-000000000002', '41000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000010', '22000000-0000-4000-8000-000000000002', 'BP-DEMO-0002', 'COMPLETED', 349000, 0, 0, 349000, '2026-07-24T12:10:00Z', '2026-07-26T13:25:00Z'),
+  ('42000000-0000-4000-8000-000000000003', '41000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000010', '22000000-0000-4000-8000-000000000003', 'BP-DEMO-0003', 'COMPLETED', 579000, 0, 0, 579000, '2026-07-24T12:10:00Z', '2026-07-26T13:31:00Z'),
+  ('42000000-0000-4000-8000-000000000004', '41000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000010', '22000000-0000-4000-8000-000000000004', 'BP-DEMO-0004', 'COMPLETED', 4299000, 0, 0, 4299000, '2026-07-24T12:10:00Z', '2026-07-26T13:38:00Z'),
+  ('42000000-0000-4000-8000-000000000005', '41000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000010', '22000000-0000-4000-8000-000000000005', 'BP-DEMO-0005', 'COMPLETED', 289000, 0, 0, 289000, '2026-07-24T12:10:00Z', '2026-07-26T13:44:00Z')
+ON CONFLICT (id) DO UPDATE SET status = 'COMPLETED', completed_at = EXCLUDED.completed_at;
+
+INSERT INTO order_items
+  (id, order_id, variant_id, product_name, variant_name, sku, attributes,
+   unit_price_amount, quantity, line_total_amount)
+VALUES
+  ('43000000-0000-4000-8000-000000000001', '42000000-0000-4000-8000-000000000001', '31000000-0000-4000-8000-000000000001', 'Headphone Studio Monitor X1', 'Hitam', 'DEMO-AUDIO-X1', '{"color":"Hitam"}', 899000, 1, 899000),
+  ('43000000-0000-4000-8000-000000000002', '42000000-0000-4000-8000-000000000002', '31000000-0000-4000-8000-000000000002', 'Paket Fashion Netral 3 Pcs', 'Ukuran M', 'DEMO-FASHION-3PCS', '{"size":"M"}', 349000, 1, 349000),
+  ('43000000-0000-4000-8000-000000000003', '42000000-0000-4000-8000-000000000003', '31000000-0000-4000-8000-000000000003', 'Set Peralatan Masak Enamel', 'Set 5 Pcs', 'DEMO-HOME-ENAMEL', '{"set":"5 pcs"}', 579000, 1, 579000),
+  ('43000000-0000-4000-8000-000000000004', '42000000-0000-4000-8000-000000000004', '31000000-0000-4000-8000-000000000004', 'Kamera Compact Classic', 'Hitam', 'DEMO-CAMERA-CLASSIC', '{"color":"Hitam"}', 4299000, 1, 4299000),
+  ('43000000-0000-4000-8000-000000000005', '42000000-0000-4000-8000-000000000005', '31000000-0000-4000-8000-000000000005', 'Paket Perawatan Diri Natural', 'Set Lengkap', 'DEMO-CARE-NATURAL', '{"set":"3 produk"}', 289000, 1, 289000)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO deliveries
+  (id, order_id, driver_profile_id, method, status, fee_amount,
+   pickup_deadline_at, delivery_deadline_at, claimed_at, picked_up_at, delivered_at)
+VALUES
+  ('44000000-0000-4000-8000-000000000001', '42000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000011', 'REGULAR', 'DELIVERED', 0, '2026-07-25T12:00:00Z', '2026-07-27T12:00:00Z', '2026-07-24T13:00:00Z', '2026-07-25T09:00:00Z', '2026-07-26T13:20:00Z'),
+  ('44000000-0000-4000-8000-000000000002', '42000000-0000-4000-8000-000000000002', '21000000-0000-4000-8000-000000000011', 'REGULAR', 'DELIVERED', 0, '2026-07-25T12:00:00Z', '2026-07-27T12:00:00Z', '2026-07-24T13:00:00Z', '2026-07-25T09:00:00Z', '2026-07-26T13:25:00Z'),
+  ('44000000-0000-4000-8000-000000000003', '42000000-0000-4000-8000-000000000003', '21000000-0000-4000-8000-000000000011', 'REGULAR', 'DELIVERED', 0, '2026-07-25T12:00:00Z', '2026-07-27T12:00:00Z', '2026-07-24T13:00:00Z', '2026-07-25T09:00:00Z', '2026-07-26T13:31:00Z'),
+  ('44000000-0000-4000-8000-000000000004', '42000000-0000-4000-8000-000000000004', '21000000-0000-4000-8000-000000000011', 'REGULAR', 'DELIVERED', 0, '2026-07-25T12:00:00Z', '2026-07-27T12:00:00Z', '2026-07-24T13:00:00Z', '2026-07-25T09:00:00Z', '2026-07-26T13:38:00Z'),
+  ('44000000-0000-4000-8000-000000000005', '42000000-0000-4000-8000-000000000005', '21000000-0000-4000-8000-000000000011', 'REGULAR', 'DELIVERED', 0, '2026-07-25T12:00:00Z', '2026-07-27T12:00:00Z', '2026-07-24T13:00:00Z', '2026-07-25T09:00:00Z', '2026-07-26T13:44:00Z')
+ON CONFLICT (id) DO UPDATE SET status = 'DELIVERED', delivered_at = EXCLUDED.delivered_at;
+
+INSERT INTO product_reviews
+  (id, product_id, buyer_profile_id, order_item_id, rating, comment, created_at)
+VALUES
+  ('45000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000010', '43000000-0000-4000-8000-000000000001', 5, 'Nyaman dipakai bekerja dan suara tetap jelas.', '2026-07-27T13:10:00Z'),
+  ('45000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000002', '21000000-0000-4000-8000-000000000010', '43000000-0000-4000-8000-000000000002', 4, 'Warna sesuai foto dan bahannya nyaman.', '2026-07-27T13:14:00Z'),
+  ('45000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000003', '21000000-0000-4000-8000-000000000010', '43000000-0000-4000-8000-000000000003', 5, 'Set lengkap dan mudah dibersihkan setelah dipakai.', '2026-07-27T13:18:00Z'),
+  ('45000000-0000-4000-8000-000000000004', '30000000-0000-4000-8000-000000000004', '21000000-0000-4000-8000-000000000010', '43000000-0000-4000-8000-000000000004', 4, 'Ringkas untuk dibawa dan hasil fotonya konsisten.', '2026-07-27T13:22:00Z'),
+  ('45000000-0000-4000-8000-000000000005', '30000000-0000-4000-8000-000000000005', '21000000-0000-4000-8000-000000000010', '43000000-0000-4000-8000-000000000005', 5, 'Paket datang rapi dan produknya nyaman digunakan.', '2026-07-27T13:26:00Z')
+ON CONFLICT (order_item_id) DO UPDATE SET
+  rating = EXCLUDED.rating,
+  comment = EXCLUDED.comment;

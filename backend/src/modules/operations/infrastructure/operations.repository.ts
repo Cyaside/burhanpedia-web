@@ -29,7 +29,24 @@ export class OperationsRepository {
     const result = await this.database.query(
       `SELECT o.id, o.order_number AS "number", o.status,
               o.total_amount AS "totalAmount", o.placed_at AS "placedAt",
-              s.name AS "storeName", d.method AS "deliveryMethod"
+              s.name AS "storeName", d.method AS "deliveryMethod",
+              coalesce((
+                SELECT jsonb_agg(jsonb_build_object(
+                  'id', oi.id,
+                  'productId', v.product_id,
+                  'productName', oi.product_name,
+                  'variantName', oi.variant_name,
+                  'review', CASE WHEN r.id IS NULL THEN NULL ELSE jsonb_build_object(
+                    'rating', r.rating,
+                    'comment', r.comment,
+                    'updatedAt', r.updated_at
+                  ) END
+                ) ORDER BY oi.id)
+                FROM order_items oi
+                JOIN product_variants v ON v.id = oi.variant_id
+                LEFT JOIN product_reviews r ON r.order_item_id = oi.id
+                WHERE oi.order_id = o.id
+              ), '[]'::jsonb) AS items
        FROM orders o JOIN buyer_profiles bp ON bp.id = o.buyer_profile_id
        JOIN stores s ON s.id = o.store_id JOIN deliveries d ON d.order_id = o.id
        WHERE bp.user_id = $1 ORDER BY o.placed_at DESC, o.id DESC LIMIT 100`,
@@ -310,7 +327,8 @@ export class OperationsRepository {
               o.shipping_amount AS "shippingAmount", o.total_amount AS "totalAmount",
               o.placed_at AS "placedAt", s.name AS "storeName",
               jsonb_agg(DISTINCT jsonb_build_object(
-                'id', i.id, 'productName', i.product_name, 'variantName', i.variant_name,
+                'id', i.id, 'productId', v.product_id,
+                'productName', i.product_name, 'variantName', i.variant_name,
                 'quantity', i.quantity, 'unitPriceAmount', i.unit_price_amount::text,
                 'lineTotalAmount', i.line_total_amount::text
               )) AS items,
@@ -331,6 +349,7 @@ export class OperationsRepository {
                AS "deliveryHistory"
        FROM orders o JOIN stores s ON s.id = o.store_id
        JOIN order_items i ON i.order_id = o.id
+       JOIN product_variants v ON v.id = i.variant_id
        JOIN buyer_profiles bp ON bp.id = o.buyer_profile_id
        WHERE bp.user_id = $1 AND o.id = $2 GROUP BY o.id, s.name`,
       [userId, orderId],

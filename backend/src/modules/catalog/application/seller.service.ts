@@ -36,7 +36,11 @@ export class SellerService {
   async publicStore(slug: string) {
     const store = await this.sellers.storeBySlug(slug);
     if (!store) throw this.storeNotFound();
-    return store;
+    return {
+      ...store,
+      ratingAverage: Number(store.ratingAverage ?? 0),
+      ratingCount: store.ratingCount ?? 0,
+    };
   }
 
   async myStore(userId: string) {

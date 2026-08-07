@@ -96,6 +96,21 @@ describe('seller delivery and overdue worker', () => {
       .expect(201);
     expect(retry.body.earningAmount).toBe('20000');
 
+    const deliveredDetails = await request(app.getHttpServer())
+      .get(`/api/v1/orders/${order.id}`)
+      .set('Cookie', buyer.cookie)
+      .expect(200);
+    const reviewedItem = deliveredDetails.body.items[0] as {
+      id: string;
+      productId: string;
+    };
+    await request(app.getHttpServer())
+      .put(`/api/v1/orders/${order.id}/items/${reviewedItem.id}/review`)
+      .set('origin', origin)
+      .set('Cookie', buyer.cookie)
+      .send({ rating: 5, comment: 'Too early' })
+      .expect(409);
+
     await request(app.getHttpServer())
       .post(`/api/v1/orders/${order.id}/complete`)
       .set('origin', origin)
@@ -119,6 +134,38 @@ describe('seller delivery and overdue worker', () => {
     expect(
       details.body.deliveryHistory.map((entry: { to: string }) => entry.to),
     ).toEqual(['WAITING_FOR_DRIVER', 'CLAIMED', 'IN_TRANSIT', 'DELIVERED']);
+
+    const createdReview = await request(app.getHttpServer())
+      .put(`/api/v1/orders/${order.id}/items/${reviewedItem.id}/review`)
+      .set('origin', origin)
+      .set('Cookie', buyer.cookie)
+      .send({ rating: 5, comment: 'Produk sesuai pesanan.' })
+      .expect(200);
+    const updatedReview = await request(app.getHttpServer())
+      .put(`/api/v1/orders/${order.id}/items/${reviewedItem.id}/review`)
+      .set('origin', origin)
+      .set('Cookie', buyer.cookie)
+      .send({ rating: 4, comment: 'Produk baik setelah dipakai.' })
+      .expect(200);
+    expect(updatedReview.body.id).toBe(createdReview.body.id);
+
+    const publicReviews = await request(app.getHttpServer())
+      .get(`/api/v1/products/${reviewedItem.productId}/reviews`)
+      .expect(200);
+    expect(
+      publicReviews.body.items.find(
+        (review: { orderItemId: string }) =>
+          review.orderItemId === reviewedItem.id,
+      ),
+    ).toMatchObject({ rating: 4, verifiedPurchase: true });
+
+    const ratedProduct = await request(app.getHttpServer())
+      .get(`/api/v1/products/${reviewedItem.productId}`)
+      .expect(200);
+    expect(ratedProduct.body).toMatchObject({
+      ratingAverage: 4,
+      ratingCount: 1,
+    });
     const earningCount = await database.query<{ count: string }>(
       'SELECT count(*) FROM driver_earnings WHERE delivery_id = $1',
       [deliveryId],
