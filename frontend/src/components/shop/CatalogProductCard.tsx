@@ -33,11 +33,13 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
           {product.store.name}
         </Link>
         <div className="flex min-h-5 items-center gap-1 text-xs text-muted-foreground">
-          {product.ratingCount > 0 && (
+          {product.ratingCount > 0 ? (
             <span className="inline-flex items-center gap-1" aria-label={`Rating ${product.ratingAverage.toFixed(1)} dari ${product.ratingCount} ulasan`}>
               <Star aria-hidden="true" className="size-3.5 fill-brand-yellow text-brand-yellow" />
               {product.ratingAverage.toFixed(1)}
             </span>
+          ) : (
+            <span>Belum ada ulasan</span>
           )}
           {product.ratingCount > 0 && <span aria-hidden="true">·</span>}
           <span className={product.availableQuantity > 0 ? "" : "text-promo"}>

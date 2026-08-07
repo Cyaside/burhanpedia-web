@@ -3,13 +3,15 @@
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Wallet } from "lucide-react";
+import { Package, Star, Wallet } from "lucide-react";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { commerceApi, formatMoney } from "@/lib/api/commerce";
+import type { OrderSummary } from "@/lib/api/commerce";
 import { useAuthGuard } from "@/lib/auth";
 
 export default function ProfilePage() {
@@ -83,6 +85,17 @@ export default function ProfilePage() {
                       {new Date(order.placedAt).toLocaleDateString("id-ID")}
                     </span>
                     <strong>{formatMoney(order.totalAmount)}</strong>
+                  </div>
+                  <div className="mt-3 space-y-3 border-t pt-3">
+                    {order.items.map((item) => (
+                      <div key={item.id} className="text-sm">
+                        <p className="font-medium">{item.productName}</p>
+                        <p className="text-xs text-slate-500">{item.variantName}</p>
+                        {order.status === "COMPLETED" && (
+                          <ReviewForm orderId={order.id} item={item} />
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </article>
               ))}
@@ -161,5 +174,90 @@ export default function ProfilePage() {
       </main>
       <MobileDock />
     </div>
+  );
+}
+
+function ReviewForm({
+  orderId,
+  item,
+}: {
+  orderId: string;
+  item: OrderSummary["items"][number];
+}) {
+  const queryClient = useQueryClient();
+  const [rating, setRating] = useState(item.review?.rating ?? 0);
+  const [comment, setComment] = useState(item.review?.comment ?? "");
+  const review = useMutation({
+    mutationFn: () =>
+      commerceApi.saveReview(orderId, item.id, {
+        rating,
+        comment: comment.trim() || undefined,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["catalog-product", item.productId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["product-reviews", item.productId],
+      });
+    },
+  });
+
+  return (
+    <form
+      className="mt-3 rounded-md border bg-slate-50 p-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (rating > 0) review.mutate();
+      }}
+    >
+      <fieldset>
+        <legend className="text-xs font-semibold">
+          {item.review ? "Perbarui ulasan" : "Nilai produk"}
+        </legend>
+        <div className="mt-2 flex gap-1" aria-label="Pilih rating produk">
+          {[1, 2, 3, 4, 5].map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-label={`${value} bintang`}
+              aria-pressed={rating === value}
+              onClick={() => setRating(value)}
+              className="rounded p-1 focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <Star
+                aria-hidden="true"
+                className={`size-5 ${value <= rating ? "fill-brand-yellow text-brand-yellow" : "text-slate-300"}`}
+              />
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <label htmlFor={`review-${item.id}`} className="sr-only">
+        Komentar ulasan
+      </label>
+      <Textarea
+        id={`review-${item.id}`}
+        value={comment}
+        maxLength={2000}
+        placeholder="Ceritakan pengalaman dengan produk ini (opsional)"
+        className="mt-2 min-h-20 bg-white"
+        onChange={(event) => setComment(event.target.value)}
+      />
+      <Button type="submit" size="sm" className="mt-2" disabled={rating === 0 || review.isPending}>
+        {review.isPending ? "Menyimpan…" : item.review ? "Perbarui" : "Kirim ulasan"}
+      </Button>
+      {review.isSuccess && (
+        <span role="status" className="ml-3 text-xs text-green-700">
+          Ulasan tersimpan.
+        </span>
+      )}
+      {review.isError && (
+        <p role="alert" className="mt-2 text-xs text-red-700">
+          {review.error.message}
+        </p>
+      )}
+    </form>
   );
 }

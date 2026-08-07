@@ -90,7 +90,7 @@ export default function DashboardPage() {
           <Button asChild variant="outline"><Link href="/profile">Profil</Link></Button>
         </div>
       )}
-      {role === "SELLER" && <Button asChild><Link href="/seller/products">Kelola produk</Link></Button>}
+      {role === "SELLER" && <Button asChild><Link href="/seller/store">Kelola identitas toko</Link></Button>}
     </main>
   )
 }

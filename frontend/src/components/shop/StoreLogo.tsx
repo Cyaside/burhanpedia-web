@@ -11,8 +11,10 @@ interface StoreLogoProps {
 export function StoreLogo({ name, logoUrl, logoAltText, className }: StoreLogoProps) {
   return (
     <span
+      aria-label={logoUrl ? undefined : `Monogram ${name}`}
       className={cn(
-        "relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl border bg-white",
+        "relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-neutral-300",
+        logoUrl ? "bg-white" : "bg-neutral-900",
         className,
       )}
     >
@@ -25,7 +27,7 @@ export function StoreLogo({ name, logoUrl, logoAltText, className }: StoreLogoPr
           className="object-contain p-1.5"
         />
       ) : (
-        <span aria-hidden="true" className="text-sm font-extrabold text-primary">
+        <span aria-hidden="true" className="text-sm font-black tracking-tight text-white">
           {initials(name)}
         </span>
       )}
@@ -34,10 +36,11 @@ export function StoreLogo({ name, logoUrl, logoAltText, className }: StoreLogoPr
 }
 
 function initials(name: string) {
-  return name
+  const parts = name
     .split(/\s+/)
     .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
+  if (parts.length > 1) {
+    return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
+  }
+  return parts[0]?.slice(0, 2).toUpperCase() ?? "?";
 }

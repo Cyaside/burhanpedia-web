@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { getPublicStore, listCatalog } from "@/lib/api/catalog";
 import type { CatalogFilters } from "@/lib/api/catalog";
 import { ApiError } from "@/lib/api/client";
+import { Star } from "lucide-react";
 
 export default function StorePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -107,6 +108,17 @@ export default function StorePage() {
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                   {store.data.description ||
                     "Jelajahi produk yang tersedia di toko ini."}
+                </p>
+                <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                  {store.data.ratingCount > 0 ? (
+                    <>
+                      <Star aria-hidden="true" className="size-4 fill-brand-yellow text-brand-yellow" />
+                      <strong className="text-foreground">{store.data.ratingAverage.toFixed(1)}</strong>
+                      rating produk · {store.data.ratingCount} ulasan
+                    </>
+                  ) : (
+                    "Belum ada ulasan produk"
+                  )}
                 </p>
               </div>
             </section>

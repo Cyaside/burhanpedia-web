@@ -6,7 +6,11 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, Star, Truck } from "lucide-react";
-import { getCatalogProduct, formatRupiah } from "@/lib/api/catalog";
+import {
+  getCatalogProduct,
+  getProductReviews,
+  formatRupiah,
+} from "@/lib/api/catalog";
 import type { CatalogProduct } from "@/lib/api/catalog";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
@@ -27,6 +31,11 @@ export default function ProductDetailPage() {
     queryFn: () => getCatalogProduct(slug),
   });
   const data = product.data;
+  const reviews = useQuery({
+    queryKey: ["product-reviews", data?.id],
+    queryFn: () => getProductReviews(data!.id),
+    enabled: Boolean(data),
+  });
   const variant = data?.variants.find((item) => item.id === selectedVariant);
   const addToCart = useMutation({
     mutationFn: ({ variantId, count }: { variantId: string; count: number }) =>
@@ -274,9 +283,36 @@ export default function ProductDetailPage() {
                 </h2>
                 <p className="mt-3 text-sm text-muted-foreground">
                   {data.ratingCount > 0
-                    ? `Rating rata-rata ${data.ratingAverage.toFixed(1)} dari ${data.ratingCount} ulasan. Rincian ulasan belum tersedia.`
+                    ? `Rating rata-rata ${data.ratingAverage.toFixed(1)} dari ${data.ratingCount} ulasan terverifikasi.`
                     : "Produk ini belum memiliki ulasan."}
                 </p>
+                {reviews.data?.items.map((review) => (
+                  <article key={review.id} className="mt-4 border-t pt-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold">{review.reviewerName}</p>
+                      <span className="text-xs text-muted-foreground">
+                        Pembelian terverifikasi
+                      </span>
+                    </div>
+                    <p
+                      className="mt-1 flex gap-0.5"
+                      aria-label={`${review.rating} dari 5 bintang`}
+                    >
+                      {Array.from({ length: 5 }, (_, index) => (
+                        <Star
+                          key={index}
+                          aria-hidden="true"
+                          className={`size-3.5 ${index < review.rating ? "fill-brand-yellow text-brand-yellow" : "text-border"}`}
+                        />
+                      ))}
+                    </p>
+                    {review.comment && (
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {review.comment}
+                      </p>
+                    )}
+                  </article>
+                ))}
               </section>
             </div>
           </>

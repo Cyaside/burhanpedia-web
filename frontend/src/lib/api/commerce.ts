@@ -91,6 +91,17 @@ export interface OrderSummary {
   placedAt: string;
   storeName: string;
   deliveryMethod: DeliveryMethod;
+  items: Array<{
+    id: string;
+    productId: string;
+    productName: string;
+    variantName: string;
+    review: {
+      rating: number;
+      comment: string | null;
+      updatedAt: string;
+    } | null;
+  }>;
 }
 
 export interface WalletHistory {
@@ -123,6 +134,12 @@ export const commerceApi = {
       headers: { "Idempotency-Key": idempotencyKey },
     }),
   orders: () => api.get<OrderSummary[]>("/orders"),
+  saveReview: (
+    orderId: string,
+    orderItemId: string,
+    input: { rating: number; comment?: string },
+  ) =>
+    api.put(`/orders/${orderId}/items/${orderItemId}/review`, input),
   wallet: () => api.get<WalletHistory>("/wallet/entries"),
   demoTopUp: (amount: number, idempotencyKey: string) =>
     api.post("/wallet/top-ups", { amount }, {

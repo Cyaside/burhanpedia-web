@@ -44,11 +44,25 @@ export interface PublicStore {
   logoUrl: string | null
   logoAltText: string | null
   status: string
+  ratingAverage: number
+  ratingCount: number
 }
 
 export interface CatalogPage {
   items: CatalogProduct[]
   nextCursor: string | null
+}
+
+export interface ProductReview {
+  id: string
+  productId: string
+  orderItemId: string
+  rating: number
+  comment: string | null
+  reviewerName: string
+  verifiedPurchase: true
+  createdAt: string
+  updatedAt: string
 }
 
 export interface CatalogFilters {
@@ -74,6 +88,12 @@ export function listCatalog(filters: CatalogFilters = {}) {
 
 export function getCatalogProduct(id: string) {
   return api.get<CatalogProduct>(`/products/${encodeURIComponent(id)}`)
+}
+
+export function getProductReviews(productId: string) {
+  return api.get<{ items: ProductReview[] }>(
+    `/products/${encodeURIComponent(productId)}/reviews`,
+  )
 }
 
 export function listCatalogCategories() {
