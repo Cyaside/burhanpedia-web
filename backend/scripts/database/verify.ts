@@ -30,7 +30,7 @@ async function verify(): Promise<void> {
     const migrations = await client.query<{ count: string }>(
       'SELECT count(*) FROM schema_migrations',
     );
-    assert(Number(migrations.rows[0].count) >= 10);
+    assert(Number(migrations.rows[0].count) >= 11);
 
     const requiredIndexes = [
       'products_search_trgm_idx',
@@ -85,6 +85,16 @@ async function verify(): Promise<void> {
       `INSERT INTO stores (seller_profile_id, slug, name)
        VALUES ($1, 'schema-test', 'Schema Test Store') RETURNING id`,
       [seller.rows[0].id],
+    );
+    await expectConstraint(
+      client,
+      () =>
+        client.query(
+          `UPDATE stores SET logo_url = 'https://example.com/logo.png'
+           WHERE id = $1`,
+          [store.rows[0].id],
+        ),
+      'stores_logo_pair_check',
     );
     const product = await client.query<{ id: string }>(
       `INSERT INTO products (store_id, slug, name)

@@ -31,32 +31,32 @@ export const categoryVisuals = [
   {
     slug: "elektronik",
     fallbackName: "Elektronik",
-    image: unsplash("photo-1737885197905-5bb7251b267e", 640),
-    alt: "Headphone studio di depan layar komputer",
+    image: unsplash("photo-1562560017-e008835e92bc", 640),
+    alt: "Koleksi laptop, ponsel, kamera, dan aksesori elektronik",
   },
   {
     slug: "fashion",
     fallbackName: "Fashion",
-    image: unsplash("photo-1603400521630-9f2de124b33b", 640),
-    alt: "Koleksi pakaian bernuansa netral di sebuah butik",
+    image: unsplash("photo-1721152531086-70a0d0bb33f9", 640),
+    alt: "Beragam pakaian dan manekin di dalam toko fashion",
   },
   {
     slug: "rumah-tangga",
     fallbackName: "Rumah Tangga",
-    image: unsplash("photo-1556910602-38f53e68e15d", 640),
-    alt: "Peralatan masak tersusun di rak dapur",
+    image: unsplash("photo-1554995207-c18c203602cb", 640),
+    alt: "Ruang keluarga dengan sofa, meja, tanaman, dan dekorasi rumah",
   },
   {
     slug: "hobi",
     fallbackName: "Hobi & Koleksi",
-    image: unsplash("photo-1674615420480-1a8b651aeb05", 640),
-    alt: "Kamera compact dan perlengkapan kreatif di atas meja",
+    image: unsplash("photo-1771440047898-a83cc89b4fe2", 640),
+    alt: "Beragam alat seni dan kerajinan di meja kerja",
   },
   {
     slug: "kesehatan",
     fallbackName: "Kesehatan",
-    image: unsplash("photo-1768483018807-bd0b9ab86539", 640),
-    alt: "Rangkaian produk perawatan diri di atas rak",
+    image: unsplash("photo-1696861286643-341a8d7a79e9", 640),
+    alt: "Rak produk kesehatan di sebuah apotek",
   },
 ] as const;
 

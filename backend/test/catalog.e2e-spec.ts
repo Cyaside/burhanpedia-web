@@ -88,6 +88,8 @@ describe('catalog and seller ownership', () => {
       .send({ slug: `test-store-${suffix}`, name: `Test Store ${suffix}` })
       .expect(201);
     storeId = store.body.id as string;
+    expect(store.body.logoUrl).toBeNull();
+    expect(store.body.logoAltText).toBeNull();
 
     for (const [index, name] of ['Desk Lamp', 'Reading Lamp'].entries()) {
       const product = await request(app.getHttpServer())

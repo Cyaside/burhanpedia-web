@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { PackageCheck, ShieldCheck, Store, Truck } from "lucide-react";
+import { PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
 import { CatalogProductCard } from "@/components/shop/CatalogProductCard";
 import { CatalogEmpty, CatalogError, ProductGridSkeleton } from "@/components/shop/CatalogFeedback";
 import { HomeDiscovery } from "@/components/shop/HomeDiscovery";
+import { StoreLogo } from "@/components/shop/StoreLogo";
 import { listCatalog, listCatalogCategories } from "@/lib/api/catalog";
 import type { CatalogProduct } from "@/lib/api/catalog";
 
@@ -60,7 +61,7 @@ export default function HomePage() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {stores.map((store) => (
                 <Link key={store.id} href={`/stores/${store.slug}`} className="flex min-h-20 items-center gap-3 rounded-lg border bg-white p-4 hover:border-primary">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-md bg-accent text-primary"><Store aria-hidden="true" className="size-5" /></span>
+                  <StoreLogo name={store.name} logoUrl={store.logoUrl} logoAltText={store.logoAltText} />
                   <span className="min-w-0"><strong className="block truncate text-sm">{store.name}</strong><span className="text-xs text-muted-foreground">Lihat etalase toko</span></span>
                 </Link>
               ))}
@@ -109,5 +110,5 @@ function ValuePoint({ icon: Icon, title, text }: { icon: typeof PackageCheck; ti
 }
 
 function uniqueStores(products: CatalogProduct[]) {
-  return [...new Map(products.map((product) => [product.store.id, product.store])).values()].slice(0, 4);
+  return [...new Map(products.map((product) => [product.store.id, product.store])).values()].slice(0, 5);
 }

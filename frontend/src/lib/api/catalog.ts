@@ -5,7 +5,13 @@ export interface CatalogProduct {
   slug: string
   name: string
   description: string | null
-  store: { id: string; slug: string; name: string }
+  store: {
+    id: string
+    slug: string
+    name: string
+    logoUrl: string | null
+    logoAltText: string | null
+  }
   category: { id: string; name: string } | null
   minPriceAmount: string
   ratingAverage: number
@@ -35,6 +41,8 @@ export interface PublicStore {
   slug: string
   name: string
   description: string | null
+  logoUrl: string | null
+  logoAltText: string | null
   status: string
 }
 

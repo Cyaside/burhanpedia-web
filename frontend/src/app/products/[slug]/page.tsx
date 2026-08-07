@@ -5,12 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, Star, Store, Truck } from "lucide-react";
+import { ShieldCheck, Star, Truck } from "lucide-react";
 import { getCatalogProduct, formatRupiah } from "@/lib/api/catalog";
 import type { CatalogProduct } from "@/lib/api/catalog";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
 import { Button } from "@/components/ui/button";
+import { StoreLogo } from "@/components/shop/StoreLogo";
 import { commerceApi } from "@/lib/api/commerce";
 import { ensureAuthenticated } from "@/lib/auth";
 
@@ -225,7 +226,12 @@ export default function ProductDetailPage() {
                   href={`/stores/${data.store.slug}`}
                   className="mt-4 flex min-h-14 items-center gap-3 rounded-lg border bg-white px-4 hover:border-primary"
                 >
-                  <Store aria-hidden="true" className="size-5 text-primary" />
+                  <StoreLogo
+                    name={data.store.name}
+                    logoUrl={data.store.logoUrl}
+                    logoAltText={data.store.logoAltText}
+                    className="size-10 rounded-lg"
+                  />
                   <span className="flex-1">
                     <strong className="block text-sm">{data.store.name}</strong>
                     <span className="text-xs text-muted-foreground">

@@ -66,6 +66,8 @@ export class CatalogService {
         id: row.store_id,
         slug: row.store_slug,
         name: row.store_name,
+        logoUrl: row.store_logo_url,
+        logoAltText: row.store_logo_alt_text,
       },
       category: row.category_id
         ? { id: row.category_id, name: row.category_name }

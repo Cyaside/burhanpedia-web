@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
           hostname: "images.unsplash.com",
           pathname: "/**",
         },
+        {
+          protocol: "https" as const,
+          hostname: "cdn.jsdelivr.net",
+          pathname: "/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/**",
+        },
       ]
     })(),
   },

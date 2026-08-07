@@ -13,6 +13,8 @@ export interface StoreRow {
   slug: string;
   name: string;
   description: string | null;
+  logoUrl: string | null;
+  logoAltText: string | null;
   status: string;
 }
 
@@ -36,7 +38,9 @@ export class SellerRepository {
     userId: string,
     client?: PoolClient,
   ): Promise<StoreRow | null> {
-    const sql = `SELECT s.id, s.slug, s.name, s.description, s.status
+    const sql = `SELECT s.id, s.slug, s.name, s.description,
+                        s.logo_url AS "logoUrl",
+                        s.logo_alt_text AS "logoAltText", s.status
                  FROM stores s
                  JOIN seller_profiles sp ON sp.id = s.seller_profile_id
                  WHERE sp.user_id = $1`;
@@ -48,7 +52,8 @@ export class SellerRepository {
 
   async storeBySlug(slug: string): Promise<StoreRow | null> {
     const result = await this.database.query<StoreRow>(
-      `SELECT id, slug, name, description, status
+      `SELECT id, slug, name, description,
+              logo_url AS "logoUrl", logo_alt_text AS "logoAltText", status
        FROM stores WHERE slug = $1 AND status = 'ACTIVE'`,
       [slug],
     );
@@ -63,7 +68,8 @@ export class SellerRepository {
       `INSERT INTO stores (seller_profile_id, slug, name, description, status)
        SELECT sp.id, $2, $3, $4, 'ACTIVE'
        FROM seller_profiles sp WHERE sp.user_id = $1
-       RETURNING id, slug, name, description, status`,
+       RETURNING id, slug, name, description,
+                 logo_url AS "logoUrl", logo_alt_text AS "logoAltText", status`,
       [userId, dto.slug, dto.name, dto.description ?? null],
     );
     return result.rows[0] ?? null;

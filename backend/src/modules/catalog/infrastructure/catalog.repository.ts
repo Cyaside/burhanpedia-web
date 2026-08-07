@@ -10,6 +10,8 @@ export interface CatalogRow {
   store_id: string;
   store_slug: string;
   store_name: string;
+  store_logo_url: string | null;
+  store_logo_alt_text: string | null;
   category_id: string | null;
   category_name: string | null;
   min_price_amount: string | null;
@@ -109,6 +111,8 @@ export class CatalogRepository {
          LIMIT ${limit}
        )
        SELECT page.*, s.slug AS store_slug, s.name AS store_name,
+              s.logo_url AS store_logo_url,
+              s.logo_alt_text AS store_logo_alt_text,
               c.name AS category_name,
               coalesce(stock.available_quantity, 0)::text AS available_quantity,
               coalesce(pictures.images, '[]'::jsonb) AS images
@@ -139,6 +143,8 @@ export class CatalogRepository {
               p.category_id, p.min_price_amount, p.rating_average,
               p.rating_count, p.created_at,
               s.slug AS store_slug, s.name AS store_name,
+              s.logo_url AS store_logo_url,
+              s.logo_alt_text AS store_logo_alt_text,
               c.name AS category_name,
               coalesce(variants.variants, '[]'::jsonb) AS variants,
               coalesce(variants.available_quantity, 0)::text AS available_quantity,

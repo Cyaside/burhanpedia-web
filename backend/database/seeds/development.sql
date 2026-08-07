@@ -11,42 +11,77 @@ ON CONFLICT (slug) DO UPDATE SET
   is_active = true;
 
 INSERT INTO users (id, email, name, password_hash, email_verified_at)
-VALUES (
-  '20000000-0000-4000-8000-000000000001',
-  'demo.seller@burhanpedia.local',
-  'Burhanpedia Demo Seller',
-  '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg',
-  '2026-07-23T13:00:00Z'
-)
+VALUES
+  ('20000000-0000-4000-8000-000000000001', 'nada@burhanpedia.local', 'Nada Lokal', '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg', '2026-07-23T13:00:00Z'),
+  ('20000000-0000-4000-8000-000000000002', 'lemari@burhanpedia.local', 'Lemari Sore', '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg', '2026-07-23T13:00:00Z'),
+  ('20000000-0000-4000-8000-000000000003', 'dapur@burhanpedia.local', 'Dapur Nusa', '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg', '2026-07-23T13:00:00Z'),
+  ('20000000-0000-4000-8000-000000000004', 'kreasi@burhanpedia.local', 'Ruang Kreasi', '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg', '2026-07-23T13:00:00Z'),
+  ('20000000-0000-4000-8000-000000000005', 'sehat@burhanpedia.local', 'Sehat Harian', '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg', '2026-07-23T13:00:00Z')
 ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
   name = EXCLUDED.name,
   password_hash = EXCLUDED.password_hash,
   status = 'ACTIVE',
   email_verified_at = EXCLUDED.email_verified_at;
 
 INSERT INTO user_roles (user_id, role, status)
-VALUES ('20000000-0000-4000-8000-000000000001', 'SELLER', 'ACTIVE')
+VALUES
+  ('20000000-0000-4000-8000-000000000001', 'SELLER', 'ACTIVE'),
+  ('20000000-0000-4000-8000-000000000002', 'SELLER', 'ACTIVE'),
+  ('20000000-0000-4000-8000-000000000003', 'SELLER', 'ACTIVE'),
+  ('20000000-0000-4000-8000-000000000004', 'SELLER', 'ACTIVE'),
+  ('20000000-0000-4000-8000-000000000005', 'SELLER', 'ACTIVE')
 ON CONFLICT (user_id, role) DO UPDATE SET status = 'ACTIVE';
 
 INSERT INTO seller_profiles (id, user_id)
-VALUES (
-  '21000000-0000-4000-8000-000000000001',
-  '20000000-0000-4000-8000-000000000001'
-)
+VALUES
+  ('21000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001'),
+  ('21000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000002'),
+  ('21000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000003'),
+  ('21000000-0000-4000-8000-000000000004', '20000000-0000-4000-8000-000000000004'),
+  ('21000000-0000-4000-8000-000000000005', '20000000-0000-4000-8000-000000000005')
 ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id;
 
-INSERT INTO stores (id, seller_profile_id, slug, name, description, status)
-VALUES (
-  '22000000-0000-4000-8000-000000000001',
-  '21000000-0000-4000-8000-000000000001',
-  'toko-burhan-pilihan',
-  'Toko Burhan Pilihan',
-  'Etalase demo berisi kebutuhan pilihan dari beberapa kategori.',
-  'ACTIVE'
-)
+INSERT INTO stores
+  (id, seller_profile_id, slug, name, description, logo_url, logo_alt_text, status)
+VALUES
+  (
+    '22000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000001',
+    'nada-lokal', 'Nada Lokal', 'Perangkat audio untuk bekerja, bermain, dan menikmati musik.',
+    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F3A7.png',
+    'Mark headphone Nada Lokal', 'ACTIVE'
+  ),
+  (
+    '22000000-0000-4000-8000-000000000002', '21000000-0000-4000-8000-000000000002',
+    'lemari-sore', 'Lemari Sore', 'Pilihan pakaian kasual dengan warna yang mudah dipadukan.',
+    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F457.png',
+    'Mark gaun Lemari Sore', 'ACTIVE'
+  ),
+  (
+    '22000000-0000-4000-8000-000000000003', '21000000-0000-4000-8000-000000000003',
+    'dapur-nusa', 'Dapur Nusa', 'Peralatan memasak praktis untuk dapur sehari-hari.',
+    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F373.png',
+    'Mark wajan Dapur Nusa', 'ACTIVE'
+  ),
+  (
+    '22000000-0000-4000-8000-000000000004', '21000000-0000-4000-8000-000000000004',
+    'ruang-kreasi', 'Ruang Kreasi', 'Perlengkapan hobi dan alat untuk proyek kreatif.',
+    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F3A8.png',
+    'Mark palet warna Ruang Kreasi', 'ACTIVE'
+  ),
+  (
+    '22000000-0000-4000-8000-000000000005', '21000000-0000-4000-8000-000000000005',
+    'sehat-harian', 'Sehat Harian', 'Pilihan perawatan diri untuk rutinitas harian.',
+    'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@17.0.0/color/618x618/1F9F4.png',
+    'Mark botol perawatan Sehat Harian', 'ACTIVE'
+  )
 ON CONFLICT (id) DO UPDATE SET
+  seller_profile_id = EXCLUDED.seller_profile_id,
+  slug = EXCLUDED.slug,
   name = EXCLUDED.name,
   description = EXCLUDED.description,
+  logo_url = EXCLUDED.logo_url,
+  logo_alt_text = EXCLUDED.logo_alt_text,
   status = 'ACTIVE';
 
 INSERT INTO products
@@ -63,7 +98,7 @@ VALUES
   ),
   (
     '30000000-0000-4000-8000-000000000002',
-    '22000000-0000-4000-8000-000000000001',
+    '22000000-0000-4000-8000-000000000002',
     '10000000-0000-4000-8000-000000000002',
     'paket-fashion-netral',
     'Paket Fashion Netral 3 Pcs',
@@ -72,7 +107,7 @@ VALUES
   ),
   (
     '30000000-0000-4000-8000-000000000003',
-    '22000000-0000-4000-8000-000000000001',
+    '22000000-0000-4000-8000-000000000003',
     '10000000-0000-4000-8000-000000000003',
     'set-peralatan-masak-enamel',
     'Set Peralatan Masak Enamel',
@@ -81,7 +116,7 @@ VALUES
   ),
   (
     '30000000-0000-4000-8000-000000000004',
-    '22000000-0000-4000-8000-000000000001',
+    '22000000-0000-4000-8000-000000000004',
     '10000000-0000-4000-8000-000000000004',
     'kamera-compact-classic',
     'Kamera Compact Classic',
@@ -90,7 +125,7 @@ VALUES
   ),
   (
     '30000000-0000-4000-8000-000000000005',
-    '22000000-0000-4000-8000-000000000001',
+    '22000000-0000-4000-8000-000000000005',
     '10000000-0000-4000-8000-000000000005',
     'paket-perawatan-diri-natural',
     'Paket Perawatan Diri Natural',
@@ -98,6 +133,7 @@ VALUES
     'ACTIVE', 4.85, 83, '2026-07-27T12:45:00Z'
   )
 ON CONFLICT (id) DO UPDATE SET
+  store_id = EXCLUDED.store_id,
   category_id = EXCLUDED.category_id,
   name = EXCLUDED.name,
   description = EXCLUDED.description,

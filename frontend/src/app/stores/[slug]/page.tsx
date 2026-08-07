@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Store } from "lucide-react";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
 import { CatalogProductCard } from "@/components/shop/CatalogProductCard";
+import { StoreLogo } from "@/components/shop/StoreLogo";
 import {
   CatalogEmpty,
   CatalogError,
@@ -91,9 +91,12 @@ export default function StorePage() {
               className="mt-6 flex items-start gap-4 rounded-lg border bg-white p-5 sm:p-7"
               aria-labelledby="store-heading"
             >
-              <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-accent text-primary">
-                <Store aria-hidden="true" className="size-7" />
-              </span>
+              <StoreLogo
+                name={store.data.name}
+                logoUrl={store.data.logoUrl}
+                logoAltText={store.data.logoAltText}
+                className="size-16"
+              />
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-success">
                   Toko aktif
