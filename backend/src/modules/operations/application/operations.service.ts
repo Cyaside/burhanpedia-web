@@ -14,6 +14,10 @@ export class OperationsService {
     return this.operations.sellerOrders(userId);
   }
 
+  sellerFinance(userId: string) {
+    return this.operations.sellerFinance(userId);
+  }
+
   buyerOrders(userId: string) {
     return this.operations.buyerOrders(userId);
   }
@@ -61,6 +65,10 @@ export class OperationsService {
             ).toString('base64url')
           : null,
     };
+  }
+
+  driverDeliveries(userId: string) {
+    return this.operations.driverDeliveries(userId);
   }
 
   claim(userId: string, jobId: string, key?: string) {

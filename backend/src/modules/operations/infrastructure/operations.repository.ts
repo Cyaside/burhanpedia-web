@@ -3,6 +3,22 @@ import { DatabaseService } from '../../../database/database.service';
 import { OrderStateMachine } from '../domain/order-state-machine';
 import type { OrderStatus } from '../domain/order-state-machine';
 
+export interface AdminVoucherRow {
+  id: string;
+  code: string;
+  quota: number | null;
+  redemptionCount: number;
+  perBuyerLimit: number;
+  startsAt: Date;
+  endsAt: Date;
+  isActive: boolean;
+  name?: string;
+  kind?: 'FIXED' | 'PERCENTAGE' | 'FREE_SHIPPING';
+  valueAmount?: string | null;
+  valueBasisPoints?: number | null;
+  minimumSubtotalAmount?: string;
+}
+
 @Injectable()
 export class OperationsRepository {
   constructor(
@@ -23,6 +39,137 @@ export class OperationsRepository {
       [userId],
     );
     return result.rows;
+  }
+
+  async sellerFinance(userId: string) {
+    const result = await this.database.query<{
+      validAmount: string;
+      completedAmount: string;
+      validCount: string;
+      completedCount: string;
+    }>(
+      `SELECT
+         coalesce(sum(o.total_amount) FILTER (
+           WHERE o.status NOT IN ('CANCELED','RETURNED','REFUNDED')
+         ), 0)::text AS "validAmount",
+         coalesce(sum(o.total_amount) FILTER (
+           WHERE o.status = 'COMPLETED'
+         ), 0)::text AS "completedAmount",
+         count(*) FILTER (
+           WHERE o.status NOT IN ('CANCELED','RETURNED','REFUNDED')
+         )::text AS "validCount",
+         count(*) FILTER (WHERE o.status = 'COMPLETED')::text AS "completedCount"
+       FROM orders o
+       JOIN stores s ON s.id = o.store_id
+       JOIN seller_profiles sp ON sp.id = s.seller_profile_id
+       WHERE sp.user_id = $1`,
+      [userId],
+    );
+    return result.rows[0];
+  }
+
+  async adminOverview() {
+    const [orders, deliveries, jobs, outbox, deadLetters, vouchers] =
+      await Promise.all([
+        this.database.query<{ status: string; count: string }>(
+          'SELECT status::text, count(*)::text AS count FROM orders GROUP BY status ORDER BY status',
+        ),
+        this.database.query<{ status: string; count: string }>(
+          'SELECT status::text, count(*)::text AS count FROM deliveries GROUP BY status ORDER BY status',
+        ),
+        this.database.query<{ status: string; count: string }>(
+          'SELECT status::text, count(*)::text AS count FROM background_jobs GROUP BY status ORDER BY status',
+        ),
+        this.database.query<{ status: string; count: string }>(
+          'SELECT status::text, count(*)::text AS count FROM outbox_events GROUP BY status ORDER BY status',
+        ),
+        this.database.query<{ count: string }>(
+          'SELECT count(*)::text AS count FROM dead_letter_events',
+        ),
+        this.database.query<AdminVoucherRow>(
+          `SELECT v.id, v.code, v.quota, v.redemption_count AS "redemptionCount",
+                v.per_buyer_limit AS "perBuyerLimit", v.starts_at AS "startsAt",
+                v.ends_at AS "endsAt", v.is_active AS "isActive",
+                p.name, p.kind, p.value_amount AS "valueAmount",
+                p.value_basis_points AS "valueBasisPoints",
+                p.minimum_subtotal_amount AS "minimumSubtotalAmount"
+         FROM vouchers v JOIN promotions p ON p.id = v.promotion_id
+         ORDER BY v.created_at DESC LIMIT 100`,
+        ),
+      ]);
+    return {
+      orders: orders.rows,
+      deliveries: deliveries.rows,
+      jobs: jobs.rows,
+      outbox: outbox.rows,
+      deadLetterCount: Number(deadLetters.rows[0]?.count ?? 0),
+      vouchers: vouchers.rows,
+    };
+  }
+
+  createVoucher(
+    userId: string,
+    input: {
+      code: string;
+      name: string;
+      kind: 'FIXED' | 'PERCENTAGE' | 'FREE_SHIPPING';
+      valueAmount?: string;
+      valueBasisPoints?: number;
+      maximumDiscountAmount?: string;
+      minimumSubtotalAmount: string;
+      quota?: number;
+      perBuyerLimit: number;
+      startsAt: string;
+      endsAt: string;
+    },
+  ) {
+    return this.database.withTransaction(async (client) => {
+      const promotion = await client.query<{ id: string }>(
+        `INSERT INTO promotions
+         (code, name, kind, value_amount, value_basis_points,
+          maximum_discount_amount, minimum_subtotal_amount,
+          starts_at, ends_at, is_active)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true)
+         RETURNING id`,
+        [
+          input.code,
+          input.name,
+          input.kind,
+          input.valueAmount ?? null,
+          input.valueBasisPoints ?? null,
+          input.maximumDiscountAmount ?? null,
+          input.minimumSubtotalAmount,
+          input.startsAt,
+          input.endsAt,
+        ],
+      );
+      const voucher = await client.query<AdminVoucherRow>(
+        `INSERT INTO vouchers
+         (promotion_id, code, quota, per_buyer_limit, starts_at, ends_at, is_active)
+         VALUES ($1,$2,$3,$4,$5,$6,true)
+         RETURNING id, code, quota, redemption_count AS "redemptionCount",
+                   per_buyer_limit AS "perBuyerLimit", starts_at AS "startsAt",
+                   ends_at AS "endsAt", is_active AS "isActive"`,
+        [
+          promotion.rows[0].id,
+          input.code,
+          input.quota ?? null,
+          input.perBuyerLimit,
+          input.startsAt,
+          input.endsAt,
+        ],
+      );
+      await client.query(
+        `INSERT INTO audit_logs (actor_user_id, action, resource_type, resource_id, metadata)
+         VALUES ($1,'VOUCHER_CREATED','VOUCHER',$2,$3::jsonb)`,
+        [
+          userId,
+          voucher.rows[0].id,
+          JSON.stringify({ code: input.code, kind: input.kind }),
+        ],
+      );
+      return { ...voucher.rows[0], name: input.name, kind: input.kind };
+    });
   }
 
   async buyerOrders(userId: string) {
@@ -117,6 +264,30 @@ export class OperationsRepository {
          AND ($2::timestamptz IS NULL OR (j.created_at, j.id) > ($2,$3::uuid))
        ORDER BY j.created_at, j.id LIMIT $1`,
       [limit, cursor?.createdAt ?? null, cursor?.id ?? null],
+    );
+    return result.rows;
+  }
+
+  async driverDeliveries(userId: string) {
+    const result = await this.database.query(
+      `SELECT d.id, o.id AS "orderId", o.order_number AS "orderNumber",
+              o.status AS "orderStatus", d.status, d.method,
+              d.fee_amount AS "feeAmount",
+              d.pickup_deadline_at AS "pickupDeadlineAt",
+              d.delivery_deadline_at AS "deliveryDeadlineAt",
+              d.picked_up_at AS "pickedUpAt", d.delivered_at AS "deliveredAt",
+              s.name AS "storeName", a.city, a.province,
+              j.status AS "jobStatus", j.updated_at AS "updatedAt"
+       FROM deliveries d
+       JOIN driver_profiles dp ON dp.id = d.driver_profile_id
+       JOIN orders o ON o.id = d.order_id
+       JOIN stores s ON s.id = o.store_id
+       JOIN order_addresses a ON a.order_id = o.id
+       LEFT JOIN delivery_jobs j ON j.delivery_id = d.id
+       WHERE dp.user_id = $1
+       ORDER BY coalesce(d.delivered_at, d.picked_up_at, d.claimed_at) DESC, d.id DESC
+       LIMIT 100`,
+      [userId],
     );
     return result.rows;
   }

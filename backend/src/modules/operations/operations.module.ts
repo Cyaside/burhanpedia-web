@@ -9,6 +9,8 @@ import {
   SellerOrdersController,
 } from './presentation/operations.controller';
 import { ClockController } from './presentation/clock.controller';
+import { AdminOperationsController } from './presentation/admin-operations.controller';
+import { AdminOperationsService } from './application/admin-operations.service';
 
 @Module({
   controllers: [
@@ -16,12 +18,14 @@ import { ClockController } from './presentation/clock.controller';
     DriverOperationsController,
     BuyerOrdersController,
     ClockController,
+    AdminOperationsController,
   ],
   providers: [
     OrderStateMachine,
     OperationsRepository,
     OperationsService,
     ClockService,
+    AdminOperationsService,
   ],
   exports: [OrderStateMachine, ClockService],
 })

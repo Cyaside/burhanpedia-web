@@ -73,6 +73,14 @@ export class SellerCatalogController {
     return this.sellers.createProduct(principal.userId, dto);
   }
 
+  @Get('products/:id')
+  product(
+    @CurrentUser() principal: SessionPrincipal,
+    @Param('id', ParseUUIDPipe) productId: string,
+  ) {
+    return this.sellers.myProduct(principal.userId, productId);
+  }
+
   @Patch('products/:id')
   updateProduct(
     @CurrentUser() principal: SessionPrincipal,

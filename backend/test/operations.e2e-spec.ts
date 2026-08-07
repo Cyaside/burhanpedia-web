@@ -78,6 +78,23 @@ describe('seller delivery and overdue worker', () => {
     const winner = claims.findIndex(({ status }) => status === 201);
     const deliveryId = claims[winner].body.delivery_id as string;
 
+    const claimed = await request(app.getHttpServer())
+      .get('/api/v1/driver/deliveries')
+      .set('Cookie', driverCookies[winner])
+      .expect(200);
+    expect(claimed.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: deliveryId, status: 'CLAIMED' }),
+      ]),
+    );
+    const otherDriver = await request(app.getHttpServer())
+      .get('/api/v1/driver/deliveries')
+      .set('Cookie', driverCookies[1 - winner])
+      .expect(200);
+    expect(otherDriver.body).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: deliveryId })]),
+    );
+
     await request(app.getHttpServer())
       .post(`/api/v1/driver/deliveries/${deliveryId}/pickup`)
       .set('origin', origin)
@@ -116,6 +133,24 @@ describe('seller delivery and overdue worker', () => {
       .set('origin', origin)
       .set('Cookie', buyer.cookie)
       .expect(201);
+    const finance = await request(app.getHttpServer())
+      .get('/api/v1/seller/orders/finance')
+      .set('Cookie', sellerCookie)
+      .expect(200);
+    const orderAmount = await database.query<{ total_amount: string }>(
+      'SELECT total_amount::text FROM orders WHERE id = $1',
+      [order.id],
+    );
+    expect(finance.body).toMatchObject({
+      validAmount: orderAmount.rows[0].total_amount,
+      completedAmount: orderAmount.rows[0].total_amount,
+      validCount: '1',
+      completedCount: '1',
+    });
+    await request(app.getHttpServer())
+      .get('/api/v1/seller/orders/finance')
+      .set('Cookie', buyer.cookie)
+      .expect(403);
     const details = await request(app.getHttpServer())
       .get(`/api/v1/orders/${order.id}`)
       .set('Cookie', buyer.cookie)
@@ -171,6 +206,76 @@ describe('seller delivery and overdue worker', () => {
       [deliveryId],
     );
     expect(earningCount.rows[0].count).toBe('1');
+  });
+
+  it('limits admin monitoring and voucher creation to admins', async () => {
+    const adminCookie = await login(`admin-${suffix}@burhanpedia.test`);
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/operations')
+      .set('Cookie', buyer.cookie)
+      .expect(403);
+    const before = await request(app.getHttpServer())
+      .get('/api/v1/admin/operations')
+      .set('Cookie', adminCookie)
+      .expect(200);
+    expect(before.body).toMatchObject({
+      orders: expect.any(Array),
+      vouchers: expect.any(Array),
+      deadLetterCount: expect.any(Number),
+    });
+
+    const code = `GATE8_${suffix.toUpperCase()}`;
+    const startsAt = new Date(Date.now() - 60_000).toISOString();
+    const endsAt = new Date(Date.now() + 86_400_000).toISOString();
+    const payload = {
+      code,
+      name: 'Gate 8 voucher',
+      kind: 'FIXED',
+      valueAmount: '1000',
+      minimumSubtotalAmount: '10000',
+      quota: 10,
+      perBuyerLimit: 1,
+      startsAt,
+      endsAt,
+    };
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/vouchers')
+      .set('origin', origin)
+      .set('Cookie', buyer.cookie)
+      .send(payload)
+      .expect(403);
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/vouchers')
+      .set('origin', origin)
+      .set('Cookie', adminCookie)
+      .send({ ...payload, endsAt: startsAt })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/vouchers')
+      .set('origin', origin)
+      .set('Cookie', adminCookie)
+      .send({ ...payload, valueAmount: '0' })
+      .expect(400);
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/admin/vouchers')
+      .set('origin', origin)
+      .set('Cookie', adminCookie)
+      .send(payload)
+      .expect(201);
+    expect(created.body).toMatchObject({ code, quota: 10 });
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/vouchers')
+      .set('origin', origin)
+      .set('Cookie', adminCookie)
+      .send(payload)
+      .expect(409);
+    const after = await request(app.getHttpServer())
+      .get('/api/v1/admin/operations')
+      .set('Cookie', adminCookie)
+      .expect(200);
+    expect(after.body.vouchers).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code })]),
+    );
   });
 
   it('advances application time and refunds an overdue order exactly once', async () => {

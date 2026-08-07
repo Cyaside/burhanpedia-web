@@ -112,6 +112,12 @@ export class SellerService {
     };
   }
 
+  async myProduct(userId: string, productId: string) {
+    const product = await this.sellers.sellerProduct(userId, productId);
+    if (!product) throw this.productNotFound();
+    return this.present(product);
+  }
+
   async updateProduct(
     userId: string,
     productId: string,
@@ -169,6 +175,7 @@ export class SellerService {
       status: row.status,
       version: row.version,
       minPriceAmount: row.min_price_amount,
+      variants: row.variants ?? [],
       createdAt: row.created_at.toISOString(),
     };
   }

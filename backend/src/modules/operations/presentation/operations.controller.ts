@@ -25,6 +25,11 @@ export class SellerOrdersController {
     return this.operations.sellerOrders(principal.userId);
   }
 
+  @Get('finance')
+  finance(@CurrentUser() principal: SessionPrincipal) {
+    return this.operations.sellerFinance(principal.userId);
+  }
+
   @Post(':id/process')
   process(
     @CurrentUser() principal: SessionPrincipal,
@@ -45,6 +50,11 @@ export class DriverOperationsController {
     @Query('cursor') cursor?: string,
   ) {
     return this.operations.jobs(limit, cursor);
+  }
+
+  @Get('deliveries')
+  deliveries(@CurrentUser() principal: SessionPrincipal) {
+    return this.operations.driverDeliveries(principal.userId);
   }
 
   @Post('jobs/:id/claim')

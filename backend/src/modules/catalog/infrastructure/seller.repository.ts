@@ -30,6 +30,17 @@ export interface SellerProductRow {
   version: number;
   min_price_amount: string | null;
   created_at: Date;
+  variants?: Array<{
+    id: string;
+    sku: string;
+    name: string;
+    attributes: Record<string, string>;
+    priceAmount: string;
+    status: string;
+    onHand: number;
+    reserved: number;
+    availableQuantity: number;
+  }>;
 }
 
 @Injectable()
@@ -150,10 +161,27 @@ export class SellerRepository {
   ): Promise<SellerProductRow[]> {
     const result = await this.database.query<SellerProductRow>(
       `SELECT p.id, p.store_id, p.slug, p.name, p.description,
-              p.status, p.version, p.min_price_amount, p.created_at
+              p.status, p.version, p.min_price_amount, p.created_at,
+              coalesce(variants.items, '[]'::jsonb) AS variants
        FROM products p
        JOIN stores s ON s.id = p.store_id
        JOIN seller_profiles sp ON sp.id = s.seller_profile_id
+       LEFT JOIN LATERAL (
+         SELECT jsonb_agg(jsonb_build_object(
+                  'id', v.id,
+                  'sku', v.sku,
+                  'name', v.name,
+                  'attributes', v.attributes,
+                  'priceAmount', v.price_amount::text,
+                  'status', v.status,
+                  'onHand', coalesce(i.on_hand, 0),
+                  'reserved', coalesce(i.reserved, 0),
+                  'availableQuantity', greatest(coalesce(i.on_hand, 0) - coalesce(i.reserved, 0), 0)
+                ) ORDER BY v.created_at, v.id) AS items
+         FROM product_variants v
+         LEFT JOIN inventories i ON i.variant_id = v.id
+         WHERE v.product_id = p.id
+       ) variants ON true
        WHERE sp.user_id = $1
          AND ($3::timestamptz IS NULL OR (p.created_at, p.id) < ($3, $4::uuid))
        ORDER BY p.created_at DESC, p.id DESC
@@ -161,6 +189,39 @@ export class SellerRepository {
       [userId, limit, cursor?.createdAt ?? null, cursor?.id ?? null],
     );
     return result.rows;
+  }
+
+  async sellerProduct(
+    userId: string,
+    productId: string,
+  ): Promise<SellerProductRow | null> {
+    const result = await this.database.query<SellerProductRow>(
+      `SELECT p.id, p.store_id, p.slug, p.name, p.description,
+              p.status, p.version, p.min_price_amount, p.created_at,
+              coalesce(variants.items, '[]'::jsonb) AS variants
+       FROM products p
+       JOIN stores s ON s.id = p.store_id
+       JOIN seller_profiles sp ON sp.id = s.seller_profile_id
+       LEFT JOIN LATERAL (
+         SELECT jsonb_agg(jsonb_build_object(
+                  'id', v.id,
+                  'sku', v.sku,
+                  'name', v.name,
+                  'attributes', v.attributes,
+                  'priceAmount', v.price_amount::text,
+                  'status', v.status,
+                  'onHand', coalesce(i.on_hand, 0),
+                  'reserved', coalesce(i.reserved, 0),
+                  'availableQuantity', greatest(coalesce(i.on_hand, 0) - coalesce(i.reserved, 0), 0)
+                ) ORDER BY v.created_at, v.id) AS items
+         FROM product_variants v
+         LEFT JOIN inventories i ON i.variant_id = v.id
+         WHERE v.product_id = p.id
+       ) variants ON true
+       WHERE sp.user_id = $1 AND p.id = $2`,
+      [userId, productId],
+    );
+    return result.rows[0] ?? null;
   }
 
   async updateProduct(

@@ -104,6 +104,38 @@ export interface OrderSummary {
   }>;
 }
 
+export interface OrderDetail {
+  id: string;
+  number: string;
+  status: string;
+  subtotalAmount: string;
+  discountAmount: string;
+  shippingAmount: string;
+  totalAmount: string;
+  placedAt: string;
+  storeName: string;
+  items: Array<{
+    id: string;
+    productId: string;
+    productName: string;
+    variantName: string;
+    quantity: number;
+    unitPriceAmount: string;
+    lineTotalAmount: string;
+  }>;
+  address: {
+    recipientName: string;
+    phone: string;
+    line1: string;
+    line2: string | null;
+    city: string;
+    province: string;
+    postalCode: string;
+  };
+  history: Array<{ from: string | null; to: string; reason: string | null; createdAt: string }>;
+  deliveryHistory: Array<{ from: string | null; to: string; note: string | null; occurredAt: string }>;
+}
+
 export interface WalletHistory {
   balanceAmount: string;
   items: Array<{
@@ -134,6 +166,8 @@ export const commerceApi = {
       headers: { "Idempotency-Key": idempotencyKey },
     }),
   orders: () => api.get<OrderSummary[]>("/orders"),
+  order: (orderId: string) => api.get<OrderDetail>(`/orders/${orderId}`),
+  completeOrder: (orderId: string) => api.post<{ id: string; status: string }>(`/orders/${orderId}/complete`),
   saveReview: (
     orderId: string,
     orderItemId: string,

@@ -203,6 +203,15 @@ describe('catalog and seller ownership', () => {
     expect(second.body.items[0].id).not.toBe(first.body.items[0].id);
     expect(second.body.nextCursor).toBeNull();
 
+    const ownProduct = await request(app.getHttpServer())
+      .get(`/api/v1/seller/products/${productId}`)
+      .set('Cookie', accessCookie)
+      .expect(200);
+    expect(ownProduct.body).toMatchObject({
+      id: productId,
+      variants: [expect.objectContaining({ id: variantId, onHand: 5 })],
+    });
+
     await request(app.getHttpServer())
       .get('/api/v1/seller/products')
       .set('Cookie', accessCookie)
@@ -250,6 +259,10 @@ describe('catalog and seller ownership', () => {
       .send({ email: otherEmail, password: 'VerySecurePassword123!' })
       .expect(200);
     const otherCookie = String(otherLogin.headers['set-cookie']).split(';')[0];
+    await request(app.getHttpServer())
+      .get(`/api/v1/seller/products/${productId}`)
+      .set('Cookie', otherCookie)
+      .expect(404);
     await request(app.getHttpServer())
       .post(`/api/v1/seller/variants/${variantId}/inventory/adjustments`)
       .set('origin', origin)
