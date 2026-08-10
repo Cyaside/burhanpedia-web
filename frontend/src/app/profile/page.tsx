@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, Star, Wallet } from "lucide-react";
 import SiteHeader from "@/components/navigation/SiteHeader";
@@ -86,6 +87,9 @@ export default function ProfilePage() {
                     </span>
                     <strong>{formatMoney(order.totalAmount)}</strong>
                   </div>
+                  <Button asChild variant="link" size="sm" className="mt-2 px-0">
+                    <Link href={`/orders/${order.id}`}>Lihat detail dan pelacakan</Link>
+                  </Button>
                   <div className="mt-3 space-y-3 border-t pt-3">
                     {order.items.map((item) => (
                       <div key={item.id} className="text-sm">

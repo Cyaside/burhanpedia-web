@@ -134,6 +134,14 @@ export default function CheckoutPage() {
             <p className="mt-3 text-slate-600">
               {checkout.data.orders.length} pesanan dibuat dari checkout ini.
             </p>
+            <div className="mt-5 divide-y rounded-lg border text-left">
+              {checkout.data.orders.map((order) => (
+                <Link key={order.id} href={`/orders/${order.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-accent">
+                  <span className="font-semibold">{order.number}</span>
+                  <span className="text-primary">Lacak pesanan →</span>
+                </Link>
+              ))}
+            </div>
             <Button asChild className="mt-6">
               <Link href="/profile">Lihat pesanan</Link>
             </Button>
@@ -148,6 +156,11 @@ export default function CheckoutPage() {
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-6">
         <h1 className="border-b pb-4 text-2xl font-semibold">Checkout</h1>
+        {cart.data && cart.data.groups.length > 1 && (
+          <p className="mt-5 rounded-lg border bg-white p-4 text-sm text-muted-foreground">
+            Belanja dari {cart.data.groups.length} toko akan dipisah menjadi {cart.data.groups.length} pesanan. Metode dan biaya pengiriman dihitung untuk setiap toko; total akhir ditampilkan sebelum membayar.
+          </p>
+        )}
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="space-y-5">
             <section className="border bg-white p-5">

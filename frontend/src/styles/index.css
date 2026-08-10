@@ -84,6 +84,25 @@
   * {
     @apply border-border outline-ring/40;
   }
+  html {
+    scrollbar-color: var(--primary) var(--card);
+    scrollbar-width: thin;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: var(--card);
+  }
+  *::-webkit-scrollbar-thumb {
+    border: 2px solid var(--card);
+    border-radius: 999px;
+    background: var(--primary);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body), "Manrope", system-ui, sans-serif;

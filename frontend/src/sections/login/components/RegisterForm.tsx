@@ -82,7 +82,7 @@ export function RegisterForm() {
                 <TabsTrigger value="DRIVER" aria-label="Driver"><Truck className="mr-1 size-4" />Driver</TabsTrigger>
               </TabsList>
             </Tabs>
-            <p className="text-xs text-muted-foreground">You can add more roles later from your dashboard.</p>
+            <p className="text-xs text-muted-foreground">Pilih peran yang akan digunakan saat pertama masuk.</p>
             <input type="hidden" {...register("roles.0")} />
           </div>
           <div className="space-y-2">

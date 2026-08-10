@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, Star, Truck } from "lucide-react";
+import { Minus, Plus, ShieldCheck, ShoppingCart, Star, Truck } from "lucide-react";
 import {
   getCatalogProduct,
   getProductReviews,
@@ -36,7 +36,9 @@ export default function ProductDetailPage() {
     queryFn: () => getProductReviews(data!.id),
     enabled: Boolean(data),
   });
-  const variant = data?.variants.find((item) => item.id === selectedVariant);
+  const variant =
+    data?.variants.find((item) => item.id === selectedVariant) ??
+    (data?.variants.length === 1 ? data.variants[0] : undefined);
   const addToCart = useMutation({
     mutationFn: ({ variantId, count }: { variantId: string; count: number }) =>
       commerceApi.addItem(variantId, count),
@@ -96,9 +98,9 @@ export default function ProductDetailPage() {
         )}
         {data && (
           <>
-            <div className="mt-6 grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="mt-6 grid items-start gap-7 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)_20rem]">
               <section aria-label="Foto produk" className="min-w-0">
-                <div className="relative aspect-square overflow-hidden rounded-lg border bg-white">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-lg border bg-white">
                   {data.images[selectedImage] ? (
                     <Image
                       src={data.images[selectedImage].url}
@@ -176,48 +178,45 @@ export default function ProductDetailPage() {
                   {formatRupiah(variant?.priceAmount ?? data.minPriceAmount)}
                 </p>
 
-                <fieldset className="mt-5">
-                  <legend className="text-sm font-semibold">
-                    Pilih varian
-                  </legend>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {data.variants.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        aria-pressed={selectedVariant === item.id}
-                        disabled={item.availableQuantity === 0}
-                        onClick={() => {
-                          setSelectedVariant(item.id);
-                          setQuantity(1);
-                          addToCart.reset();
-                        }}
-                        className={`min-h-11 rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${selectedVariant === item.id ? "border-primary bg-accent text-primary" : "border-input bg-white hover:border-primary"}`}
-                      >
-                        {item.name} · {formatRupiah(item.priceAmount)}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-
-                <label
-                  htmlFor="quantity"
-                  className="mt-5 block text-sm font-semibold"
-                >
-                  Jumlah
-                  <input
-                    id="quantity"
-                    type="number"
-                    min={1}
-                    max={Math.min(variant?.availableQuantity ?? 99, 99)}
-                    value={quantity}
-                    disabled={!variant}
-                    onChange={(event) =>
-                      setQuantity(Number(event.target.value))
-                    }
-                    className="mt-2 block h-11 w-24 rounded-md border border-input bg-white px-3 text-sm"
-                  />
-                </label>
+                {data.variants.length > 1 && (
+                  <fieldset className="mt-5 border-t pt-5">
+                    <legend className="text-sm font-semibold">
+                      Pilih varian
+                    </legend>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {data.variants.map((item) => {
+                        const selected = selectedVariant === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            aria-pressed={selected}
+                            disabled={item.availableQuantity === 0}
+                            onClick={() => {
+                              setSelectedVariant(item.id);
+                              setQuantity(1);
+                              addToCart.reset();
+                            }}
+                            className={`min-h-14 rounded-md border px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed ${
+                              selected
+                                ? "border-primary bg-accent text-primary"
+                                : item.availableQuantity === 0
+                                  ? "border-border bg-muted text-muted-foreground"
+                                  : "border-input bg-white hover:border-primary"
+                            }`}
+                          >
+                            <span className="block font-semibold">{item.name}</span>
+                            <span className="mt-0.5 block text-xs">
+                              {item.availableQuantity === 0
+                                ? "Stok habis"
+                                : `${formatRupiah(item.priceAmount)} · stok ${item.availableQuantity}`}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                )}
                 <div className="mt-5 space-y-3 border-y py-4 text-sm text-muted-foreground">
                   <p className="flex items-center gap-2">
                     <Truck aria-hidden="true" className="size-4 text-primary" />{" "}
@@ -239,7 +238,7 @@ export default function ProductDetailPage() {
                     name={data.store.name}
                     logoUrl={data.store.logoUrl}
                     logoAltText={data.store.logoAltText}
-                    className="size-10 rounded-lg"
+                    className="size-10"
                   />
                   <span className="flex-1">
                     <strong className="block text-sm">{data.store.name}</strong>
@@ -249,24 +248,28 @@ export default function ProductDetailPage() {
                   </span>
                   <span aria-hidden="true">→</span>
                 </Link>
-                <div className="mt-5 hidden lg:block">
-                  <CartAction
-                    data={data}
-                    variant={variant}
-                    quantity={quantity}
-                    pending={addToCart.isPending}
-                    add={addSelected}
-                  />
-                </div>
-                <CartMessage
+              </section>
+
+              <aside className="lg:col-span-2 xl:col-span-1 xl:sticky xl:top-28">
+                <PurchaseCard
+                  data={data}
+                  variant={variant}
+                  quantity={quantity}
+                  setQuantity={setQuantity}
+                  pending={addToCart.isPending}
+                  add={addSelected}
                   success={addToCart.isSuccess}
                   error={addToCart.error?.message}
                 />
-              </section>
+              </aside>
             </div>
 
-            <div className="mt-10 grid gap-7 border-t pt-7 lg:grid-cols-[2fr_1fr]">
-              <section id="deskripsi" aria-labelledby="description-heading">
+            <div className="mt-10 border-t pt-8">
+              <section
+                id="deskripsi"
+                aria-labelledby="description-heading"
+                className="max-w-4xl"
+              >
                 <h2 id="description-heading" className="text-xl font-bold">
                   Deskripsi produk
                 </h2>
@@ -277,44 +280,78 @@ export default function ProductDetailPage() {
                 <h3 className="mt-7 font-semibold">Spesifikasi varian</h3>
                 <VariantSpecifications product={data} />
               </section>
-              <section id="ulasan" aria-labelledby="review-heading">
-                <h2 id="review-heading" className="text-xl font-bold">
-                  Ulasan
-                </h2>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {data.ratingCount > 0
-                    ? `Rating rata-rata ${data.ratingAverage.toFixed(1)} dari ${data.ratingCount} ulasan terverifikasi.`
-                    : "Produk ini belum memiliki ulasan."}
-                </p>
-                {reviews.data?.items.map((review) => (
-                  <article key={review.id} className="mt-4 border-t pt-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold">{review.reviewerName}</p>
-                      <span className="text-xs text-muted-foreground">
-                        Pembelian terverifikasi
-                      </span>
-                    </div>
-                    <p
-                      className="mt-1 flex gap-0.5"
-                      aria-label={`${review.rating} dari 5 bintang`}
-                    >
-                      {Array.from({ length: 5 }, (_, index) => (
-                        <Star
-                          key={index}
-                          aria-hidden="true"
-                          className={`size-3.5 ${index < review.rating ? "fill-brand-yellow text-brand-yellow" : "text-border"}`}
-                        />
-                      ))}
-                    </p>
-                    {review.comment && (
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {review.comment}
-                      </p>
-                    )}
-                  </article>
-                ))}
-              </section>
             </div>
+
+            <section
+              id="ulasan"
+              aria-labelledby="review-heading"
+              className="mt-10 border-t pt-8"
+            >
+              <h2 id="review-heading" className="text-xl font-bold">
+                Ulasan pembeli
+              </h2>
+              <div className="mt-5 grid gap-8 lg:grid-cols-[14rem_minmax(0,1fr)]">
+                <div>
+                  {data.ratingCount > 0 ? (
+                    <>
+                      <p className="text-4xl font-bold">
+                        {data.ratingAverage.toFixed(1)}
+                        <span className="text-lg font-medium text-muted-foreground">
+                          /5
+                        </span>
+                      </p>
+                      <p className="mt-2 flex gap-1" aria-hidden="true">
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <Star
+                            key={index}
+                            className={`size-5 ${index < Math.round(data.ratingAverage) ? "fill-brand-yellow text-brand-yellow" : "text-border"}`}
+                          />
+                        ))}
+                      </p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {data.ratingCount} ulasan terverifikasi
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Produk ini belum memiliki ulasan.
+                    </p>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  {reviews.isPending && (
+                    <p className="text-sm text-muted-foreground">Memuat ulasan…</p>
+                  )}
+                  {reviews.data?.items.map((review) => (
+                    <article key={review.id} className="border-t py-5 first:border-t-0 first:pt-0">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold">{review.reviewerName}</p>
+                        <span className="text-xs text-success">
+                          Pembelian terverifikasi
+                        </span>
+                      </div>
+                      <p
+                        className="mt-1 flex gap-0.5"
+                        aria-label={`${review.rating} dari 5 bintang`}
+                      >
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <Star
+                            key={index}
+                            aria-hidden="true"
+                            className={`size-3.5 ${index < review.rating ? "fill-brand-yellow text-brand-yellow" : "text-border"}`}
+                          />
+                        ))}
+                      </p>
+                      {review.comment && (
+                        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                          {review.comment}
+                        </p>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
           </>
         )}
       </main>
@@ -330,6 +367,121 @@ export default function ProductDetailPage() {
         </div>
       )}
       <MobileDock />
+    </div>
+  );
+}
+
+function PurchaseCard({
+  data,
+  variant,
+  quantity,
+  setQuantity,
+  pending,
+  add,
+  success,
+  error,
+}: {
+  data: CatalogProduct;
+  variant: CatalogProduct["variants"][number] | undefined;
+  quantity: number;
+  setQuantity: (quantity: number) => void;
+  pending: boolean;
+  add: () => void;
+  success: boolean;
+  error?: string;
+}) {
+  const maximum = Math.min(variant?.availableQuantity ?? 1, 99);
+  const subtotal = variant
+    ? (BigInt(variant.priceAmount) * BigInt(quantity)).toString()
+    : null;
+
+  return (
+    <section
+      aria-labelledby="purchase-heading"
+      className="rounded-lg border bg-white p-5"
+    >
+      <h2 id="purchase-heading" className="text-lg font-bold">
+        Atur jumlah
+      </h2>
+      <div className="mt-4 border-b pb-4">
+        <p className="text-xs text-muted-foreground">Varian terpilih</p>
+        <p className="mt-1 text-sm font-semibold">
+          {variant?.name ?? "Pilih varian produk terlebih dahulu"}
+        </p>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <QuantityStepper
+          value={quantity}
+          maximum={maximum}
+          disabled={!variant || variant.availableQuantity === 0}
+          onChange={setQuantity}
+        />
+        <p className="text-sm text-muted-foreground">
+          Stok: <strong className="text-foreground">{variant?.availableQuantity ?? "—"}</strong>
+        </p>
+      </div>
+      <div className="mt-5 flex items-end justify-between gap-4 border-t pt-4">
+        <span className="text-sm text-muted-foreground">Subtotal</span>
+        <strong className="text-xl">
+          {subtotal ? formatRupiah(subtotal) : "—"}
+        </strong>
+      </div>
+      <div className="mt-5 hidden lg:block">
+        <CartAction
+          data={data}
+          variant={variant}
+          quantity={quantity}
+          pending={pending}
+          add={add}
+        />
+      </div>
+      <CartMessage success={success} error={error} />
+    </section>
+  );
+}
+
+function QuantityStepper({
+  value,
+  maximum,
+  disabled,
+  onChange,
+}: {
+  value: number;
+  maximum: number;
+  disabled: boolean;
+  onChange: (quantity: number) => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Jumlah produk"
+      className="inline-grid h-11 grid-cols-[2.75rem_3rem_2.75rem] overflow-hidden rounded-md border border-input bg-white"
+    >
+      <button
+        type="button"
+        aria-label="Kurangi jumlah"
+        disabled={disabled || value <= 1}
+        onClick={() => onChange(Math.max(1, value - 1))}
+        className="grid place-items-center text-primary hover:bg-accent disabled:text-muted-foreground"
+      >
+        <Minus aria-hidden="true" className="size-4" />
+      </button>
+      <output
+        aria-live="polite"
+        aria-label={`${value} barang`}
+        className="grid place-items-center border-x border-input text-sm font-semibold"
+      >
+        {value}
+      </output>
+      <button
+        type="button"
+        aria-label="Tambah jumlah"
+        disabled={disabled || value >= maximum}
+        onClick={() => onChange(Math.min(maximum, value + 1))}
+        className="grid place-items-center text-primary hover:bg-accent disabled:text-muted-foreground"
+      >
+        <Plus aria-hidden="true" className="size-4" />
+      </button>
     </div>
   );
 }
@@ -359,6 +511,7 @@ function CartAction({
       }
       onClick={add}
     >
+      <ShoppingCart aria-hidden="true" />
       {pending
         ? "Menambahkan…"
         : data.availableQuantity === 0
