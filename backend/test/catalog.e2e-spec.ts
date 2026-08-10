@@ -219,6 +219,10 @@ describe('catalog and seller ownership', () => {
       .expect(400);
   });
 
+  it('rejects malformed public product identifiers before querying PostgreSQL', async () => {
+    await request(app.getHttpServer()).get('/api/v1/products/new').expect(400);
+  });
+
   it('enforces ownership, version checks, and nonnegative inventory', async () => {
     await request(app.getHttpServer())
       .patch(`/api/v1/seller/products/${productId}`)

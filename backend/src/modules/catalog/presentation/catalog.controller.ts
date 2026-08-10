@@ -3,6 +3,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -22,7 +23,7 @@ export class CatalogController {
   }
 
   @Get(':id')
-  async product(@Param('id') id: string) {
+  async product(@Param('id', ParseUUIDPipe) id: string) {
     const product = await this.catalog.product(id);
     if (!product) {
       throw new NotFoundException({
