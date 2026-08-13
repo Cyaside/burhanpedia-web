@@ -40,7 +40,6 @@ Backend tersedia di `http://localhost:3000/api/v1`. Detail konfigurasi selalu di
 ## Dokumentasi
 
 - [Requirement Burhanpedia](docs/requirements.md)
-- Keputusan arsitektur: `docs/adr/`
 - Runbook operasional: `docs/runbooks/`
 
 Dokumen master overhaul sengaja tidak disimpan di repository ini.

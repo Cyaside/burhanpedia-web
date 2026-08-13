@@ -12,7 +12,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-export const CATALOG_SORTS = [
+const CATALOG_SORTS = [
   'newest',
   'price_asc',
   'price_desc',

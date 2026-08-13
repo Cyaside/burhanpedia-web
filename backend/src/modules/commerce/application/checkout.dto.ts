@@ -12,11 +12,7 @@ import {
 } from 'class-validator';
 import type { DeliveryMethod } from '../domain/pricing.engine';
 
-export const DELIVERY_METHODS: DeliveryMethod[] = [
-  'INSTANT',
-  'NEXT_DAY',
-  'REGULAR',
-];
+const DELIVERY_METHODS: DeliveryMethod[] = ['INSTANT', 'NEXT_DAY', 'REGULAR'];
 
 export class DeliveryChoiceDto {
   @IsUUID()
@@ -41,15 +37,4 @@ export class CheckoutRequestDto {
   @ValidateNested({ each: true })
   @Type(() => DeliveryChoiceDto)
   deliveries!: DeliveryChoiceDto[];
-}
-
-export class OrderHistoryQueryDto {
-  @IsOptional()
-  @Type(() => Number)
-  limit?: number;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(512)
-  cursor?: string;
 }

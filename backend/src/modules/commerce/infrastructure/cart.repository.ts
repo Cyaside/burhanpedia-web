@@ -18,6 +18,19 @@ export interface CartRow {
   image_url: string | null;
 }
 
+interface AddressRow {
+  id: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  province: string;
+  postalCode: string;
+  isDefault: boolean;
+}
+
 @Injectable()
 export class CartRepository {
   constructor(private readonly database: DatabaseService) {}
@@ -115,8 +128,8 @@ export class CartRepository {
     return result.rowCount === 1;
   }
 
-  async addresses(userId: string) {
-    const result = await this.database.query(
+  async addresses(userId: string): Promise<AddressRow[]> {
+    const result = await this.database.query<AddressRow>(
       `SELECT a.id, a.label, a.recipient_name AS "recipientName", a.phone,
               a.line1, a.line2, a.city, a.province,
               a.postal_code AS "postalCode", a.is_default AS "isDefault"
@@ -127,7 +140,10 @@ export class CartRepository {
     return result.rows;
   }
 
-  async createAddress(userId: string, dto: CreateAddressDto) {
+  async createAddress(
+    userId: string,
+    dto: CreateAddressDto,
+  ): Promise<AddressRow | null> {
     return this.database.withTransaction(async (client) => {
       const buyer = await client.query<{ id: string }>(
         'SELECT id FROM buyer_profiles WHERE user_id = $1',
@@ -140,7 +156,7 @@ export class CartRepository {
           [buyer.rows[0].id],
         );
       }
-      const result = await client.query(
+      const result = await client.query<AddressRow>(
         `INSERT INTO addresses
          (buyer_profile_id, label, recipient_name, phone, line1, line2,
           city, province, postal_code, is_default)

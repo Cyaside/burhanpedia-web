@@ -7,12 +7,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Pool, PoolClient, QueryConfig, QueryResult, QueryResultRow } from 'pg';
 
-export type IsolationLevel =
-  | 'READ COMMITTED'
-  | 'REPEATABLE READ'
-  | 'SERIALIZABLE';
+type IsolationLevel = 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE';
 
-export interface TransactionOptions {
+interface TransactionOptions {
   isolationLevel?: IsolationLevel;
   maxRetries?: number;
 }

@@ -1,4 +1,4 @@
-export const DELIVERY_FEES = {
+const DELIVERY_FEES = {
   INSTANT: 25_000n,
   NEXT_DAY: 15_000n,
   REGULAR: 10_000n,

@@ -3,7 +3,7 @@ import { DatabaseService } from '../../../database/database.service';
 import { OrderStateMachine } from '../domain/order-state-machine';
 import type { OrderStatus } from '../domain/order-state-machine';
 
-export interface AdminVoucherRow {
+interface AdminVoucherRow {
   id: string;
   code: string;
   quota: number | null;

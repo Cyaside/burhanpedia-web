@@ -26,15 +26,6 @@ export default tseslint.config(
   },
   {
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
-      // This codebase (Nest controllers, Request typing, etc.) commonly uses `any` at the edges.
-      // Keep these as warnings so `npm run lint` doesn't hard-fail on safe-but-untypechecked code paths.
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -43,6 +34,18 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+    },
+  },
+  {
+    files: ['test/**/*.ts', 'src/**/*.spec.ts'],
+    rules: {
+      // Supertest intentionally exposes JSON response bodies and the Nest HTTP
+      // adapter as `any`; production source remains under the strict rules above.
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
 );

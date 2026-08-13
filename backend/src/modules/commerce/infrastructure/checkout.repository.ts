@@ -8,7 +8,7 @@ import {
   PromotionRule,
 } from '../domain/pricing.engine';
 
-export interface CheckoutLineRow {
+interface CheckoutLineRow {
   buyer_profile_id: string;
   cart_id: string;
   item_id: string;
@@ -27,7 +27,7 @@ export interface CheckoutLineRow {
   available_quantity: number;
 }
 
-export interface AddressRow {
+interface AddressRow {
   id: string;
   recipient_name: string;
   phone: string;
@@ -38,7 +38,7 @@ export interface AddressRow {
   postal_code: string;
 }
 
-export interface VoucherRow {
+interface VoucherRow {
   id: string;
   promotion_id: string;
   store_id: string | null;

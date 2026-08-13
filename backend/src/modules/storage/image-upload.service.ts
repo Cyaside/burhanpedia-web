@@ -323,10 +323,7 @@ export class ImageUploadService {
       bytes = await this.storage.load(object.storage_key, MAX_IMAGE_BYTES);
     } catch (error) {
       if (error instanceof UnprocessableEntityException) throw error;
-      const status =
-        typeof error === 'object' && error !== null && '$metadata' in error
-          ? (error.$metadata as { httpStatusCode?: number }).httpStatusCode
-          : undefined;
+      const status = this.storageStatus(error);
       if (status === 404) {
         throw this.invalidUpload('The uploaded object was not found.');
       }
@@ -370,6 +367,14 @@ export class ImageUploadService {
       if (error instanceof UnprocessableEntityException) throw error;
       throw this.invalidUpload('The uploaded object is not a valid image.');
     }
+  }
+
+  private storageStatus(error: unknown): number | undefined {
+    if (typeof error !== 'object' || error === null) return undefined;
+    const metadata = (error as { $metadata?: unknown }).$metadata;
+    if (typeof metadata !== 'object' || metadata === null) return undefined;
+    const status = (metadata as { httpStatusCode?: unknown }).httpStatusCode;
+    return typeof status === 'number' ? status : undefined;
   }
 
   private present(row: ProductImageRow) {

@@ -10,6 +10,28 @@ import {
 } from './cart.dto';
 import { CartRepository, CartRow } from '../infrastructure/cart.repository';
 
+interface PresentedCartItem {
+  id: string;
+  variantId: string;
+  quantity: number;
+  unitPriceAmount: string;
+  lineTotalAmount: string;
+  availableQuantity: number;
+  variantName: string;
+  product: {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+  };
+}
+
+interface PresentedCartGroup {
+  id: string;
+  name: string;
+  items: PresentedCartItem[];
+  subtotalAmount: bigint;
+}
+
 @Injectable()
 export class CartService {
   constructor(private readonly carts: CartRepository) {}
@@ -54,10 +76,7 @@ export class CartService {
   }
 
   private present(rows: CartRow[]) {
-    const stores = new Map<
-      string,
-      { id: string; name: string; items: object[]; subtotalAmount: bigint }
-    >();
+    const stores = new Map<string, PresentedCartGroup>();
     for (const row of rows) {
       const group = stores.get(row.store_id) ?? {
         id: row.store_id,
