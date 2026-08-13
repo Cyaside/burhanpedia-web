@@ -112,7 +112,7 @@ export default function DriverPage() {
             {history.map((delivery) => (
               <div key={delivery.id} className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
                 <div><p className="font-semibold">{delivery.orderNumber}</p><p className="mt-1 text-xs text-muted-foreground">{delivery.storeName} · {delivery.city}</p></div>
-                <span>{delivery.status}</span>
+                <span>{deliveryStatusLabel(delivery.status)}</span>
               </div>
             ))}
             {history.length === 0 && <p className="py-5 text-sm text-muted-foreground">Belum ada riwayat.</p>}
@@ -122,4 +122,8 @@ export default function DriverPage() {
       </main>
     </div>
   );
+}
+
+function deliveryStatusLabel(status: string) {
+  return { DELIVERED: "Terkirim", RETURNED: "Dikembalikan", CANCELED: "Dibatalkan" }[status] ?? status;
 }

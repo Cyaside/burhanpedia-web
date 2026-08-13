@@ -78,21 +78,23 @@ export default function AdminPage() {
               <StatusCard title="Background jobs" rows={overview.data.jobs} />
               <StatusCard title="Outbox" rows={overview.data.outbox} footer={`${overview.data.deadLetterCount} dead-letter`} />
             </section>
-            <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(22rem,0.7fr)]">
+            <div className="mt-8 space-y-6">
               <section className="rounded-lg border bg-white p-5">
-                <h2 className="text-lg font-bold">Voucher aktif dan terjadwal</h2>
+                <h2 className="text-lg font-bold">Daftar voucher</h2>
                 <div className="mt-4 divide-y">
-                  {overview.data.vouchers.map((item) => (
-                    <article key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
+                  {overview.data.vouchers.map((item) => {
+                    const status = voucherStatus(item, clock.data?.now ?? new Date().toISOString());
+                    return <article key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
                       <div><p className="font-bold">{item.code}</p><p className="mt-1 text-sm text-muted-foreground">{item.name} · {voucherValue(item)}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(item.startsAt).toLocaleDateString("id-ID")}–{new Date(item.endsAt).toLocaleDateString("id-ID")}</p></div>
-                      <div className="text-right text-sm"><p>{item.redemptionCount}/{item.quota ?? "∞"} dipakai</p><p className={item.isActive ? "mt-1 text-success" : "mt-1 text-muted-foreground"}>{item.isActive ? "Aktif" : "Nonaktif"}</p></div>
-                    </article>
-                  ))}
+                      <div className="text-right text-sm"><p>{item.redemptionCount}/{item.quota ?? "∞"} dipakai</p><p className={status === "Aktif" ? "mt-1 text-success" : "mt-1 text-muted-foreground"}>{status}</p></div>
+                    </article>;
+                  })}
                   {overview.data.vouchers.length === 0 && <p className="py-5 text-sm text-muted-foreground">Belum ada voucher.</p>}
                 </div>
               </section>
               <form onSubmit={createVoucher} className="rounded-lg border bg-white p-5">
                 <h2 className="text-lg font-bold">Buat voucher</h2>
+                <div className="grid gap-x-5 md:grid-cols-2">
                 <Field label="Kode"><Input name="code" pattern="[A-Za-z0-9_-]{3,40}" required /></Field>
                 <Field label="Nama kampanye"><Input name="name" minLength={3} maxLength={120} required /></Field>
                 <Field label="Jenis diskon">
@@ -105,7 +107,8 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 gap-3"><Field label="Kuota"><Input name="quota" type="number" min={1} /></Field><Field label="Batas per buyer"><Input name="perBuyerLimit" type="number" min={1} max={100} defaultValue="1" required /></Field></div>
                 <Field label="Mulai"><Input name="startsAt" type="datetime-local" required /></Field>
                 <Field label="Berakhir"><Input name="endsAt" type="datetime-local" required /></Field>
-                <Button type="submit" className="mt-5 w-full" disabled={voucher.isPending}>{voucher.isPending ? "Menyimpan…" : "Buat voucher"}</Button>
+                </div>
+                <Button type="submit" className="mt-5" disabled={voucher.isPending}>{voucher.isPending ? "Menyimpan…" : "Buat voucher"}</Button>
                 {voucher.isSuccess && <p role="status" className="mt-3 text-sm text-success">Voucher berhasil dibuat.</p>}
                 {voucher.isError && <p role="alert" className="mt-3 text-sm text-destructive">{voucher.error.message}</p>}
               </form>
@@ -138,4 +141,12 @@ function voucherValue(item: { kind: string; valueAmount: string | null; valueBas
   if (item.kind === "FREE_SHIPPING") return "Gratis ongkir";
   if (item.kind === "PERCENTAGE") return `${(item.valueBasisPoints ?? 0) / 100}%`;
   return formatMoney(item.valueAmount ?? "0");
+}
+
+function voucherStatus(item: { isActive: boolean; startsAt: string; endsAt: string }, now: string) {
+  if (!item.isActive) return "Nonaktif";
+  const current = Date.parse(now);
+  if (current < Date.parse(item.startsAt)) return "Terjadwal";
+  if (current >= Date.parse(item.endsAt)) return "Berakhir";
+  return "Aktif";
 }
