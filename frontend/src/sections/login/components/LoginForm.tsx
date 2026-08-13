@@ -94,5 +94,3 @@ export function LoginForm() {
     </>
   )
 }
-
-export default LoginForm

@@ -10,7 +10,7 @@ export interface SellerStore {
   status: string;
 }
 
-export interface SellerVariant {
+interface SellerVariant {
   id: string;
   sku: string;
   name: string;

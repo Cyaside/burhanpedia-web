@@ -11,7 +11,7 @@ const environment = publicEnvironmentSchema.parse({
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? '/api/v1',
 });
 
-export const config = {
+const config = {
   apiUrl: environment.NEXT_PUBLIC_API_URL.replace(/\/$/, ''),
   environment: process.env.NODE_ENV ?? 'development',
 } as const;

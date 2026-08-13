@@ -2,7 +2,7 @@ import { api } from "./client";
 
 export type DeliveryMethod = "INSTANT" | "NEXT_DAY" | "REGULAR";
 
-export interface CartItem {
+interface CartItem {
   id: string;
   variantId: string;
   quantity: number;
@@ -13,7 +13,7 @@ export interface CartItem {
   product: { id: string; name: string; imageUrl: string | null };
 }
 
-export interface CartGroup {
+interface CartGroup {
   id: string;
   name: string;
   items: CartItem[];

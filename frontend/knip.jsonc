@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  // FlatCompat resolves this shareable config by name, so static import
+  // analysis cannot see the dependency even though ESLint loads it.
+  "ignoreDependencies": ["eslint-config-next"]
+}
