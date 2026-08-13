@@ -450,7 +450,7 @@ export class OperationsRepository {
   async driverEarnings(userId: string) {
     const wallet = await this.database.query(
       `SELECT w.id, coalesce(w.balance_amount,0)::text AS "balanceAmount",
-              coalesce(w.currency,'IDR') AS currency,
+              'IDR'::text AS currency,
               coalesce(jsonb_agg(jsonb_build_object(
                 'id', e.id, 'deliveryId', e.delivery_id,
                 'amount', e.amount::text, 'earnedAt', e.earned_at

@@ -113,6 +113,21 @@ describe('seller delivery and overdue worker', () => {
       .expect(201);
     expect(retry.body.earningAmount).toBe('20000');
 
+    const earnings = await request(app.getHttpServer())
+      .get('/api/v1/driver/earnings')
+      .set('Cookie', driverCookies[winner])
+      .expect(200);
+    expect(earnings.body).toMatchObject({
+      balanceAmount: '20000',
+      currency: 'IDR',
+      entries: [
+        expect.objectContaining({
+          deliveryId,
+          amount: '20000',
+        }),
+      ],
+    });
+
     const deliveredDetails = await request(app.getHttpServer())
       .get(`/api/v1/orders/${order.id}`)
       .set('Cookie', buyer.cookie)
