@@ -4,6 +4,7 @@ const DEFAULTS = {
   DATABASE_CONNECTION_TIMEOUT_MS: '5000',
   DATABASE_IDLE_TIMEOUT_MS: '30000',
   DATABASE_STATEMENT_TIMEOUT_MS: '10000',
+  LOG_SLOW_REQUEST_MS: '750',
   JWT_ACCESS_TTL_SECONDS: '900',
   REFRESH_TOKEN_TTL_DAYS: '30',
   FRONTEND_URL: 'http://localhost:3001',
@@ -56,6 +57,11 @@ export function validateEnvironment(
     config.DATABASE_STATEMENT_TIMEOUT_MS,
     'DATABASE_STATEMENT_TIMEOUT_MS',
     DEFAULTS.DATABASE_STATEMENT_TIMEOUT_MS,
+  );
+  config.LOG_SLOW_REQUEST_MS = positiveInteger(
+    config.LOG_SLOW_REQUEST_MS,
+    'LOG_SLOW_REQUEST_MS',
+    DEFAULTS.LOG_SLOW_REQUEST_MS,
   );
   const jwtSecret = requireNonEmpty(config, 'JWT_ACCESS_SECRET');
   if (jwtSecret.length < 32) {

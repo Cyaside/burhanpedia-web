@@ -8,6 +8,7 @@ import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { validateEnvironment } from './config/environment';
 import { RequestIdMiddleware } from './common/http/request-id.middleware';
+import { RequestLoggingMiddleware } from './common/http/request-logging.middleware';
 import { OriginGuard } from './common/security/origin.guard';
 import { IdentityModule } from './modules/identity/identity.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
@@ -42,6 +43,8 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(RequestIdMiddleware).forRoutes('{*path}');
+    consumer
+      .apply(RequestIdMiddleware, RequestLoggingMiddleware)
+      .forRoutes('{*path}');
   }
 }

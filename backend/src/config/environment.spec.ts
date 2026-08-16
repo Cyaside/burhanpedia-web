@@ -23,6 +23,16 @@ describe('validateEnvironment', () => {
     expect(result.JWT_ACCESS_TTL_SECONDS).toBe('900');
     expect(result.REFRESH_TOKEN_TTL_DAYS).toBe('30');
     expect(result.COOKIE_SECURE).toBe('false');
+    expect(result.LOG_SLOW_REQUEST_MS).toBe('750');
+  });
+
+  it('rejects an invalid slow-request threshold', () => {
+    expect(() =>
+      validateEnvironment({
+        ...validEnvironment,
+        LOG_SLOW_REQUEST_MS: '0',
+      }),
+    ).toThrow('LOG_SLOW_REQUEST_MS must be a positive integer');
   });
 
   it('requires secure cookies in production', () => {
