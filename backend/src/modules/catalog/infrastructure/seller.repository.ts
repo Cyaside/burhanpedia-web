@@ -18,6 +18,13 @@ export interface StoreRow {
   status: string;
   ratingAverage?: string;
   ratingCount?: number;
+  productCount?: number;
+}
+
+export interface PublicStoreListRow extends StoreRow {
+  ratingAverage: string;
+  ratingCount: number;
+  productCount: number;
 }
 
 export interface SellerProductRow {
@@ -70,17 +77,50 @@ export class SellerRepository {
               CASE WHEN coalesce(rating.rating_count, 0) = 0 THEN 0
                    ELSE round(rating.rating_sum::numeric / rating.rating_count, 2)
               END AS "ratingAverage",
-              coalesce(rating.rating_count, 0)::integer AS "ratingCount"
+              coalesce(rating.rating_count, 0)::integer AS "ratingCount",
+              coalesce(rating.product_count, 0)::integer AS "productCount"
        FROM stores s
        LEFT JOIN LATERAL (
          SELECT coalesce(sum(p.rating_sum), 0)::bigint AS rating_sum,
-                coalesce(sum(p.rating_count), 0)::integer AS rating_count
+                coalesce(sum(p.rating_count), 0)::integer AS rating_count,
+                count(*)::integer AS product_count
          FROM products p WHERE p.store_id = s.id AND p.status = 'ACTIVE'
        ) rating ON true
        WHERE s.slug = $1 AND s.status = 'ACTIVE'`,
       [slug],
     );
     return result.rows[0] ?? null;
+  }
+
+  async publicStores(
+    limit: number,
+    cursor?: { name: string; id: string },
+  ): Promise<PublicStoreListRow[]> {
+    const values: unknown[] = [];
+    const cursorCondition = cursor
+      ? `(lower(s.name), s.id) > ($1, $2::uuid)`
+      : 'true';
+    if (cursor) values.push(cursor.name, cursor.id);
+    values.push(limit);
+
+    const result = await this.database.query<PublicStoreListRow>(
+      `SELECT s.id, s.slug, s.name, s.description,
+              s.logo_url AS "logoUrl", s.logo_alt_text AS "logoAltText",
+              s.status,
+              CASE WHEN coalesce(sum(p.rating_count), 0) = 0 THEN 0
+                   ELSE round(sum(p.rating_sum)::numeric / sum(p.rating_count), 2)
+              END AS "ratingAverage",
+              coalesce(sum(p.rating_count), 0)::integer AS "ratingCount",
+              count(p.id)::integer AS "productCount"
+       FROM stores s
+       LEFT JOIN products p ON p.store_id = s.id AND p.status = 'ACTIVE'
+       WHERE s.status = 'ACTIVE' AND ${cursorCondition}
+       GROUP BY s.id
+       ORDER BY lower(s.name), s.id
+       LIMIT $${values.length}`,
+      values,
+    );
+    return result.rows;
   }
 
   async createStore(

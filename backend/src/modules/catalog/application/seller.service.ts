@@ -43,10 +43,56 @@ export class SellerService {
     };
   }
 
+  async publicStores(limit = 24, cursor?: string) {
+    const decoded = cursor ? this.decodeStoreCursor(cursor) : undefined;
+    const rows = await this.sellers.publicStores(limit + 1, decoded);
+    const hasMore = rows.length > limit;
+    const items = rows.slice(0, limit).map((store) => ({
+      ...store,
+      ratingAverage: Number(store.ratingAverage),
+    }));
+    const last = hasMore ? rows[limit - 1] : undefined;
+    return {
+      items,
+      nextCursor: last
+        ? Buffer.from(
+            JSON.stringify({ name: last.name.toLowerCase(), id: last.id }),
+          ).toString('base64url')
+        : null,
+    };
+  }
+
   async myStore(userId: string) {
     const store = await this.sellers.storeForUser(userId);
     if (!store) throw this.storeNotFound();
     return store;
+  }
+
+  private decodeStoreCursor(cursor: string): { name: string; id: string } {
+    try {
+      const value: unknown = JSON.parse(
+        Buffer.from(cursor, 'base64url').toString('utf8'),
+      );
+      if (
+        typeof value !== 'object' ||
+        value === null ||
+        !('name' in value) ||
+        typeof value.name !== 'string' ||
+        !('id' in value) ||
+        typeof value.id !== 'string' ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          value.id,
+        )
+      ) {
+        throw new Error('Invalid store cursor');
+      }
+      return { name: value.name, id: value.id };
+    } catch {
+      throw new BadRequestException({
+        code: 'INVALID_CURSOR',
+        detail: 'The store cursor is invalid.',
+      });
+    }
   }
 
   async createProduct(userId: string, dto: CreateProductDto) {

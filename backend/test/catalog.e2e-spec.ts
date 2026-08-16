@@ -165,6 +165,34 @@ describe('catalog and seller ownership', () => {
       .expect(400);
   });
 
+  it('lists active stores with product totals and a validated cursor', async () => {
+    const first = await request(app.getHttpServer())
+      .get('/api/v1/stores')
+      .query({ limit: 1 })
+      .expect(200);
+    expect(first.body.items).toHaveLength(1);
+    expect(first.body.nextCursor).toEqual(expect.any(String));
+
+    const second = await request(app.getHttpServer())
+      .get('/api/v1/stores')
+      .query({ limit: 1, cursor: first.body.nextCursor })
+      .expect(200);
+    expect(second.body.items[0].id).not.toBe(first.body.items[0].id);
+
+    const all = await request(app.getHttpServer())
+      .get('/api/v1/stores')
+      .query({ limit: 100 })
+      .expect(200);
+    expect(
+      all.body.items.find((store: { id: string }) => store.id === storeId),
+    ).toMatchObject({ productCount: 2, ratingAverage: 0, ratingCount: 0 });
+
+    await request(app.getHttpServer())
+      .get('/api/v1/stores')
+      .query({ cursor: 'invalid' })
+      .expect(400);
+  });
+
   it('filters by price and minimum rated products', async () => {
     const price = await request(app.getHttpServer())
       .get('/api/v1/products')

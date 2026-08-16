@@ -21,6 +21,7 @@ import {
   UpdateProductDto,
 } from '../application/seller.dto';
 import { SellerProductsQueryDto } from '../application/seller-products-query.dto';
+import { PublicStoresQueryDto } from '../application/public-stores-query.dto';
 import { SellerService } from '../application/seller.service';
 
 @Controller('stores')
@@ -34,6 +35,12 @@ export class StoresController {
     @Body() dto: CreateStoreDto,
   ) {
     return this.sellers.createStore(principal.userId, dto);
+  }
+
+  @Public()
+  @Get()
+  list(@Query() query: PublicStoresQueryDto) {
+    return this.sellers.publicStores(query.limit, query.cursor);
   }
 
   @Public()
