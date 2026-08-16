@@ -21,6 +21,8 @@
     "worker:dev": "nest start --entryFile worker --watch",
     "db:migrate": "ts-node scripts/database/migrate.ts",
     "db:seed": "ts-node scripts/database/seed.ts",
+    "db:seed:demo": "ts-node scripts/database/seed-demo.ts",
+    "db:verify:demo": "ts-node scripts/database/verify-demo.ts",
     "db:reset": "ts-node scripts/database/reset.ts",
     "db:verify": "ts-node scripts/database/verify.ts",
     "bench:catalog": "ts-node scripts/database/catalog-benchmark.ts",
