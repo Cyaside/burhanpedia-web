@@ -71,6 +71,18 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
     return this.pool.query<Row>(query, values);
   }
 
+  poolStatus(): {
+    total: number;
+    idle: number;
+    waiting: number;
+  } {
+    return {
+      total: this.pool.totalCount,
+      idle: this.pool.idleCount,
+      waiting: this.pool.waitingCount,
+    };
+  }
+
   connect(): Promise<PoolClient> {
     return this.pool.connect();
   }

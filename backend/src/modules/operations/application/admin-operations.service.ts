@@ -4,15 +4,26 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { DatabaseError } from 'pg';
+import { DatabaseService } from '../../../database/database.service';
 import { OperationsRepository } from '../infrastructure/operations.repository';
 import { CreateVoucherDto } from './admin-operations.dto';
 
 @Injectable()
 export class AdminOperationsService {
-  constructor(private readonly operations: OperationsRepository) {}
+  constructor(
+    private readonly operations: OperationsRepository,
+    private readonly database: DatabaseService,
+  ) {}
 
-  overview() {
-    return this.operations.adminOverview();
+  async overview() {
+    const overview = await this.operations.adminOverview();
+    return {
+      ...overview,
+      runtime: {
+        uptimeSeconds: Math.floor(process.uptime()),
+        databasePool: this.database.poolStatus(),
+      },
+    };
   }
 
   async createVoucher(userId: string, input: CreateVoucherDto) {
