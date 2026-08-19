@@ -12,6 +12,7 @@
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "npm run lint -- --fix",
     "audit:dead-code": "npx --yes knip@6.37.0",
+    "audit:dependencies": "npm audit --omit=dev --audit-level=high",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

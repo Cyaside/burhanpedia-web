@@ -32,4 +32,6 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run audit:dead-code
+      - run: npm run audit:dependencies
       - run: npm run build
