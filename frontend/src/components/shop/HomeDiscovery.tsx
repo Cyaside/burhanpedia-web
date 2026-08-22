@@ -24,9 +24,9 @@ export function HomeDiscovery({ categories, categoriesLoading, categoriesError }
           className="group grid min-h-[330px] overflow-hidden rounded-xl border bg-primary text-white md:grid-cols-[minmax(280px,0.85fr)_1.15fr]"
         >
           <span className="flex flex-col justify-center p-6 sm:p-8">
-            <span className="text-xs font-bold uppercase tracking-[0.14em] text-white/80">Pilihan toko lokal</span>
+            <span className="text-xs font-bold uppercase tracking-[0.14em] text-white">Pilihan toko lokal</span>
             <span className="mt-3 text-3xl font-bold leading-tight sm:text-4xl">Produk baru untuk kebutuhan sehari-hari.</span>
-            <span className="mt-3 max-w-md text-sm leading-6 text-white/85">
+            <span className="mt-3 max-w-md text-sm leading-6 text-white">
               Temukan katalog terbaru, cek stok, lalu lanjutkan belanja tanpa berpindah halaman.
             </span>
             <span className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-md bg-white px-4 text-sm font-bold text-primary group-hover:bg-accent">

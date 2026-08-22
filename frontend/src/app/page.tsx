@@ -199,11 +199,11 @@ function SectionHeading({
   refreshing?: boolean;
 }) {
   return (
-    <div className="mb-4 flex items-end justify-between gap-3">
-      <h2 id={id} className="text-xl font-bold">
+    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <h2 id={id} className="min-w-0 text-xl font-bold">
         {title}
       </h2>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {refresh && (
           <Button
             variant="outline"

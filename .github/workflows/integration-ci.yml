@@ -60,5 +60,30 @@ jobs:
       - name: Install and build frontend
         working-directory: frontend
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+          NEXT_PUBLIC_API_URL: /api/v1
         run: npm ci && npm run build
+      - name: Start application stack
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://burhanpedia:burhanpedia_test@127.0.0.1:5432/burhanpedia_test
+          JWT_ACCESS_SECRET: integration-test-secret-with-at-least-32-characters
+          FRONTEND_URL: http://127.0.0.1:3001
+          COOKIE_SECURE: 'false'
+          BACKEND_ORIGIN: http://127.0.0.1:3000
+        run: |
+          nohup npm --prefix backend run start:prod >/tmp/burhanpedia-api.log 2>&1 &
+          PORT=3001 nohup npm --prefix frontend start >/tmp/burhanpedia-web.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:3000/api/v1/health/ready >/dev/null &&
+              curl --fail --silent http://127.0.0.1:3001 >/dev/null && exit 0
+            sleep 2
+          done
+          cat /tmp/burhanpedia-api.log /tmp/burhanpedia-web.log
+          exit 1
+      - name: Run storefront and accessibility smoke
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3001
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e

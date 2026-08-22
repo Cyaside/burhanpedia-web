@@ -11,11 +11,15 @@ import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { ApiError, api } from "@/lib/api/client"
 
 const rolesSchema = z.array(z.enum(["BUYER", "SELLER", "DRIVER"])).min(1, "Choose at least one role")
+const roleOptions = [
+  { value: "BUYER", label: "Buyer", icon: ShoppingBag },
+  { value: "SELLER", label: "Seller", icon: Store },
+  { value: "DRIVER", label: "Driver", icon: Truck },
+] as const
 
 const registerSchema = z
   .object({
@@ -38,7 +42,6 @@ export function RegisterForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    setValue,
     watch,
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -73,18 +76,31 @@ export function RegisterForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Register as</Label>
-            <Tabs value={selectedRoles[0]} onValueChange={(v: string) => setValue("roles", [v as "BUYER" | "SELLER" | "DRIVER"]) }>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="BUYER" aria-label="Buyer"><ShoppingBag className="mr-1 size-4" />Buyer</TabsTrigger>
-                <TabsTrigger value="SELLER" aria-label="Seller"><Store className="mr-1 size-4" />Seller</TabsTrigger>
-                <TabsTrigger value="DRIVER" aria-label="Driver"><Truck className="mr-1 size-4" />Driver</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Register as</legend>
+            <div className="grid grid-cols-3 rounded-lg bg-muted p-[3px]">
+              {roleOptions.map(({ value, label, icon: Icon }) => (
+                <label
+                  key={value}
+                  className={`flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-ring ${
+                    selectedRoles[0] === value
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    value={value}
+                    className="sr-only"
+                    {...register("roles.0")}
+                  />
+                  <Icon aria-hidden="true" className="size-4" />
+                  {label}
+                </label>
+              ))}
+            </div>
             <p className="text-xs text-muted-foreground">Pilih peran yang akan digunakan saat pertama masuk.</p>
-            <input type="hidden" {...register("roles.0")} />
-          </div>
+          </fieldset>
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input id="name" placeholder="Your name" autoComplete="name" {...register("name")} />
