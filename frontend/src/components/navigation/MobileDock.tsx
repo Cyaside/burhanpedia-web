@@ -2,18 +2,58 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LayoutGrid, ShoppingCart, UserRound } from "lucide-react";
+import {
+  Bike,
+  Home,
+  LayoutDashboard,
+  LayoutGrid,
+  LogIn,
+  Package,
+  ShieldCheck,
+  ShoppingCart,
+  UserRound,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useCurrentUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-const items = [
+interface DockItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+const commonItems: DockItem[] = [
   { href: "/", label: "Beranda", icon: Home },
   { href: "/products", label: "Produk", icon: LayoutGrid },
-  { href: "/cart", label: "Keranjang", icon: ShoppingCart },
-  { href: "/profile", label: "Akun", icon: UserRound },
 ];
 
 export function MobileDock() {
   const pathname = usePathname();
+  const user = useCurrentUser().data;
+  const roleItems: Record<string, DockItem[]> = {
+    BUYER: [
+      { href: "/cart", label: "Keranjang", icon: ShoppingCart },
+      { href: "/dashboard", label: "Akun", icon: UserRound },
+    ],
+    SELLER: [
+      { href: "/seller/products", label: "Produk saya", icon: Package },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    ],
+    DRIVER: [
+      { href: "/driver", label: "Pengiriman", icon: Bike },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    ],
+    ADMIN: [
+      { href: "/admin", label: "Operasional", icon: ShieldCheck },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    ],
+  };
+  const guestItems: DockItem[] = [
+    { href: "/cart", label: "Keranjang", icon: ShoppingCart },
+    { href: "/login", label: "Masuk", icon: LogIn },
+  ];
+  const items = [...commonItems, ...(user ? roleItems[user.activeRole] : guestItems)];
   return (
     <nav aria-label="Navigasi utama mobile" className="fixed inset-x-0 bottom-0 z-40 border-t bg-white lg:hidden">
       <div className="grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">

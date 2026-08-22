@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { commerceApi, DeliveryMethod, formatMoney } from "@/lib/api/commerce";
 import type { CreateAddressInput } from "@/lib/api/commerce";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 const methods: Array<{ value: DeliveryMethod; label: string }> = [
   { value: "INSTANT", label: "Instan" },
@@ -19,17 +19,17 @@ const methods: Array<{ value: DeliveryMethod; label: string }> = [
 ];
 
 export default function CheckoutPage() {
-  const { isAuthenticated, checking } = useAuthGuard();
+  const { allowed, checking } = useRoleGuard("BUYER");
   const queryClient = useQueryClient();
   const cart = useQuery({
     queryKey: ["cart"],
     queryFn: commerceApi.cart,
-    enabled: isAuthenticated,
+    enabled: allowed,
   });
   const addresses = useQuery({
     queryKey: ["addresses"],
     queryFn: commerceApi.addresses,
-    enabled: isAuthenticated,
+    enabled: allowed,
   });
   const [addressId, setAddressId] = useState("");
   const [voucherCode, setVoucherCode] = useState("");
@@ -98,7 +98,7 @@ export default function CheckoutPage() {
   const quote = useQuery({
     queryKey: ["checkout-quote", input, cart.data?.version],
     queryFn: () => commerceApi.quote(input),
-    enabled: isAuthenticated && canQuote,
+    enabled: allowed && canQuote,
     retry: false,
   });
   const checkout = useMutation({
@@ -120,7 +120,7 @@ export default function CheckoutPage() {
     },
   });
 
-  if (checking || !isAuthenticated) return null;
+  if (checking || !allowed) return null;
   if (checkout.data) {
     return (
       <div className="min-h-dvh bg-slate-50">

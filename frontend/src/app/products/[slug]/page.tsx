@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, ShieldCheck, ShoppingCart, Star, Truck } from "lucide-react";
+import { Check, Minus, Plus, ShieldCheck, ShoppingCart, Star, Truck } from "lucide-react";
+import { toast } from "sonner";
 import {
   getCatalogProduct,
   getProductReviews,
@@ -17,12 +18,14 @@ import { MobileDock } from "@/components/navigation/MobileDock";
 import { Button } from "@/components/ui/button";
 import { StoreLogo } from "@/components/shop/StoreLogo";
 import { commerceApi } from "@/lib/api/commerce";
-import { ensureAuthenticated } from "@/lib/auth";
+import { currentUserQueryKey, getCurrentUser, roleLabel, useCurrentUser } from "@/lib/auth";
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const currentUser = useCurrentUser();
+  const canBuy = !currentUser.isPending && (!currentUser.data || currentUser.data.activeRole === "BUYER");
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -52,7 +55,24 @@ export default function ProductDetailPage() {
       quantity > Math.min(variant.availableQuantity, 99)
     )
       return;
-    if (!(await ensureAuthenticated(router))) return;
+    let buyer;
+    try {
+      buyer = await queryClient.fetchQuery({
+        queryKey: currentUserQueryKey,
+        queryFn: getCurrentUser,
+        staleTime: 30_000,
+      });
+    } catch {
+      router.push(`/login?next=${encodeURIComponent(`/products/${slug}`)}`);
+      return;
+    }
+    if (buyer.activeRole !== "BUYER") {
+      toast.error("Akses tidak tersedia", {
+        description: `Peran aktif ${roleLabel(buyer.activeRole)} tidak dapat menambahkan produk ke keranjang.`,
+      });
+      router.push("/dashboard");
+      return;
+    }
     addToCart.mutate({ variantId: variant.id, count: quantity });
   }
 
@@ -98,7 +118,7 @@ export default function ProductDetailPage() {
         )}
         {data && (
           <>
-            <div className="mt-6 grid items-start gap-7 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)_20rem]">
+            <div className={`mt-6 grid items-start gap-7 lg:grid-cols-2 ${canBuy ? "xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)_20rem]" : "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"}`}>
               <section aria-label="Foto produk" className="min-w-0">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-lg border bg-white">
                   {data.images[selectedImage] ? (
@@ -181,9 +201,9 @@ export default function ProductDetailPage() {
                 {data.variants.length > 1 && (
                   <fieldset className="mt-5 border-t pt-5">
                     <legend className="text-sm font-semibold">
-                      Pilih varian
+                      Pilih varian{variant ? `: ${variant.name}` : ""}
                     </legend>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {data.variants.map((item) => {
                         const selected = selectedVariant === item.id;
                         return (
@@ -197,20 +217,17 @@ export default function ProductDetailPage() {
                               setQuantity(1);
                               addToCart.reset();
                             }}
-                            className={`min-h-14 rounded-md border px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed ${
+                            className={`inline-flex min-h-11 max-w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed ${
                               selected
-                                ? "border-primary bg-accent text-primary"
+                                ? "border-primary bg-primary/5 text-primary"
                                 : item.availableQuantity === 0
                                   ? "border-border bg-muted text-muted-foreground"
                                   : "border-input bg-white hover:border-primary"
                             }`}
                           >
-                            <span className="block font-semibold">{item.name}</span>
-                            <span className="mt-0.5 block text-xs">
-                              {item.availableQuantity === 0
-                                ? "Stok habis"
-                                : `${formatRupiah(item.priceAmount)} · stok ${item.availableQuantity}`}
-                            </span>
+                            {selected && <Check aria-hidden="true" className="size-4 shrink-0" />}
+                            <span className="font-medium">{item.name}</span>
+                            {item.availableQuantity === 0 && <span className="text-xs">Habis</span>}
                           </button>
                         );
                       })}
@@ -250,18 +267,20 @@ export default function ProductDetailPage() {
                 </Link>
               </section>
 
-              <aside className="lg:col-span-2 xl:col-span-1 xl:sticky xl:top-28">
-                <PurchaseCard
-                  data={data}
-                  variant={variant}
-                  quantity={quantity}
-                  setQuantity={setQuantity}
-                  pending={addToCart.isPending}
-                  add={addSelected}
-                  success={addToCart.isSuccess}
-                  error={addToCart.error?.message}
-                />
-              </aside>
+              {canBuy && (
+                <aside className="lg:col-span-2 xl:col-span-1 xl:sticky xl:top-28">
+                  <PurchaseCard
+                    data={data}
+                    variant={variant}
+                    quantity={quantity}
+                    setQuantity={setQuantity}
+                    pending={addToCart.isPending}
+                    add={addSelected}
+                    success={addToCart.isSuccess}
+                    error={addToCart.error?.message}
+                  />
+                </aside>
+              )}
             </div>
 
             <div className="mt-10 border-t pt-8">
@@ -277,8 +296,9 @@ export default function ProductDetailPage() {
                   {data.description ||
                     "Penjual belum menambahkan deskripsi produk."}
                 </p>
-                <h3 className="mt-7 font-semibold">Spesifikasi varian</h3>
-                <VariantSpecifications product={data} />
+                {variant && Object.keys(variant.attributes).length > 0 && (
+                  <VariantSpecifications variant={variant} />
+                )}
               </section>
             </div>
 
@@ -355,7 +375,7 @@ export default function ProductDetailPage() {
           </>
         )}
       </main>
-      {data && (
+      {data && canBuy && (
         <div className="fixed inset-x-0 bottom-14 z-30 border-t bg-white px-4 py-2 lg:hidden">
           <CartAction
             data={data}
@@ -543,29 +563,20 @@ function CartMessage({ success, error }: { success: boolean; error?: string }) {
   );
 }
 
-function VariantSpecifications({ product }: { product: CatalogProduct }) {
-  const entries = product.variants.flatMap((variant) =>
-    Object.entries(variant.attributes).map(([key, value]) => ({
-      key: `${variant.id}-${key}`,
-      label: `${variant.name} · ${key}`,
-      value: String(value),
-    })),
-  );
-  if (entries.length === 0)
-    return (
-      <p className="mt-2 text-sm text-muted-foreground">
-        Belum ada spesifikasi tambahan.
-      </p>
-    );
+function VariantSpecifications({ variant }: { variant: CatalogProduct["variants"][number] }) {
+  const entries = Object.entries(variant.attributes);
   return (
-    <dl className="mt-3 divide-y rounded-lg border bg-white px-4">
-      {entries.map((entry) => (
-        <div key={entry.key} className="grid gap-1 py-3 text-sm sm:grid-cols-2">
-          <dt className="text-muted-foreground">{entry.label}</dt>
-          <dd>{entry.value}</dd>
-        </div>
-      ))}
-    </dl>
+    <section className="mt-7" aria-label="Spesifikasi varian terpilih">
+      <h3 className="font-semibold">Spesifikasi {variant.name}</h3>
+      <dl className="mt-3 divide-y rounded-lg border bg-white px-4">
+        {entries.map(([key, value]) => (
+          <div key={key} className="grid gap-1 py-3 text-sm sm:grid-cols-2">
+            <dt className="text-muted-foreground">{key}</dt>
+            <dd>{String(value)}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 

@@ -1,35 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { SellerNavigation } from "@/components/seller/SellerNavigation";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/api/commerce";
 import { operationsApi } from "@/lib/api/operations";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 export default function SellerOrdersPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, checking } = useAuthGuard();
-  useEffect(() => {
-    if (!checking && user && user.activeRole !== "SELLER") router.replace("/dashboard");
-  }, [checking, router, user]);
+  const { allowed, checking } = useRoleGuard("SELLER");
   const orders = useQuery({
     queryKey: ["seller-orders"],
     queryFn: operationsApi.sellerOrders,
-    enabled: user?.activeRole === "SELLER",
+    enabled: allowed,
   });
   const process = useMutation({
     mutationFn: operationsApi.processSellerOrder,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["seller-orders"] }),
   });
 
-  if (checking || !user) return null;
-  if (user.activeRole !== "SELLER") return null;
+  if (checking || !allowed) return null;
 
   return (
     <div className="min-h-dvh bg-background">

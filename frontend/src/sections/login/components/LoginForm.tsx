@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { ArrowRight, Loader2, Home } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,6 +24,7 @@ type LoginValues = z.infer<typeof loginSchema>
 
 export function LoginForm() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const {
     register,
     handleSubmit,
@@ -35,8 +37,10 @@ export function LoginForm() {
   async function onSubmit(values: LoginValues) {
     try {
       const data = await api.post<{ user: { name: string } }>("/auth/login", values)
+      queryClient.clear()
       toast.success("Logged in successfully", { description: `Welcome back, ${data.user.name}` })
-      router.push("/dashboard")
+      const next = new URLSearchParams(window.location.search).get("next")
+      router.push(next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard")
     } catch (error) {
       toast.error("Login failed", {
         description: error instanceof ApiError ? error.message : "An error occurred during login",

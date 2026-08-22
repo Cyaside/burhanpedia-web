@@ -21,8 +21,11 @@ import {
   listPublicStores,
 } from "@/lib/api/catalog";
 import type { CatalogProduct } from "@/lib/api/catalog";
+import { useCurrentUser } from "@/lib/auth";
 
 export default function HomePage() {
+  const user = useCurrentUser().data;
+  const canBuy = !user || user.activeRole === "BUYER";
   const [newestPage, setNewestPage] = useState(0);
   const [valuePage, setValuePage] = useState(0);
   const [storeStart, setStoreStart] = useState(0);
@@ -96,6 +99,7 @@ export default function HomePage() {
           categories={categories.data?.filter((category) => !category.parentId)}
           categoriesLoading={categories.isPending}
           categoriesError={categories.isError}
+          canBuy={canBuy}
         />
 
         <ProductSection
@@ -174,9 +178,11 @@ export default function HomePage() {
             <Link href="/products" className="hover:text-primary">
               Produk
             </Link>
-            <Link href="/profile" className="hover:text-primary">
-              Pesanan saya
-            </Link>
+            {canBuy && (
+              <Link href={user ? "/profile" : "/login"} className="hover:text-primary">
+                Pesanan saya
+              </Link>
+            )}
           </nav>
         </div>
       </footer>

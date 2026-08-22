@@ -13,10 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { commerceApi, formatMoney } from "@/lib/api/commerce";
 import type { OrderSummary } from "@/lib/api/commerce";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 export default function ProfilePage() {
-  const { isAuthenticated, checking, user } = useAuthGuard();
+  const { allowed, checking, user } = useRoleGuard("BUYER");
   const queryClient = useQueryClient();
   const [topUpAmount, setTopUpAmount] = useState("100000");
   const topUpAttempt = useRef<{ amount: number; key: string } | null>(null);
@@ -42,14 +42,14 @@ export default function ProfilePage() {
   const orders = useQuery({
     queryKey: ["orders"],
     queryFn: commerceApi.orders,
-    enabled: isAuthenticated,
+    enabled: allowed,
   });
   const wallet = useQuery({
     queryKey: ["wallet"],
     queryFn: commerceApi.wallet,
-    enabled: isAuthenticated,
+    enabled: allowed,
   });
-  if (checking || !isAuthenticated) return null;
+  if (checking || !allowed) return null;
 
   return (
     <div className="min-h-dvh bg-slate-50">

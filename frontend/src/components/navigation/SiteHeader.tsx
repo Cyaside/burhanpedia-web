@@ -3,11 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import type { FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { HelpCircle, Search, ShoppingCart, UserRound } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/auth";
 import { listCatalogCategories } from "@/lib/api/catalog";
 import type { CatalogCategory } from "@/lib/api/catalog";
 import { Button } from "@/components/ui/button";
@@ -16,26 +16,14 @@ export default function SiteHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
-  const [hasSession, setHasSession] = useState(false);
+  const currentUser = useCurrentUser();
+  const user = currentUser.data;
+  const canBuy = !user || user.activeRole === "BUYER";
   const categories = useQuery({
     queryKey: ["catalog-categories"],
     queryFn: listCatalogCategories,
     staleTime: 5 * 60_000,
   });
-
-  useEffect(() => {
-    let active = true;
-    getCurrentUser()
-      .then(() => {
-        if (active) setHasSession(true);
-      })
-      .catch(() => {
-        if (active) setHasSession(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [pathname]);
 
   function searchProducts(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,14 +41,16 @@ export default function SiteHeader() {
               <HelpCircle aria-hidden="true" className="mr-1 inline size-3.5" />
               Bantuan
             </Link>
+            {canBuy && (
+              <Link
+                href={user ? "/profile" : "/login"}
+                className="hover:text-primary"
+              >
+                Status pesanan
+              </Link>
+            )}
             <Link
-              href={hasSession ? "/profile" : "/login"}
-              className="hover:text-primary"
-            >
-              Status pesanan
-            </Link>
-            <Link
-              href={hasSession ? "/dashboard" : "/login"}
+              href={user ? "/dashboard" : "/login"}
               className="hover:text-primary"
             >
               Akun & peran
@@ -115,22 +105,24 @@ export default function SiteHeader() {
           aria-label="Akun dan keranjang"
           className="flex items-center gap-1 sm:gap-2"
         >
-          <Button asChild variant="ghost" size="icon" aria-label="Keranjang">
-            <Link href="/cart">
-              <ShoppingCart aria-hidden="true" className="size-5" />
-              <span className="sr-only">Keranjang</span>
-            </Link>
-          </Button>
+          {canBuy && (
+            <Button asChild variant="ghost" size="icon" aria-label="Keranjang">
+              <Link href="/cart">
+                <ShoppingCart aria-hidden="true" className="size-5" />
+                <span className="sr-only">Keranjang</span>
+              </Link>
+            </Button>
+          )}
           <Button
             asChild
             variant="ghost"
             size="icon"
-            aria-label={hasSession ? "Akun saya" : "Masuk"}
+            aria-label={user ? "Akun dan peran" : "Masuk"}
           >
-            <Link href={hasSession ? "/profile" : "/login"}>
+            <Link href={user ? "/dashboard" : "/login"}>
               <UserRound aria-hidden="true" className="size-5" />
               <span className="sr-only">
-                {hasSession ? "Akun saya" : "Masuk"}
+                {user ? "Akun dan peran" : "Masuk"}
               </span>
             </Link>
           </Button>

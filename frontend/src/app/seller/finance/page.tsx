@@ -1,33 +1,26 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { SellerNavigation } from "@/components/seller/SellerNavigation";
 import { formatMoney } from "@/lib/api/commerce";
 import { operationsApi } from "@/lib/api/operations";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 export default function SellerFinancePage() {
-  const router = useRouter();
-  const { user, checking } = useAuthGuard();
-  useEffect(() => {
-    if (!checking && user && user.activeRole !== "SELLER") router.replace("/dashboard");
-  }, [checking, router, user]);
+  const { allowed, checking } = useRoleGuard("SELLER");
   const orders = useQuery({
     queryKey: ["seller-orders"],
     queryFn: operationsApi.sellerOrders,
-    enabled: user?.activeRole === "SELLER",
+    enabled: allowed,
   });
   const finance = useQuery({
     queryKey: ["seller-finance"],
     queryFn: operationsApi.sellerFinance,
-    enabled: user?.activeRole === "SELLER",
+    enabled: allowed,
   });
 
-  if (checking || !user) return null;
-  if (user.activeRole !== "SELLER") return null;
+  if (checking || !allowed) return null;
 
   return (
     <div className="min-h-dvh bg-background">

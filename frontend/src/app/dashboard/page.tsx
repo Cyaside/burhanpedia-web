@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Bike, ChevronRight, Package, ReceiptText, Settings2, ShoppingBag, Store, UserRound, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
-import { AppRole, useAuthGuard } from "@/lib/auth";
+import { AppRole, currentUserQueryKey, roleLabel, useAuthGuard } from "@/lib/auth";
 
 const roleContent: Record<AppRole, { title: string; description: string; links: Array<{ href: string; title: string; description: string; icon: LucideIcon }> }> = {
   BUYER: {
@@ -48,6 +49,7 @@ const roleContent: Record<AppRole, { title: string; description: string; links: 
 
 export default function DashboardPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, checking } = useAuthGuard();
   const [selectedRole, setSelectedRole] = useState<AppRole | null>(null);
   const [busy, setBusy] = useState(false);
@@ -60,6 +62,7 @@ export default function DashboardPage() {
     try {
       await api.post("/me/roles/active", { role });
       setSelectedRole(role);
+      await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Gagal mengganti peran.");
     } finally {
@@ -72,6 +75,7 @@ export default function DashboardPage() {
     setError(null);
     try {
       await api.post("/auth/logout");
+      queryClient.clear();
       router.replace("/login");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Gagal keluar dari akun.");
@@ -130,8 +134,4 @@ export default function DashboardPage() {
       </main>
     </div>
   );
-}
-
-function roleLabel(role: AppRole) {
-  return { BUYER: "Pembeli", SELLER: "Seller", DRIVER: "Driver", ADMIN: "Admin" }[role];
 }

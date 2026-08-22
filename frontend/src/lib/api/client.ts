@@ -49,7 +49,9 @@ async function request<T>(path: string, options: RequestInit = {}, canRefresh = 
     throw new ApiError(
       response.status,
       problem.code ?? "REQUEST_FAILED",
-      problem.detail ?? problem.title ?? response.statusText
+      response.status === 403
+        ? "Akses tidak tersedia untuk peran aktif atau akun ini."
+        : problem.detail ?? problem.title ?? response.statusText
     )
   }
   if (response.status === 204) return undefined as T

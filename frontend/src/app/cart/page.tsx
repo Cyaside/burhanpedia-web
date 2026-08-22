@@ -8,15 +8,15 @@ import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
 import { Button } from "@/components/ui/button";
 import { commerceApi, formatMoney } from "@/lib/api/commerce";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 export default function CartPage() {
-  const { isAuthenticated, checking } = useAuthGuard();
+  const { allowed, checking } = useRoleGuard("BUYER");
   const queryClient = useQueryClient();
   const cart = useQuery({
     queryKey: ["cart"],
     queryFn: commerceApi.cart,
-    enabled: isAuthenticated,
+    enabled: allowed,
   });
   const update = useMutation({
     mutationFn: ({ id, quantity }: { id: string; quantity: number }) =>
@@ -28,7 +28,7 @@ export default function CartPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
   });
 
-  if (checking || !isAuthenticated) return null;
+  if (checking || !allowed) return null;
   const groups = cart.data?.groups ?? [];
   const count = groups.reduce(
     (total, group) =>

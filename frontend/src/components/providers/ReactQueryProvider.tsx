@@ -1,26 +1,29 @@
- "use client"
+"use client";
 
- import React from "react"
- import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import React from "react";
+import { isServer, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
- let queryClient: QueryClient | null = null
+let browserQueryClient: QueryClient | null = null;
 
- function getClient() {
-   if (!queryClient) {
-     queryClient = new QueryClient({
-       defaultOptions: {
-         queries: {
-           retry: 1,
-           staleTime: 1000 * 30,
-           refetchOnWindowFocus: false,
-         },
-       },
-     })
-   }
-   return queryClient
- }
+function createClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        staleTime: 30_000,
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
+}
 
- export function ReactQueryProvider({ children }: { children: React.ReactNode }) {
-   const client = React.useMemo(getClient, [])
-   return <QueryClientProvider client={client}>{children}</QueryClientProvider>
- }
+function getClient() {
+  if (isServer) return createClient();
+  browserQueryClient ??= createClient();
+  return browserQueryClient;
+}
+
+export function ReactQueryProvider({ children }: { children: React.ReactNode }) {
+  const client = React.useMemo(getClient, []);
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}

@@ -7,13 +7,13 @@ import SiteHeader from "@/components/navigation/SiteHeader";
 import { MobileDock } from "@/components/navigation/MobileDock";
 import { Button } from "@/components/ui/button";
 import { commerceApi, formatMoney } from "@/lib/api/commerce";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 export default function BuyerOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const { isAuthenticated, checking } = useAuthGuard();
-  const order = useQuery({ queryKey: ["order", id], queryFn: () => commerceApi.order(id), enabled: isAuthenticated });
+  const { allowed, checking } = useRoleGuard("BUYER");
+  const order = useQuery({ queryKey: ["order", id], queryFn: () => commerceApi.order(id), enabled: allowed });
   const complete = useMutation({
     mutationFn: () => commerceApi.completeOrder(id),
     onSuccess: () => {
@@ -22,7 +22,7 @@ export default function BuyerOrderDetailPage() {
     },
   });
 
-  if (checking || !isAuthenticated) return null;
+  if (checking || !allowed) return null;
 
   return (
     <div className="min-h-dvh bg-background">

@@ -13,9 +13,10 @@ interface HomeDiscoveryProps {
   categories?: CatalogCategory[];
   categoriesLoading: boolean;
   categoriesError: boolean;
+  canBuy: boolean;
 }
 
-export function HomeDiscovery({ categories, categoriesLoading, categoriesError }: HomeDiscoveryProps) {
+export function HomeDiscovery({ categories, categoriesLoading, categoriesError, canBuy }: HomeDiscoveryProps) {
   return (
     <div className="space-y-5">
       <section className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]" aria-label="Promosi Burhanpedia">
@@ -76,10 +77,10 @@ export function HomeDiscovery({ categories, categoriesLoading, categoriesError }
         {quickShoppingLinks.map((item) => (
           <Link
             key={item.href}
-            href={item.href}
+            href={item.href === "/cart" && !canBuy ? "/stores" : item.href}
             className="flex min-h-12 items-center justify-between border-b px-4 text-sm font-semibold hover:bg-accent hover:text-primary sm:border-r lg:border-b-0 last:border-b-0 sm:[&:nth-child(2)]:border-r-0 lg:[&:nth-child(2)]:border-r"
           >
-            {item.label}<ArrowRight aria-hidden="true" className="size-4" />
+            {item.href === "/cart" && !canBuy ? "Jelajahi toko" : item.label}<ArrowRight aria-hidden="true" className="size-4" />
           </Link>
         ))}
       </nav>

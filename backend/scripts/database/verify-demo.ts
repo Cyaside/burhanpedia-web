@@ -42,7 +42,7 @@ async function verifyDemo(): Promise<void> {
     assert.equal(counts.drivers, '30');
     assert.equal(counts.admins, '1');
     assert.equal(counts.products, '300');
-    assert.equal(counts.variants, '300');
+    assert.equal(counts.variants, '310');
     assert.equal(counts.images, '300');
     console.info('Demo dataset verified', counts);
   } finally {

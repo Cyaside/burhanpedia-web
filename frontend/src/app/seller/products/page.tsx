@@ -9,22 +9,22 @@ import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/api/catalog";
 import { sellerApi, type SellerProduct } from "@/lib/api/seller";
 import { ApiError } from "@/lib/api/client";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 export default function SellerProductsPage() {
-  const { user, checking } = useAuthGuard();
+  const { allowed, checking } = useRoleGuard("SELLER");
   const queryClient = useQueryClient();
   const store = useQuery({
     queryKey: ["seller-store"],
     queryFn: sellerApi.store,
-    enabled: user?.activeRole === "SELLER",
+    enabled: allowed,
   });
   const products = useInfiniteQuery({
     queryKey: ["seller-products"],
     queryFn: ({ pageParam }) => sellerApi.products(pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: user?.activeRole === "SELLER",
+    enabled: allowed,
   });
   const publication = useMutation({
     mutationFn: ({ product, status }: { product: SellerProduct; status: SellerProduct["status"] }) =>
@@ -32,8 +32,7 @@ export default function SellerProductsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["seller-products"] }),
   });
 
-  if (checking || !user) return null;
-  if (user.activeRole !== "SELLER") return <SellerRoleRequired />;
+  if (checking || !allowed) return null;
 
   const items = products.data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -160,19 +159,5 @@ function StatusLabel({ status }: { status: SellerProduct["status"] }) {
     <span className={status === "ACTIVE" ? "text-sm font-semibold text-success" : "text-sm font-semibold text-muted-foreground"}>
       {label}
     </span>
-  );
-}
-
-function SellerRoleRequired() {
-  return (
-    <main className="mx-auto max-w-xl px-6 py-16 text-center">
-      <h1 className="text-2xl font-bold">Aktifkan peran seller</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Ganti peran aktif ke SELLER untuk mengelola produk toko.
-      </p>
-      <Button asChild className="mt-5">
-        <Link href="/dashboard">Kembali ke dashboard</Link>
-      </Button>
-    </main>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import SiteHeader from "@/components/navigation/SiteHeader";
@@ -9,18 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/api/commerce";
 import { operationsApi } from "@/lib/api/operations";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 type VoucherKind = "FIXED" | "PERCENTAGE" | "FREE_SHIPPING";
 
 export default function AdminPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, checking } = useAuthGuard();
-  useEffect(() => {
-    if (!checking && user && user.activeRole !== "ADMIN") router.replace("/dashboard");
-  }, [checking, router, user]);
-  const enabled = user?.activeRole === "ADMIN";
+  const { allowed, checking } = useRoleGuard("ADMIN");
+  const enabled = allowed;
   const overview = useQuery({ queryKey: ["admin-overview"], queryFn: operationsApi.adminOverview, enabled });
   const clock = useQuery({ queryKey: ["admin-clock"], queryFn: operationsApi.clock, enabled });
   const [kind, setKind] = useState<VoucherKind>("FIXED");
@@ -57,8 +52,7 @@ export default function AdminPage() {
     });
   }
 
-  if (checking || !user) return null;
-  if (user.activeRole !== "ADMIN") return null;
+  if (checking || !allowed) return null;
 
   return (
     <div className="min-h-dvh bg-background">

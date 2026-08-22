@@ -116,6 +116,35 @@ ON CONFLICT (variant_id) DO UPDATE SET
   on_hand = EXCLUDED.on_hand,
   reserved = LEAST(inventories.reserved, EXCLUDED.on_hand);
 
+-- A few catalog products demonstrate a real choice of price, stock, and variant.
+WITH product_numbers AS (SELECT generate_series(1, 10) AS n)
+INSERT INTO product_variants
+  (id, product_id, sku, name, attributes, price_amount, compare_at_amount, status)
+SELECT ('71000000-0000-4000-8000-' || lpad((1000 + n)::text, 12, '0'))::uuid,
+       ('70000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
+       'DEMO-' || lpad(n::text, 4, '0') || '-PLUS',
+       'Paket Plus',
+       jsonb_build_object('paket', 'Plus', 'seri', lpad(n::text, 3, '0')),
+       99000 + (((n - 1) % 5) + 1) * 75000 + (n % 20) * 12500,
+       124000 + (((n - 1) % 5) + 1) * 75000 + (n % 20) * 12500,
+       'ACTIVE'
+FROM product_numbers
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  attributes = EXCLUDED.attributes,
+  price_amount = EXCLUDED.price_amount,
+  compare_at_amount = EXCLUDED.compare_at_amount,
+  status = 'ACTIVE';
+
+WITH product_numbers AS (SELECT generate_series(1, 10) AS n)
+INSERT INTO inventories (variant_id, on_hand, reserved)
+SELECT ('71000000-0000-4000-8000-' || lpad((1000 + n)::text, 12, '0'))::uuid,
+       8 + n, 0
+FROM product_numbers
+ON CONFLICT (variant_id) DO UPDATE SET
+  on_hand = EXCLUDED.on_hand,
+  reserved = LEAST(inventories.reserved, EXCLUDED.on_hand);
+
 WITH product_numbers AS (
   SELECT g AS n, ((g - 1) % 5) + 1 AS category_n
   FROM generate_series(1, 295) AS g

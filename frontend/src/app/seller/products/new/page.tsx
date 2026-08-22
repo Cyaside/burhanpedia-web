@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { listCatalogCategories } from "@/lib/api/catalog";
 import { sellerApi, type VariantInput } from "@/lib/api/seller";
 import { ApiError } from "@/lib/api/client";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 interface VariantDraft extends Omit<VariantInput, "attributes" | "onHand"> {
   key: string;
@@ -33,10 +33,7 @@ const emptyVariant = (key = crypto.randomUUID()): VariantDraft => ({
 export default function NewSellerProductPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, checking } = useAuthGuard();
-  useEffect(() => {
-    if (!checking && user && user.activeRole !== "SELLER") router.replace("/dashboard");
-  }, [checking, router, user]);
+  const { allowed, checking } = useRoleGuard("SELLER");
   const categories = useQuery({
     queryKey: ["catalog-categories"],
     queryFn: listCatalogCategories,
@@ -44,7 +41,7 @@ export default function NewSellerProductPage() {
   const store = useQuery({
     queryKey: ["seller-store"],
     queryFn: sellerApi.store,
-    enabled: user?.activeRole === "SELLER",
+    enabled: allowed,
   });
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -108,8 +105,7 @@ export default function NewSellerProductPage() {
     });
   }
 
-  if (checking || !user) return null;
-  if (user.activeRole !== "SELLER") return null;
+  if (checking || !allowed) return null;
 
   return (
     <div className="min-h-dvh bg-background">

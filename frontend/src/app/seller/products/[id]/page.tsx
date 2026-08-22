@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import SiteHeader from "@/components/navigation/SiteHeader";
@@ -11,22 +11,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatRupiah } from "@/lib/api/catalog";
 import { sellerApi, type SellerProduct } from "@/lib/api/seller";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 export default function SellerProductDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, checking } = useAuthGuard();
-  useEffect(() => {
-    if (!checking && user && user.activeRole !== "SELLER") router.replace("/dashboard");
-  }, [checking, router, user]);
+  const { allowed, checking } = useRoleGuard("SELLER");
   const [image, setImage] = useState<File | null>(null);
   const [imageAlt, setImageAlt] = useState("");
   const product = useQuery({
     queryKey: ["seller-product", id],
     queryFn: () => sellerApi.product(id),
-    enabled: user?.activeRole === "SELLER",
+    enabled: allowed,
   });
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["seller-product", id] });
@@ -89,8 +85,7 @@ export default function SellerProductDetailPage() {
     });
   }
 
-  if (checking || !user) return null;
-  if (user.activeRole !== "SELLER") return null;
+  if (checking || !allowed) return null;
 
   return (
     <div className="min-h-dvh bg-background">

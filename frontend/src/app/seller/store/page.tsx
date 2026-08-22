@@ -9,12 +9,12 @@ import { StoreLogo } from "@/components/shop/StoreLogo";
 import { SellerNavigation } from "@/components/seller/SellerNavigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 import { sellerApi } from "@/lib/api/seller";
 import { ApiError } from "@/lib/api/client";
 
 export default function SellerStorePage() {
-  const { user, checking } = useAuthGuard();
+  const { allowed, checking } = useRoleGuard("SELLER");
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
@@ -24,7 +24,7 @@ export default function SellerStorePage() {
   const store = useQuery({
     queryKey: ["seller-store"],
     queryFn: sellerApi.store,
-    enabled: user?.activeRole === "SELLER",
+    enabled: allowed,
   });
   const upload = useMutation({
     mutationFn: (selected: File) =>
@@ -56,20 +56,7 @@ export default function SellerStorePage() {
     });
   }
 
-  if (checking || !user) return null;
-  if (user.activeRole !== "SELLER") {
-    return (
-      <main className="mx-auto max-w-xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-bold">Aktifkan peran seller</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Ganti peran aktif ke SELLER sebelum mengelola identitas toko.
-        </p>
-        <Button asChild className="mt-5">
-          <Link href="/dashboard">Kembali ke dashboard</Link>
-        </Button>
-      </main>
-    );
-  }
+  if (checking || !allowed) return null;
 
   return (
     <div className="min-h-dvh bg-background">

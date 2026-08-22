@@ -1,23 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bike, MapPin, Wallet } from "lucide-react";
 import SiteHeader from "@/components/navigation/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/api/commerce";
 import { operationsApi } from "@/lib/api/operations";
-import { useAuthGuard } from "@/lib/auth";
+import { useRoleGuard } from "@/lib/auth";
 
 export default function DriverPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, checking } = useAuthGuard();
-  useEffect(() => {
-    if (!checking && user && user.activeRole !== "DRIVER") router.replace("/dashboard");
-  }, [checking, router, user]);
-  const enabled = user?.activeRole === "DRIVER";
+  const { allowed, checking } = useRoleGuard("DRIVER");
+  const enabled = allowed;
   const jobs = useInfiniteQuery({
     queryKey: ["driver-jobs"],
     queryFn: ({ pageParam }) => operationsApi.jobs(pageParam),
@@ -39,8 +33,7 @@ export default function DriverPage() {
   const pickup = useMutation({ mutationFn: operationsApi.pickup, onSuccess: refresh });
   const complete = useMutation({ mutationFn: operationsApi.completeDelivery, onSuccess: refresh });
 
-  if (checking || !user) return null;
-  if (user.activeRole !== "DRIVER") return null;
+  if (checking || !allowed) return null;
 
   const active = deliveries.data?.filter((item) => ["CLAIMED", "IN_TRANSIT"].includes(item.status)) ?? [];
   const history = deliveries.data?.filter((item) => !["CLAIMED", "IN_TRANSIT"].includes(item.status)) ?? [];
