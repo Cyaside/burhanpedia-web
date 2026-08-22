@@ -6,6 +6,12 @@ on:
       - 'frontend/**'
       - 'backend/**'
       - '.github/workflows/integration-ci.yml'
+  push:
+    branches: [main, overhaul]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/integration-ci.yml'
   workflow_dispatch:
 
 permissions:

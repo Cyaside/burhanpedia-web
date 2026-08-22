@@ -1,67 +1,48 @@
-# Burhanpedia Backend
+# Burhanpedia API and worker
 
-NestJS API dan background worker untuk Burhanpedia. Proyek ini berdiri sendiri di dalam folder `backend/` dan tidak berbagi dependency atau source package dengan frontend.
+This project provides the HTTP API, background worker, PostgreSQL migrations, and database tools. It can be installed and built independently of the frontend.
 
-## Requirement
+## Local setup
 
-- Node.js 22+
-- Docker Desktop dengan Compose
-
-## Development
+Requirements: Node.js 22–24 and Docker Compose. Create `.env` from `.env.example` if it does not exist, then verify `DATABASE_URL` before running any database command.
 
 ```bash
-cp .env.example .env
-docker compose up -d postgres
+docker compose up -d --wait postgres
 npm ci
 npm run db:migrate
 npm run db:seed
 npm run start:dev
 ```
 
-Untuk upload gambar lokal, jalankan `docker compose up -d minio minio-init`.
-Isi `S3_*` pada `.env` sesuai `.env.example`; bucket dibuat otomatis dan
-hanya objek gambar yang dapat dibaca publik. Kredensial contoh hanya untuk
-development, jangan digunakan di production. Upload berlangsung dua tahap:
-seller meminta signed PUT URL, mengirim file langsung ke storage dengan
-`Content-Type` yang dikembalikan, lalu memanggil endpoint complete. API akan
-memeriksa ukuran, SHA-256, format dan dimensi gambar sebelum memasukkannya
-ke katalog.
-
-Uji adapter terhadap MinIO lokal dengan `npm run smoke:storage` setelah
-`S3_*` terisi. Script ini mengirim gambar uji, membacanya kembali, lalu
-menghapus objek uji tersebut.
-
-API menggunakan prefix `http://localhost:3000/api/v1`.
-
-Worker dijalankan pada terminal lain:
+The API listens on `http://localhost:3000/api/v1` by default. Start background processing in another terminal:
 
 ```bash
 npm run worker:dev
 ```
 
-Worker memproses deadline pengiriman, refund idempotent, retry, dan dead-letter.
-Event bisnis dipublikasikan secara atomik ke tabel `published_events` sebagai
-feed internal yang durable; integrasi eksternal belum terpasang. Consumer
-berikutnya harus membaca feed tersebut dengan cursor dan memprosesnya secara
-idempotent. Simulasi hari berikutnya hanya tersedia di non-production;
-connection pool production selalu menggunakan waktu database nyata.
+For local image uploads, start MinIO and its bucket initialization service:
+
+```bash
+docker compose up -d --wait minio minio-init
+```
+
+Configure the `S3_*` variables from `.env.example`. Seller uploads use a signed URL; the API validates the uploaded object's size, checksum, format, and dimensions before publication. `npm run smoke:storage` exercises this flow against the configured storage endpoint.
 
 ## Quality checks
 
 ```bash
 npm run lint
 npm run typecheck
-npm test
+npm test -- --runInBand
 npm run build
+npm run audit:dead-code
+npm run audit:dependencies
 ```
 
-Benchmark katalog memakai database test terpisah. `npm run bench:catalog`
-memuat 10.000 user, 1.000 toko, 100.000 produk, dan 300.000 varian,
-menjalankan `EXPLAIN (ANALYZE, BUFFERS)` untuk daftar terbaru, harga, serta
-pencarian, lalu melakukan rollback. Set `DATABASE_URL`/`MIGRATION_DATABASE_URL`
-ke database test sebelum menjalankannya; jangan gunakan database produksi.
+Database and HTTP integration checks require a dedicated PostgreSQL test database. The CI workflow shows the environment and commands used for these checks. Never point test, seed, benchmark, or reset commands at a production database.
 
-Database diakses langsung melalui `pg`. SQL hanya boleh berada pada repository, migration, seed, atau database infrastructure.
+## Production runtime
 
-Panduan migration, backup, reset, dan pemulihan tersedia di
-[`docs/runbooks/database.md`](../docs/runbooks/database.md).
+Run migrations as a separate job through a direct PostgreSQL connection. Deploy the API (`npm run start:prod`) and worker (`npm run worker`) as separate processes from the same build. Production configuration requires secure cookies, a strong JWT secret, the public frontend origin, PostgreSQL, and S3-compatible image storage. See `.env.example` for configuration and verify backup, restore, monitoring, and rollback procedures before release.
+
+The development wallet top-up and time simulation are disabled in production. No production funding or payment integration is provided, so the current checkout flow must not be offered for public paid orders.
