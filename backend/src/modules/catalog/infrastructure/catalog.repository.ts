@@ -78,9 +78,9 @@ export class CatalogRepository {
         `p.rating_count > 0 AND p.rating_average >= ${add(input.minRating)}`,
       );
     if (input.q) {
-      const escaped = input.q.trim().replace(/[\\%_]/g, '\\$&');
       conditions.push(
-        `(p.name || ' ' || coalesce(p.description, '')) ILIKE ${add(`%${escaped}%`)} ESCAPE '\\'`,
+        `to_tsvector('simple', p.name || ' ' || coalesce(p.description, ''))
+         @@ websearch_to_tsquery('simple', ${add(input.q.trim())})`,
       );
     }
     const { expression, direction } = SORT_SQL[input.sort];

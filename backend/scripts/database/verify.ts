@@ -30,10 +30,10 @@ async function verify(): Promise<void> {
     const migrations = await client.query<{ count: string }>(
       'SELECT count(*) FROM schema_migrations',
     );
-    assert(Number(migrations.rows[0].count) >= 12);
+    assert(Number(migrations.rows[0].count) >= 14);
 
     const requiredIndexes = [
-      'products_search_trgm_idx',
+      'products_search_fts_idx',
       'orders_store_queue_idx',
       'inventory_reservations_active_expiry_idx',
       'deliveries_available_idx',
