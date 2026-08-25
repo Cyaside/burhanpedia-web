@@ -1,19 +1,43 @@
 # Burhanpedia frontend
 
-This Next.js project contains the public storefront and buyer, seller, driver, and administrator pages. It communicates with the backend through HTTP; it does not import backend source code.
+The frontend is a standalone Next.js application for the public storefront and the buyer, seller, driver, and administrator experiences. It communicates with the backend through HTTP; it does not import backend source code or connect to PostgreSQL directly.
 
-## Local setup
+## How it works
 
-Use Node.js 22–24. Create `.env.local` from `.env.example` if it does not exist, then run:
+| Area | Location | Responsibility |
+| --- | --- | --- |
+| Routes | `src/app/` | App Router pages for catalog, stores, product details, cart, checkout, orders, and role-specific workspaces. |
+| Feature UI | `src/components/` and `src/sections/` | Reusable navigation, storefront, seller, form, and UI components. |
+| API boundary | `src/lib/api/` | Shared HTTP client and typed catalog, commerce, seller, and operations requests. |
+| Session and roles | `src/lib/auth.ts` | Current-user query and client-side route guards. |
+| Shared browser state | `src/components/providers/` | React Query provider for fetching, caching, and invalidation. |
+| Styling and assets | `src/styles/` and `public/` | Design styles and local brand assets. |
+| Browser tests | `tests/` | Playwright journeys across public and authenticated views. |
+
+The browser requests `/api/v1/*` on the frontend origin. The rewrite in `next.config.ts` forwards those requests to `BACKEND_ORIGIN`, so session cookies remain on the same browser origin. The shared API client sends credentials, refreshes an expired session once, and turns API Problem Details responses into user-facing errors. Page-level role guards prevent inappropriate controls and routes from appearing, while the backend remains the authority for every permission and ownership check.
+
+Catalog pages fetch categories, stores, and cursor-paginated products. The buyer flow selects a product variant, uses a server-side cart, requests a checkout quote, and submits checkout with an idempotency key. Seller, driver, and admin views call their respective backend endpoints; they do not mutate marketplace data locally as a source of truth.
+
+## Configuration
+
+Use Node.js 22–24. Copy `.env.example` to `.env.local` and set:
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | Browser-visible API path; `/api/v1` is the default for same-origin requests. |
+| `BACKEND_ORIGIN` | API origin used by the Next.js rewrite, for example `http://127.0.0.1:3000`. |
+| `IMAGE_PUBLIC_BASE_URL` | Public base URL for product and store images; must match the backend storage configuration. |
+
+Start the backend and database first, then from `frontend/` run:
 
 ```bash
 npm ci
 npm run dev -- -p 3001
 ```
 
-Open `http://localhost:3001`. The default `NEXT_PUBLIC_API_URL=/api/v1` keeps browser requests on the frontend origin. `BACKEND_ORIGIN=http://127.0.0.1:3000` controls the server-side proxy target. Set `IMAGE_PUBLIC_BASE_URL` to the public URL of the configured image bucket.
+Open `http://localhost:3001`. See the [repository guide](../README.md) for the complete local stack.
 
-## Quality checks
+## Verification
 
 ```bash
 npm run lint
@@ -23,17 +47,10 @@ npm run audit:dead-code
 npm run audit:dependencies
 ```
 
-The Playwright suite requires the API, a seeded PostgreSQL test database, and a running production frontend build:
+The Playwright suite needs a running API, seeded PostgreSQL test data, and a running frontend server. For example, after building the frontend, start it with `npm run start -- -p 3001` and run `npm run test:e2e` in another terminal. Tests cover desktop and mobile Chromium where applicable. The [integration CI workflow](../.github/workflows/integration-ci.yml) provisions the complete test stack.
 
-```bash
-npm run start -- -p 3001
-npm run test:e2e
-```
+## Deployment boundary
 
-The [integration CI workflow](../.github/workflows/integration-ci.yml) provisions the complete test stack.
+Deploy the frontend with a compatible API and worker release. Configure the public origin, backend rewrite target, secure cookies, and image URL consistently across services. Paid checkout is not ready for public production use until a real funding or payment flow exists; the demo top-up control is intentionally unavailable in production.
 
-## Production deployment
-
-Configure the frontend origin, backend proxy target, and image public base URL for the target environment. Deploy the frontend alongside a compatible API and worker release. Paid checkout is not production-ready until a real wallet-funding or payment flow is available; the demo top-up control is not rendered in production.
-
-Photography credits and source links are listed in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
+Image credits and source links are listed in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
