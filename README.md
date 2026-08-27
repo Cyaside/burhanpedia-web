@@ -1,22 +1,35 @@
 # Burhanpedia
 
-Burhanpedia is a marketplace application covering product discovery, multi-store checkout, seller operations, delivery, reviews, and administration. Its Next.js frontend and NestJS backend live in separate directories in one repository. Each project owns its dependencies, lockfile, configuration, and build; there is no root workspace or shared source package.
+An e-commerce marketplace for discovering products, shopping across independent stores, and managing orders from purchase through delivery.
 
-The application is suitable for local development and demonstration. It is **not ready to accept public paid orders**: production payment and wallet funding are not implemented, and demo top-up is disabled in production.
+Burhanpedia brings buyers, sellers, and delivery drivers into one connected experience. Buyers can compare products and variants, place multi-store orders, follow deliveries, and review completed purchases. Sellers manage their storefronts and orders, while drivers handle available deliveries.
+
+[Features](#features) · [Demo](#demo) · [How it works](#how-it-works) · [Technology](#technology) · [Get started](#get-started) · [Documentation](#documentation)
+
+## Features
+
+| Experience | What it provides |
+| --- | --- |
+| Shopping | Searchable product catalog, category browsing, store discovery, product variants, and a server-side cart. |
+| Checkout | Address selection, delivery options per store, voucher validation, server-calculated prices, and order tracking. |
+| Storefronts | Seller-managed store details, logos, products, variants, stock, and order processing. |
+| Delivery | Driver assignment, delivery progress, status history, and overdue-order handling. |
+| Reviews | Reviews from buyers of completed orders, with product and store rating summaries. |
+| Administration | Role-aware administrative views and operational controls. |
 
 ## Demo
 
-These silent recordings use seeded demonstration data. The attachment URLs below render as inline video players on GitHub.
+The recordings below show the application with demonstration data. They contain no narration or overlays.
 
-### Storefront and product discovery
+### Browse the marketplace
 
 https://github.com/user-attachments/assets/7ca6615c-5da3-4688-9ddb-84ed908af96f
 
-### Buyer cart and checkout
+### Cart and checkout
 
 https://github.com/user-attachments/assets/8cd7f68c-731c-4434-a25f-0782e071d29c
 
-### Seller storefront and order management
+### Seller workspace
 
 https://github.com/user-attachments/assets/3808d62a-498c-44ad-9faf-fb2af5c52760
 
@@ -24,7 +37,7 @@ https://github.com/user-attachments/assets/3808d62a-498c-44ad-9faf-fb2af5c52760
 
 https://github.com/user-attachments/assets/408d544e-e2d1-46a0-be33-e9fa24a757e7
 
-### Buyer review flow
+### Buyer reviews
 
 https://github.com/user-attachments/assets/ce3635a1-09c9-4740-9d14-18f71066b838
 
@@ -32,37 +45,39 @@ https://github.com/user-attachments/assets/ce3635a1-09c9-4740-9d14-18f71066b838
 
 https://github.com/user-attachments/assets/41c2b1bd-b044-4228-bf44-37e2a7cbdfc0
 
-## Architecture
+## How it works
 
-```text
-Browser
-  │
-  ▼
-frontend/  Next.js pages, role-aware UI, and same-origin /api/v1 proxy
-  │
-  ▼
-backend/   NestJS HTTP API ─────────── S3-compatible image storage
-  │
-  ▼
-PostgreSQL  Catalog, identity, orders, jobs, and outbox
-  ▲
-  │
-backend/   Separate worker process
+```mermaid
+flowchart LR
+    Browser[Buyer, seller, driver, or admin] --> Web[Next.js frontend]
+    Web -->|Same-origin API requests| API[NestJS API]
+    API --> DB[(PostgreSQL)]
+    API --> Storage[(S3-compatible image storage)]
+    Worker[Background worker] --> DB
 ```
 
-The browser calls the frontend origin. Next.js forwards `/api/v1/*` requests to the API, including the session cookies. The API enforces authorization and owns business rules; frontend role checks only control navigation and presentation. PostgreSQL stores marketplace state and versioned SQL migrations. The worker runs independently from the HTTP process and handles scheduled order work and outbox publication.
+The frontend presents the marketplace and calls the API through a same-origin proxy. The API handles identity, permissions, catalog changes, pricing, checkout, and order transitions. PostgreSQL stores application data; a separate worker processes scheduled order tasks and outbox events. Product and store images use S3-compatible object storage. See the [frontend](frontend/README.md) and [backend](backend/README.md) guides for implementation details.
 
-| Directory | Responsibility |
+## Technology
+
+| Technology | Role in the project |
 | --- | --- |
-| [`frontend/`](frontend/README.md) | Storefront, buyer checkout, seller, driver, and admin screens; API client and browser tests. |
-| [`backend/`](backend/README.md) | HTTP API, domain services, PostgreSQL repositories, migrations, seed data, and worker. |
-| [`.github/workflows/`](.github/workflows/) | Independent project checks and integration tests. |
+| Next.js, React, TypeScript | Storefront and role-specific web application. |
+| TanStack Query | Server-state fetching and cache management in the browser. |
+| Tailwind CSS | Responsive interface styling. |
+| NestJS, TypeScript | HTTP API, authentication, validation, and marketplace workflows. |
+| PostgreSQL and `pg` | Persistent data, SQL queries, transactions, and versioned migrations. |
+| Docker Compose | Local PostgreSQL and MinIO services. |
+| S3-compatible storage / MinIO | Product and store image uploads. |
+| Jest and Playwright | Backend tests and end-to-end browser tests. |
 
-## Run locally
+The frontend and backend are separate projects in this repository, each with its own `package.json`, lockfile, and build. No root workspace or shared source package is required.
 
-Use Node.js 22–24 and Docker Compose. Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `frontend/.env.local`. Review `DATABASE_URL` before running migrations or seed commands; use a disposable local database.
+## Get started
 
-From `backend/`:
+Requirements: Node.js 22–24 and Docker Compose. Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `frontend/.env.local`. Check that `DATABASE_URL` points to the intended local database before running a migration or seed command.
+
+Start PostgreSQL and the API from `backend/`:
 
 ```bash
 docker compose up -d --wait postgres
@@ -72,25 +87,23 @@ npm run db:seed
 npm run start:dev
 ```
 
-From `frontend/` in another terminal:
+Start the web application from `frontend/` in a second terminal:
 
 ```bash
 npm ci
 npm run dev -- -p 3001
 ```
 
-Open `http://localhost:3001`. The frontend proxies `/api/v1` to the API at `http://localhost:3000`. Run `npm run worker:dev` from `backend/` in a separate terminal for background processing. Seller image uploads also require the optional MinIO service; see the [backend setup](backend/README.md).
+Open `http://localhost:3001`. The frontend forwards `/api/v1` requests to the API at `http://localhost:3000`. Run `npm run worker:dev` from `backend/` in another terminal for background processing. Image uploads additionally require MinIO; setup instructions are in the [backend guide](backend/README.md).
 
-For a larger local demonstration dataset, run `npm run db:seed:demo` from `backend/`. Never run development or demo seeds against production data.
+To populate a larger local showcase, run `npm run db:seed:demo` from `backend/`. Never use demonstration seeds on a production database.
 
-## Verification and deployment boundary
+## Documentation
 
-Both projects expose independent `lint`, `typecheck`, and `build` scripts. Backend unit and integration tests and frontend Playwright tests are documented in their respective guides. The [integration workflow](.github/workflows/integration-ci.yml) exercises the combined stack.
-
-Before a public commerce deployment, add a real payment or wallet-funding integration and rehearse backup, restore, monitoring, and rollback. Do not deploy demonstration accounts or data. The development top-up and simulated time controls are disabled in production.
-
-## Project documentation
-
-- [Frontend architecture and development](frontend/README.md)
-- [Backend architecture and operations](backend/README.md)
+- [Frontend architecture, configuration, and tests](frontend/README.md)
+- [Backend architecture, database, worker, and operations](backend/README.md)
 - [Third-party image acknowledgements](frontend/ACKNOWLEDGEMENTS.md)
+
+## Project scope
+
+The included wallet top-up is for development and demonstration; it is disabled in production. A real payment or wallet-funding integration is required before accepting public paid orders. Production operation also requires deployment-specific database, storage, backup, monitoring, and recovery procedures.
