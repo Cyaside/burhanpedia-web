@@ -1,10 +1,21 @@
 # Burhanpedia API and worker
 
-The backend is a standalone NestJS project containing the HTTP API, a separate worker entry point, PostgreSQL migrations, seed data, and operational checks. It can be installed, tested, and built without the frontend.
+The backend provides Burhanpedia's HTTP API and background processing. It owns marketplace data and business rules, from account access and product management to checkout, delivery, and reviews. It can be installed, tested, and built independently of the frontend.
 
 ## Architecture
 
-Feature modules in `src/modules/` separate HTTP presentation, application services, domain rules, and SQL repositories. Controllers validate input and expose `/api/v1` endpoints; services enforce workflows; repositories own PostgreSQL queries. `src/database/` provides the connection pool and transaction helper. The API and worker share the database schema but run as separate processes.
+The API is organized by business capability. Each feature module in `src/modules/` has a clear path from an incoming request to a database operation:
+
+```mermaid
+flowchart LR
+    Client[Web client] --> Controller[Controller]
+    Controller --> Service[Application service]
+    Service --> Rules[Domain rules]
+    Service --> Repository[Repository]
+    Repository --> Database[(PostgreSQL)]
+```
+
+Controllers accept and validate requests. Application services coordinate the work. Domain rules handle decisions such as pricing and allowed status changes. Repositories keep SQL and data mapping out of the HTTP layer. Shared database code is in `src/database/`.
 
 | Module | Responsibility |
 | --- | --- |
@@ -15,13 +26,22 @@ Feature modules in `src/modules/` separate HTTP presentation, application servic
 | `operations` | Seller order processing, driver assignment and delivery states, admin operations, and time controls for development. |
 | `reviews` | Verified buyer reviews and rating summaries. |
 
-HTTP authorization is enforced by backend guards and ownership checks, independently of what the frontend shows. The API uses validated DTOs, rate limiting, CORS, secure HTTP headers, request IDs, structured request logs, and a consistent Problem Details error response.
+The backend checks permissions and resource ownership on every protected action. Hiding a control in the frontend does not grant or remove access. Requests are validated and rate-limited; responses use a consistent error format and carry a request ID for troubleshooting.
 
-### Data and background processing
+### Database
 
-Versioned SQL files in `database/migrations/` create and evolve the PostgreSQL schema. `npm run db:migrate` records filenames and SHA-256 checksums in `schema_migrations` under an advisory lock; unchanged migrations are skipped and modified applied migrations are rejected. Repositories use `pg` directly, with parameterized queries and transaction helpers. Checkout calculates totals on the server, locks the relevant state, writes per-store orders and ledger entries atomically, and uses an idempotency key to prevent duplicate checkout on retry.
+PostgreSQL stores accounts, stores, products, carts, orders, delivery records, and background jobs. Schema changes are kept as numbered SQL files in `database/migrations/` and applied with `npm run db:migrate`. The migration command records what has run, verifies that applied files have not changed, and prevents two migration processes from changing the schema at once. Repositories use parameterized SQL through `pg`; related writes use transactions.
 
-The worker entry point is `src/worker.ts`. It claims database-backed jobs and outbox events with `FOR UPDATE SKIP LOCKED`, processes overdue order return/refund work, retries failures, and records exhausted attempts in a dead-letter table. Run only the API for HTTP traffic; run the worker separately when scheduled processing is required.
+### Checkout
+
+1. The buyer selects an address and a delivery method for each store in the cart.
+2. The API checks the cart, stock, voucher, and wallet balance, then calculates the price. It does not accept a total supplied by the browser.
+3. Checkout creates the payment record, per-store orders, inventory reservations, and wallet ledger entries in one transaction. If the operation fails, none of those changes are committed.
+4. An idempotency key lets the buyer retry the same request without creating a second charge or order.
+
+### Background worker
+
+The worker starts from `src/worker.ts` and runs separately from the HTTP API. It picks up scheduled jobs and outbox events stored in PostgreSQL. Its current work includes handling delivery deadlines and returning or refunding overdue orders. Failed work is retried; work that exhausts its attempts is recorded for investigation. The API can answer requests without the worker, but scheduled processing requires a running worker process.
 
 ## Local setup
 
@@ -42,11 +62,11 @@ docker compose up -d --wait minio minio-init
 npm run smoke:storage
 ```
 
-Configure the `S3_*` variables from `.env.example`. Uploads use signed URLs; the API checks the resulting object's size, checksum, format, and dimensions before publication. `npm run db:seed:demo` adds a larger, repeatable demonstration dataset on top of the development seed; it is not production data.
+Configure the `S3_*` variables from `.env.example`. The API issues a signed upload URL and checks the uploaded image before it can appear in the catalog. `npm run db:seed:demo` adds a larger demonstration dataset on top of the development seed; it is not production data.
 
 ## Configuration and verification
 
-The key environment groups in `.env.example` are `DATABASE_*` for PostgreSQL, `JWT_*` and `COOKIE_SECURE` for sessions, `FRONTEND_URL` and `ADDITIONAL_ORIGINS` for browser access, and `S3_*` for images. Production configuration rejects missing required secrets. Keep credentials outside version control.
+The main environment settings in `.env.example` cover PostgreSQL (`DATABASE_*`), sessions (`JWT_*` and `COOKIE_SECURE`), browser origins (`FRONTEND_URL` and `ADDITIONAL_ORIGINS`), and image storage (`S3_*`). Required production secrets are checked at startup. Keep credentials outside version control.
 
 ```bash
 npm run lint
@@ -57,10 +77,12 @@ npm run audit:dead-code
 npm run audit:dependencies
 ```
 
-Database and HTTP integration tests require a dedicated PostgreSQL test database. `npm run test:e2e` runs backend endpoint tests; `npm run db:verify` checks schema and seed invariants. The [integration CI workflow](../.github/workflows/integration-ci.yml) shows the combined test setup. Never run seed, reset, benchmark, or test commands against a production database.
+Database and HTTP integration tests require a dedicated PostgreSQL test database. `npm run test:e2e` runs backend endpoint tests; `npm run db:verify` checks schema and seed data. The [integration CI workflow](../.github/workflows/integration-ci.yml) shows the combined test setup. Never run seed, reset, benchmark, or test commands against a production database.
 
 ## Production runtime and limitations
 
-Run migrations as a separate deployment job using a direct PostgreSQL connection. Deploy the built API with `npm run start:prod` and the worker with `npm run worker`. Configure secure cookies, a strong JWT secret, the public frontend origin, PostgreSQL backups, and S3-compatible image storage. Rehearse restore and rollback before release.
+Run migrations as a separate deployment step using a direct PostgreSQL connection. Deploy the built API with `npm run start:prod` and the worker with `npm run worker` as separate processes. Configure secure cookies, a strong JWT secret, the public frontend origin, PostgreSQL backups, and S3-compatible image storage. Rehearse restore and rollback before release.
 
-Development wallet top-up and simulated time are disabled in production. There is no production funding or payment integration, so this backend must not be used for public paid checkout until that capability is implemented and verified.
+For a Vercel API deployment, set the project root to `backend/`. `vercel.json` selects the NestJS framework; do not configure a static `public` output directory. Vercel hosts the HTTP API as a function, not the continuously running worker. The worker needs a separate process host and access to the same PostgreSQL database.
+
+Production checkout requires a payment or wallet-funding integration. The included development wallet top-up and simulated time controls are unavailable when `NODE_ENV=production`.

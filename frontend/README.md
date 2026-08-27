@@ -1,22 +1,30 @@
 # Burhanpedia frontend
 
-The frontend is a standalone Next.js application for the public storefront and the buyer, seller, driver, and administrator experiences. It communicates with the backend through HTTP; it does not import backend source code or connect to PostgreSQL directly.
+The frontend is Burhanpedia's web application. It includes the public marketplace and dedicated views for buyers, sellers, drivers, and administrators. It communicates with the backend through HTTP and does not connect to PostgreSQL directly.
 
 ## How it works
 
 | Area | Location | Responsibility |
 | --- | --- | --- |
-| Routes | `src/app/` | App Router pages for catalog, stores, product details, cart, checkout, orders, and role-specific workspaces. |
-| Feature UI | `src/components/` and `src/sections/` | Reusable navigation, storefront, seller, form, and UI components. |
-| API boundary | `src/lib/api/` | Shared HTTP client and typed catalog, commerce, seller, and operations requests. |
-| Session and roles | `src/lib/auth.ts` | Current-user query and client-side route guards. |
-| Shared browser state | `src/components/providers/` | React Query provider for fetching, caching, and invalidation. |
-| Styling and assets | `src/styles/` and `public/` | Design styles and local brand assets. |
-| Browser tests | `tests/` | Playwright journeys across public and authenticated views. |
+| Routes | `src/app/` | Pages for discovery, product details, cart, checkout, orders, and role-specific workspaces. |
+| Components | `src/components/` and `src/sections/` | Navigation, storefront cards, forms, and reusable interface elements. |
+| API client | `src/lib/api/` | Requests and response types for marketplace features. |
+| Sessions | `src/lib/auth.ts` | Current account, active role, and page access checks. |
+| Data fetching | `src/components/providers/` | React Query setup for loading and refreshing server data. |
+| Visual assets | `src/styles/` and `public/` | Shared styling and brand assets. |
+| Browser tests | `tests/` | Playwright coverage for marketplace journeys. |
 
-The browser requests `/api/v1/*` on the frontend origin. The rewrite in `next.config.ts` forwards those requests to `BACKEND_ORIGIN`, so session cookies remain on the same browser origin. The shared API client sends credentials, refreshes an expired session once, and turns API Problem Details responses into user-facing errors. Page-level role guards prevent inappropriate controls and routes from appearing, while the backend remains the authority for every permission and ownership check.
+### Requests and sessions
 
-Catalog pages fetch categories, stores, and cursor-paginated products. The buyer flow selects a product variant, uses a server-side cart, requests a checkout quote, and submits checkout with an idempotency key. Seller, driver, and admin views call their respective backend endpoints; they do not mutate marketplace data locally as a source of truth.
+The browser sends API requests to `/api/v1/*` on the web application's origin. Next.js forwards them to `BACKEND_ORIGIN`. The API client includes session cookies, attempts one refresh when a session expires, and presents API errors consistently. Access checks in the UI hide actions that do not belong to the active role; the backend independently enforces permissions and ownership.
+
+### Marketplace journeys
+
+- Public pages load categories, stores, and products from the API. Product lists can be filtered and extended without loading the entire catalog at once.
+- Buyers select a variant and quantity, add it to a cart stored by the backend, review a server-calculated checkout quote, and place an order.
+- Sellers update their store and inventory and process incoming orders. Drivers claim and progress deliveries. Administrators use dedicated operational views.
+
+The browser displays the latest server state; it does not calculate final order totals or act as the source of truth for stock and order status.
 
 ## Configuration
 
@@ -51,6 +59,6 @@ The Playwright suite needs a running API, seeded PostgreSQL test data, and a run
 
 ## Deployment boundary
 
-Deploy the frontend with a compatible API and worker release. Configure the public origin, backend rewrite target, secure cookies, and image URL consistently across services. Paid checkout is not ready for public production use until a real funding or payment flow exists; the demo top-up control is intentionally unavailable in production.
+Deploy the frontend with a compatible API and worker release. Configure the public origin, backend rewrite target, secure cookies, and image URL consistently across services. Public paid checkout requires a production payment or wallet-funding integration; the demo top-up control is not shown in production.
 
 Image credits and source links are listed in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
