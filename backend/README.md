@@ -79,10 +79,22 @@ npm run audit:dependencies
 
 Database and HTTP integration tests require a dedicated PostgreSQL test database. `npm run test:e2e` runs backend endpoint tests; `npm run db:verify` checks schema and seed data. The [integration CI workflow](../.github/workflows/integration-ci.yml) shows the combined test setup. Never run seed, reset, benchmark, or test commands against a production database.
 
-## Production runtime and limitations
+## Performance and scaling
+
+The repository includes repeatable checks for catalog query performance and concurrent checkout behavior. These are tests, not a published throughput guarantee; results depend on the database, hardware, data volume, and deployment environment.
+
+| Check | What it measures | Command |
+| --- | --- | --- |
+| HTTP catalog smoke test | By default, 50 product-list requests with 10 concurrent clients. Prints average and p95 response times and checks p95 against a configurable 300 ms target. | `npm run smoke:http` |
+| Catalog database benchmark | Generates 1,000–100,000 temporary products and measures listing and search queries, including PostgreSQL execution plans. The transaction is rolled back afterward. | `npm run bench:catalog` |
+| Checkout concurrency tests | Verifies that competing checkouts cannot oversell the final unit or redeem the last voucher twice; retry behavior is also covered. | `npm run test:e2e -- --runInBand` |
+
+Run the HTTP smoke test against a running API and a populated test database. `API_BASE_URL`, `LOAD_REQUEST_COUNT`, `LOAD_CONCURRENCY`, and `LOAD_P95_TARGET_MS` can be set to match the environment. The database benchmark uses `CATALOG_BENCH_PRODUCTS` (default: 100,000). Neither command should target a production database.
+
+The API can be placed behind an external load balancer, with all instances using the same PostgreSQL database and image storage. Use `/api/v1/health/live` and `/api/v1/health/ready` for liveness and database-readiness checks. Size the PostgreSQL connection pool for the *total* number of API instances; `DATABASE_POOL_MAX` applies to each instance. The default rate limiter is per instance, so a shared store is needed if limits must apply globally. The worker runs separately and is not an HTTP load-balancer target. The current test suite checks application-level concurrency, but does not include a multi-instance load-balancer benchmark or an independently verified requests-per-second figure.
+
+## Deployment
 
 Run migrations as a separate deployment step using a direct PostgreSQL connection. Deploy the built API with `npm run start:prod` and the worker with `npm run worker` as separate processes. Configure secure cookies, a strong JWT secret, the public frontend origin, PostgreSQL backups, and S3-compatible image storage. Rehearse restore and rollback before release.
 
 For a Vercel API deployment, set the project root to `backend/`. `vercel.json` selects the NestJS framework; do not configure a static `public` output directory. Vercel hosts the HTTP API as a function, not the continuously running worker. The worker needs a separate process host and access to the same PostgreSQL database.
-
-Production checkout requires a payment or wallet-funding integration. The included development wallet top-up and simulated time controls are unavailable when `NODE_ENV=production`.
