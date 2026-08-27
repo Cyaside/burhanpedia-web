@@ -57,8 +57,8 @@ npm run audit:dependencies
 
 The Playwright suite needs a running API, seeded PostgreSQL test data, and a running frontend server. For example, after building the frontend, start it with `npm run start -- -p 3001` and run `npm run test:e2e` in another terminal. Tests cover desktop and mobile Chromium where applicable. The [integration CI workflow](../.github/workflows/integration-ci.yml) provisions the complete test stack.
 
-## Deployment boundary
+## Deployment
 
-Deploy the frontend with a compatible API and worker release. Configure the public origin, backend rewrite target, secure cookies, and image URL consistently across services. Public paid checkout requires a production payment or wallet-funding integration; the demo top-up control is not shown in production.
+Deploy the frontend with a compatible API and worker release. Configure the public origin, backend rewrite target, secure cookies, and image URL consistently across services.
 
 Image credits and source links are listed in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).

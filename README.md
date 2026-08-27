@@ -1,10 +1,21 @@
-# Burhanpedia
+<p align="center">
+  <img src="frontend/public/brand-mark.svg" alt="Burhanpedia owl logo" width="112" height="112">
+</p>
 
-An e-commerce marketplace for discovering products, shopping across independent stores, and managing orders from purchase through delivery.
+<h1 align="center">Burhanpedia</h1>
+
+<p align="center">An e-commerce marketplace for discovering products, shopping across independent stores, and managing orders from purchase through delivery.</p>
 
 Burhanpedia brings buyers, sellers, and delivery drivers into one connected experience. Buyers can compare products and variants, place multi-store orders, follow deliveries, and review completed purchases. Sellers manage their storefronts and orders, while drivers handle available deliveries.
 
-[Features](#features) · [Demo](#demo) · [How it works](#how-it-works) · [Technology](#technology) · [Get started](#get-started) · [Documentation](#documentation)
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#demo">Demo</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#technology">Technology</a> ·
+  <a href="#get-started">Get started</a> ·
+  <a href="#documentation">Documentation</a>
+</p>
 
 ## Features
 
@@ -103,7 +114,3 @@ To populate a larger local showcase, run `npm run db:seed:demo` from `backend/`.
 - [Frontend architecture, configuration, and tests](frontend/README.md)
 - [Backend architecture, database, worker, and operations](backend/README.md)
 - [Third-party image acknowledgements](frontend/ACKNOWLEDGEMENTS.md)
-
-## Project scope
-
-The included wallet top-up is for development and demonstration; it is disabled in production. A real payment or wallet-funding integration is required before accepting public paid orders. Production operation also requires deployment-specific database, storage, backup, monitoring, and recovery procedures.
