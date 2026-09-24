@@ -258,7 +258,12 @@ export class ImageUploadService {
     key: string,
     dto: RequestImageUploadDto,
   ) {
-    const signed = await this.storage.signUpload(key, dto.contentType);
+    const signed = await this.storage.signUpload(
+      key,
+      dto.contentType,
+      dto.byteSize,
+      dto.checksumSha256,
+    );
     const result = await this.database.query<{ id: string; expires_at: Date }>(
       `INSERT INTO stored_objects
        (owner_user_id, storage_key, content_type, byte_size,

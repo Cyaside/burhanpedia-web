@@ -64,7 +64,7 @@ docker compose up -d --wait minio minio-init
 npm run smoke:storage
 ```
 
-Configure the `S3_*` variables from `.env.example`. The API issues a signed upload URL and checks the uploaded image before it can appear in the catalog. `npm run db:seed:demo` adds a larger demonstration dataset on top of the development seed and prints a one-time administrator password when that account is initialized or an older shared demo password is replaced. Both seed commands require a loopback PostgreSQL connection by default and preserve existing account suspensions when rerun.
+Configure the `S3_*` variables from `.env.example`. Signed uploads bind the requested content type, exact byte size, and SHA-256 checksum; the API also validates the stored image before it can appear in the catalog. The storage bucket's CORS policy must allow the `x-amz-checksum-sha256` request header. `npm run smoke:storage` checks valid uploads and rejects modified size, type, and content. `npm run db:seed:demo` adds a larger demonstration dataset on top of the development seed and prints a one-time administrator password when that account is initialized or an older shared demo password is replaced. Both seed commands require a loopback PostgreSQL connection by default and preserve existing account suspensions when rerun.
 
 ## Configuration and verification
 

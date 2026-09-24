@@ -4,6 +4,8 @@ export interface StoragePort {
   signUpload(
     key: string,
     contentType: string,
+    byteSize: number,
+    checksumSha256: string,
   ): Promise<{ url: string; headers: Record<string, string> }>;
   load(key: string, maximumBytes: number): Promise<Buffer>;
   publicUrl(key: string): string;

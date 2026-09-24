@@ -39,18 +39,33 @@ export class S3StorageAdapter implements StoragePort {
   async signUpload(
     key: string,
     contentType: string,
+    byteSize: number,
+    checksumSha256: string,
   ): Promise<{ url: string; headers: Record<string, string> }> {
     const client = this.requireClient();
+    const checksum = Buffer.from(checksumSha256, 'hex').toString('base64');
     const url = await getSignedUrl(
       client,
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
         ContentType: contentType,
+        ContentLength: byteSize,
+        ChecksumSHA256: checksum,
       }),
-      { expiresIn: 300 },
+      {
+        expiresIn: 300,
+        signableHeaders: new Set(['content-length', 'content-type']),
+        unhoistableHeaders: new Set(['x-amz-checksum-sha256']),
+      },
     );
-    return { url, headers: { 'Content-Type': contentType } };
+    return {
+      url,
+      headers: {
+        'Content-Type': contentType,
+        'x-amz-checksum-sha256': checksum,
+      },
+    };
   }
 
   async load(key: string, maximumBytes: number): Promise<Buffer> {
