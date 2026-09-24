@@ -56,8 +56,10 @@ async function verify(): Promise<void> {
       [requiredIndexes],
     );
     assert.deepEqual(
-      indexes.rows.map(({ indexname }) => indexname).sort(),
-      requiredIndexes.sort(),
+      indexes.rows
+        .map(({ indexname }) => indexname)
+        .sort((left, right) => left.localeCompare(right, 'en')),
+      requiredIndexes.sort((left, right) => left.localeCompare(right, 'en')),
     );
 
     const moneyColumns = await client.query<{ data_type: string }>(

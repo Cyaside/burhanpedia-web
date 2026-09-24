@@ -120,7 +120,11 @@ export class CheckoutRepository {
 
           const storeIds = [
             ...new Set(data.lines.map((line) => line.store_id)),
-          ].sort();
+          ].sort((left, right) => {
+            if (left < right) return -1;
+            if (left > right) return 1;
+            return 0;
+          });
           if (
             input.deliveries.size !== storeIds.length ||
             storeIds.some((storeId) => !input.deliveries.has(storeId))

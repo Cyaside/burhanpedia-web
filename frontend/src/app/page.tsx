@@ -83,7 +83,7 @@ export default function HomePage() {
     const count = storeQuery.data?.items.length ?? 0;
     if (count <= 4) return;
     setStoreStart((current) => {
-      const next = Math.floor(Math.random() * count);
+      const next = crypto.getRandomValues(new Uint32Array(1))[0] % count;
       return next === current ? (next + 1) % count : next;
     });
   }
