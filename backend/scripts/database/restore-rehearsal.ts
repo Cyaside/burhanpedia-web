@@ -7,14 +7,21 @@ const SERVICE = 'postgres';
 const SOURCE_DATABASE = 'burhanpedia_test';
 const RESTORE_DATABASE = 'burhanpedia_restore_rehearsal';
 const DATABASE_USER = 'burhanpedia';
-const DUMP_FILE = '/tmp/burhanpedia-restore-rehearsal.dump';
+const DOCKER_EXECUTABLE =
+  process.platform === 'win32'
+    ? 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe'
+    : '/usr/bin/docker';
 
 function docker(...args: string[]): string {
-  return execFileSync('docker', ['compose', '-f', COMPOSE_FILE, ...args], {
-    cwd: process.cwd(),
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'inherit'],
-  }).trim();
+  return execFileSync(
+    DOCKER_EXECUTABLE,
+    ['compose', '-f', COMPOSE_FILE, ...args],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'inherit'],
+    },
+  ).trim();
 }
 
 function inPostgres(...command: string[]): string {
@@ -57,8 +64,17 @@ function dropRestoreDatabase(): void {
 
 function main(): void {
   assertSafeTarget();
+  const dataDirectory = inPostgres('printenv', 'PGDATA');
+  assert.match(dataDirectory, /^\/var\/lib\/postgresql\/[A-Za-z0-9/_-]+$/);
+  const tempPrefix = `${dataDirectory}/burhanpedia-restore-`;
+  const tempDir = inPostgres('mktemp', '-d', `${tempPrefix}XXXXXX`);
+  assert(
+    tempDir.startsWith(tempPrefix) &&
+      /^[A-Za-z0-9]{6}$/.test(tempDir.slice(tempPrefix.length)),
+    'Unexpected restore directory',
+  );
+  const dumpFile = `${tempDir}/backup.dump`;
   try {
-    inPostgres('rm', '-f', DUMP_FILE);
     inPostgres(
       'pg_dump',
       '--format=custom',
@@ -69,9 +85,9 @@ function main(): void {
       '--dbname',
       SOURCE_DATABASE,
       '--file',
-      DUMP_FILE,
+      dumpFile,
     );
-    inPostgres('pg_restore', '--list', DUMP_FILE);
+    inPostgres('pg_restore', '--list', dumpFile);
     dropRestoreDatabase();
     psql('postgres', `CREATE DATABASE ${RESTORE_DATABASE}`);
     inPostgres(
@@ -83,7 +99,7 @@ function main(): void {
       DATABASE_USER,
       '--dbname',
       RESTORE_DATABASE,
-      DUMP_FILE,
+      dumpFile,
     );
 
     const result = psql(
@@ -109,8 +125,12 @@ function main(): void {
       }),
     );
   } finally {
-    dropRestoreDatabase();
-    inPostgres('rm', '-f', DUMP_FILE);
+    try {
+      dropRestoreDatabase();
+    } finally {
+      inPostgres('rm', '-f', dumpFile);
+      inPostgres('rmdir', tempDir);
+    }
   }
 }
 

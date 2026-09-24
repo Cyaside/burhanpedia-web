@@ -5,6 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomInt } from 'node:crypto';
 import { Pool, PoolClient, QueryConfig, QueryResult, QueryResultRow } from 'pg';
 
 type IsolationLevel = 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE';
@@ -128,7 +129,7 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
   }
 
   private async waitBeforeRetry(attempt: number): Promise<void> {
-    const delayMs = 20 * 2 ** attempt + Math.floor(Math.random() * 25);
+    const delayMs = 20 * 2 ** attempt + randomInt(25);
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 }

@@ -41,7 +41,7 @@ jobs:
           node-version: 22
       - name: Install and build backend
         working-directory: backend
-        run: npm ci && npm run build
+        run: npm ci --ignore-scripts && npm run build
       - name: Verify database from migrations
         working-directory: backend
         env:
@@ -68,7 +68,7 @@ jobs:
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: /api/v1
-        run: npm ci && npm run build
+        run: npm ci --ignore-scripts && npm run build
       - name: Start application stack
         env:
           NODE_ENV: test
@@ -92,5 +92,5 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3001
         run: |
-          npx playwright install --with-deps chromium
+          ./node_modules/.bin/playwright install --with-deps chromium
           npm run test:e2e
