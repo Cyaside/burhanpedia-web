@@ -5,7 +5,7 @@ import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { ArrowRight, Loader2, ShoppingBag, Store, Truck, Home } from "lucide-react"
+import { ArrowRight, Loader2, ShoppingBag, Store, Home } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,11 +14,10 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { ApiError, api } from "@/lib/api/client"
 
-const rolesSchema = z.array(z.enum(["BUYER", "SELLER", "DRIVER"])).min(1, "Choose at least one role")
+const rolesSchema = z.array(z.enum(["BUYER", "SELLER"])).min(1, "Choose at least one role")
 const roleOptions = [
   { value: "BUYER", label: "Buyer", icon: ShoppingBag },
   { value: "SELLER", label: "Seller", icon: Store },
-  { value: "DRIVER", label: "Driver", icon: Truck },
 ] as const
 
 const registerSchema = z
@@ -78,7 +77,7 @@ export function RegisterForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Register as</legend>
-            <div className="grid grid-cols-3 rounded-lg bg-muted p-[3px]">
+            <div className="grid grid-cols-2 rounded-lg bg-muted p-[3px]">
               {roleOptions.map(({ value, label, icon: Icon }) => (
                 <label
                   key={value}

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { ApiError, api } from "@/lib/api/client"
+import { safeNextPath } from "@/lib/navigation/safe-next-path"
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -40,7 +41,7 @@ export function LoginForm() {
       queryClient.clear()
       toast.success("Logged in successfully", { description: `Welcome back, ${data.user.name}` })
       const next = new URLSearchParams(window.location.search).get("next")
-      router.push(next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard")
+      router.push(safeNextPath(next))
     } catch (error) {
       toast.error("Login failed", {
         description: error instanceof ApiError ? error.message : "An error occurred during login",

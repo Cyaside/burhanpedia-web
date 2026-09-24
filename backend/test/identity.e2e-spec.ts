@@ -41,18 +41,21 @@ describe('identity session lifecycle', () => {
 
   afterAll(async () => app.close());
 
-  it('rejects public ADMIN registration', async () => {
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .set('origin', origin)
-      .send({
-        name: 'Forbidden Admin',
-        email: `admin-${email}`,
-        password: 'VerySecurePassword123!',
-        roles: ['ADMIN'],
-      })
-      .expect(400);
-  });
+  it.each(['ADMIN', 'DRIVER'])(
+    'rejects public %s registration',
+    async (role) => {
+      await request(app.getHttpServer())
+        .post('/api/v1/auth/register')
+        .set('origin', origin)
+        .send({
+          name: 'Forbidden Role',
+          email: `${role.toLowerCase()}-${email}`,
+          password: 'VerySecurePassword123!',
+          roles: [role],
+        })
+        .expect(400);
+    },
+  );
 
   it('rejects browser mutations from an unapproved origin', async () => {
     await request(app.getHttpServer())

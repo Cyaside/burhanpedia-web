@@ -12,11 +12,7 @@ import {
 } from 'class-validator';
 import { AppRole } from '../domain/identity.types';
 
-const PUBLIC_REGISTRATION_ROLES = [
-  AppRole.BUYER,
-  AppRole.SELLER,
-  AppRole.DRIVER,
-] as const;
+const PUBLIC_REGISTRATION_ROLES = [AppRole.BUYER, AppRole.SELLER] as const;
 
 export class RegisterDto {
   @Transform(({ value }: { value: unknown }) =>
@@ -41,7 +37,7 @@ export class RegisterDto {
 
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(3)
+  @ArrayMaxSize(2)
   @IsIn(PUBLIC_REGISTRATION_ROLES, { each: true })
   roles!: AppRole[];
 }
