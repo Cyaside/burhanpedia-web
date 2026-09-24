@@ -64,8 +64,15 @@ function dropRestoreDatabase(): void {
 
 function main(): void {
   assertSafeTarget();
-  const tempDir = inPostgres('mktemp', '-d', '/tmp/burhanpedia-restore-XXXXXX');
-  assert.match(tempDir, /^\/tmp\/burhanpedia-restore-[A-Za-z0-9]{6}$/);
+  const dataDirectory = inPostgres('printenv', 'PGDATA');
+  assert.match(dataDirectory, /^\/var\/lib\/postgresql\/[A-Za-z0-9/_-]+$/);
+  const tempPrefix = `${dataDirectory}/burhanpedia-restore-`;
+  const tempDir = inPostgres('mktemp', '-d', `${tempPrefix}XXXXXX`);
+  assert(
+    tempDir.startsWith(tempPrefix) &&
+      /^[A-Za-z0-9]{6}$/.test(tempDir.slice(tempPrefix.length)),
+    'Unexpected restore directory',
+  );
   const dumpFile = `${tempDir}/backup.dump`;
   try {
     inPostgres(
