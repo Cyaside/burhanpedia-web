@@ -62,7 +62,8 @@ jobs:
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://burhanpedia:burhanpedia_test@127.0.0.1:5432/burhanpedia_test
-        run: npm run db:seed:demo && npm run db:seed:demo && npm run db:verify:demo
+          ALLOW_DATABASE_RESET: 'true'
+        run: npm run db:reset && npm run db:seed:demo && npm run db:seed:demo && npm run db:verify:demo
       - name: Install and build frontend
         working-directory: frontend
         env:

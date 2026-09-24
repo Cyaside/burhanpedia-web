@@ -37,6 +37,16 @@ export function validateEnvironment(
 ): Record<string, unknown> {
   const config = { ...input };
   config.DATABASE_URL = requireNonEmpty(config, 'DATABASE_URL');
+  if (
+    config.NODE_ENV === 'production' &&
+    (config.DATABASE_SSL_REJECT_UNAUTHORIZED === 'false' ||
+      new URL(config.DATABASE_URL as string).searchParams.get('sslmode') ===
+        'no-verify')
+  ) {
+    throw new Error(
+      'PostgreSQL certificate verification is required in production',
+    );
+  }
   config.PORT = positiveInteger(config.PORT, 'PORT', DEFAULTS.PORT);
   config.DATABASE_POOL_MAX = positiveInteger(
     config.DATABASE_POOL_MAX,

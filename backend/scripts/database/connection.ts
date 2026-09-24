@@ -9,6 +9,15 @@ export function databaseUrl(): string {
   return value;
 }
 
+export function assertLocalSeedDatabase(connectionString: string): void {
+  const { hostname } = new URL(connectionString);
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(hostname)) {
+    throw new Error(
+      'Development data may only be loaded into a local database',
+    );
+  }
+}
+
 export function createDatabasePool(): Pool {
   const connectionString = databaseUrl();
   const config: PoolConfig = {

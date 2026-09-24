@@ -1,6 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { createDatabasePool } from './connection';
+import {
+  assertLocalSeedDatabase,
+  createDatabasePool,
+  databaseUrl,
+} from './connection';
 
 const SEED_FILE = resolve(__dirname, '../../database/seeds/development.sql');
 
@@ -10,6 +14,9 @@ export async function seed(): Promise<void> {
     process.env.ALLOW_PRODUCTION_SEED !== 'true'
   ) {
     throw new Error('Refusing to seed a production database');
+  }
+  if (process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+    assertLocalSeedDatabase(databaseUrl());
   }
   const pool = createDatabasePool();
   try {

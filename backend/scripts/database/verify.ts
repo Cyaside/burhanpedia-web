@@ -30,7 +30,7 @@ async function verify(): Promise<void> {
     const migrations = await client.query<{ count: string }>(
       'SELECT count(*) FROM schema_migrations',
     );
-    assert(Number(migrations.rows[0].count) >= 14);
+    assert(Number(migrations.rows[0].count) >= 15);
 
     const requiredIndexes = [
       'products_search_fts_idx',
@@ -132,6 +132,13 @@ async function verify(): Promise<void> {
        RETURNING id`,
       [wallet.rows[0].id],
     );
+    await client.query('SAVEPOINT ledger_truncate_check');
+    await assert.rejects(
+      client.query('TRUNCATE wallet_ledger_entries'),
+      /immutable/,
+    );
+    await client.query('ROLLBACK TO SAVEPOINT ledger_truncate_check');
+    await client.query('RELEASE SAVEPOINT ledger_truncate_check');
     await assert.rejects(
       client.query(
         'UPDATE wallet_ledger_entries SET amount_delta = 1 WHERE id = $1',

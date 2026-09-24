@@ -17,12 +17,7 @@ VALUES
   ('20000000-0000-4000-8000-000000000003', 'dapur@burhanpedia.local', 'Dapur Nusa', '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg', '2026-07-23T13:00:00Z'),
   ('20000000-0000-4000-8000-000000000004', 'kreasi@burhanpedia.local', 'Ruang Kreasi', '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg', '2026-07-23T13:00:00Z'),
   ('20000000-0000-4000-8000-000000000005', 'sehat@burhanpedia.local', 'Sehat Harian', '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg', '2026-07-23T13:00:00Z')
-ON CONFLICT (id) DO UPDATE SET
-  email = EXCLUDED.email,
-  name = EXCLUDED.name,
-  password_hash = EXCLUDED.password_hash,
-  status = 'ACTIVE',
-  email_verified_at = EXCLUDED.email_verified_at;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role, status)
 VALUES
@@ -31,7 +26,7 @@ VALUES
   ('20000000-0000-4000-8000-000000000003', 'SELLER', 'ACTIVE'),
   ('20000000-0000-4000-8000-000000000004', 'SELLER', 'ACTIVE'),
   ('20000000-0000-4000-8000-000000000005', 'SELLER', 'ACTIVE')
-ON CONFLICT (user_id, role) DO UPDATE SET status = 'ACTIVE';
+ON CONFLICT (user_id, role) DO NOTHING;
 
 INSERT INTO seller_profiles (id, user_id)
 VALUES
@@ -222,18 +217,13 @@ VALUES
     '$argon2id$v=19$m=19456,p=1,t=2$Nt7fk4tUtkawOb8yiLy/Ww$Gy1HJf6hptjmSRwN7l8Vcqkjo5XXus6jXeef+FuVEOg',
     '2026-07-23T13:00:00Z'
   )
-ON CONFLICT (id) DO UPDATE SET
-  email = EXCLUDED.email,
-  name = EXCLUDED.name,
-  password_hash = EXCLUDED.password_hash,
-  status = 'ACTIVE',
-  email_verified_at = EXCLUDED.email_verified_at;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role, status)
 VALUES
   ('20000000-0000-4000-8000-000000000010', 'BUYER', 'ACTIVE'),
   ('20000000-0000-4000-8000-000000000011', 'DRIVER', 'ACTIVE')
-ON CONFLICT (user_id, role) DO UPDATE SET status = 'ACTIVE';
+ON CONFLICT (user_id, role) DO NOTHING;
 
 INSERT INTO buyer_profiles (id, user_id)
 VALUES ('21000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000010')

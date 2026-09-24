@@ -28,6 +28,8 @@ Controllers accept and validate requests. Application services coordinate the wo
 
 The backend checks permissions and resource ownership on every protected action. Hiding a control in the frontend does not grant or remove access. Requests are validated and rate-limited; responses use a consistent error format and carry a request ID for troubleshooting.
 
+Public registration creates buyer or seller accounts. Driver and administrator roles are provisioned through trusted operations; existing driver accounts continue to use the driver workspace normally.
+
 ### Database
 
 PostgreSQL stores accounts, stores, products, carts, orders, delivery records, and background jobs. Schema changes are kept as numbered SQL files in `database/migrations/` and applied with `npm run db:migrate`. The migration command records what has run, verifies that applied files have not changed, and prevents two migration processes from changing the schema at once. Repositories use parameterized SQL through `pg`; related writes use transactions.
@@ -62,11 +64,11 @@ docker compose up -d --wait minio minio-init
 npm run smoke:storage
 ```
 
-Configure the `S3_*` variables from `.env.example`. The API issues a signed upload URL and checks the uploaded image before it can appear in the catalog. `npm run db:seed:demo` adds a larger demonstration dataset on top of the development seed; it is not production data.
+Configure the `S3_*` variables from `.env.example`. The API issues a signed upload URL and checks the uploaded image before it can appear in the catalog. `npm run db:seed:demo` adds a larger demonstration dataset on top of the development seed and prints a one-time administrator password when that account is initialized or an older shared demo password is replaced. Both seed commands require a loopback PostgreSQL connection by default and preserve existing account suspensions when rerun.
 
 ## Configuration and verification
 
-The main environment settings in `.env.example` cover PostgreSQL (`DATABASE_*`), sessions (`JWT_*` and `COOKIE_SECURE`), browser origins (`FRONTEND_URL` and `ADDITIONAL_ORIGINS`), and image storage (`S3_*`). Required production secrets are checked at startup. Keep credentials outside version control.
+The main environment settings in `.env.example` cover PostgreSQL (`DATABASE_*`), sessions (`JWT_*` and `COOKIE_SECURE`), browser origins (`FRONTEND_URL` and `ADDITIONAL_ORIGINS`), and image storage (`S3_*`). Required production secrets are checked at startup. Remote PostgreSQL connections should use TLS with certificate verification; production rejects configurations that disable verification. Keep credentials outside version control.
 
 ```bash
 npm run lint
@@ -90,6 +92,20 @@ The repository includes repeatable checks for catalog query performance and conc
 | Checkout concurrency tests | Verifies that competing checkouts cannot oversell the final unit or redeem the last voucher twice; retry behavior is also covered. | `npm run test:e2e -- --runInBand` |
 
 Run the HTTP smoke test against a running API and a populated test database. `API_BASE_URL`, `LOAD_REQUEST_COUNT`, `LOAD_CONCURRENCY`, and `LOAD_P95_TARGET_MS` can be set to match the environment. The database benchmark uses `CATALOG_BENCH_PRODUCTS` (default: 100,000). Neither command should target a production database.
+
+### Local benchmark results
+
+Measured on September 24, 2026, with Node.js 24.13.0, PostgreSQL 18.6 in Docker Desktop on Windows 11, and one local API instance. The HTTP run used the 300-product demo catalog. The database benchmark added 100,000 temporary products with three variants each, ran `ANALYZE`, and rolled back its transaction afterward.
+
+| Check | Workload | Observed result |
+| --- | --- | --- |
+| `GET /api/v1/products?limit=24` | 50 requests, 10 concurrent clients | 42.87 ms average; 117.40 ms p95 |
+| Newest catalog listing | 25 rows from the 100,000-product benchmark | 40 ms client elapsed; 0.91 ms PostgreSQL execution |
+| Price-ascending listing | 25 rows from the 100,000-product benchmark | 7 ms client elapsed; 1.02 ms PostgreSQL execution |
+| Full-text search | 25 rows from the 100,000-product benchmark | 108 ms client elapsed; 78.24 ms PostgreSQL execution |
+| Rare full-text search | 1 matching row | 6 ms client elapsed; 1.94 ms PostgreSQL execution |
+
+These are single local observations, not production service-level objectives or throughput measurements. The database figures come from one query execution per case; they are not latency percentiles. The catalog endpoint enforces a 90-request-per-minute rate limit, so repeated smoke runs within one window can return HTTP 429 and should not be treated as latency data.
 
 The API can be placed behind an external load balancer, with all instances using the same PostgreSQL database and image storage. Use `/api/v1/health/live` and `/api/v1/health/ready` for liveness and database-readiness checks. Size the PostgreSQL connection pool for the *total* number of API instances; `DATABASE_POOL_MAX` applies to each instance. The default rate limiter is per instance, so a shared store is needed if limits must apply globally. The worker runs separately and is not an HTTP load-balancer target. The current test suite checks application-level concurrency, but does not include a multi-instance load-balancer benchmark or an independently verified requests-per-second figure.
 

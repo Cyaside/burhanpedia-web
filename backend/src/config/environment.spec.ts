@@ -45,4 +45,27 @@ describe('validateEnvironment', () => {
       }),
     ).toThrow('COOKIE_SECURE must be true');
   });
+
+  it.each([
+    {
+      DATABASE_SSL_REJECT_UNAUTHORIZED: 'false',
+    },
+    {
+      DATABASE_URL:
+        'postgresql://user:password@db.example.test:5432/burhanpedia?sslmode=no-verify',
+    },
+  ])(
+    'requires PostgreSQL certificate verification in production',
+    (override) => {
+      expect(() =>
+        validateEnvironment({
+          ...validEnvironment,
+          NODE_ENV: 'production',
+          FRONTEND_URL: 'https://burhanpedia.example',
+          COOKIE_SECURE: 'true',
+          ...override,
+        }),
+      ).toThrow('PostgreSQL certificate verification is required');
+    },
+  );
 });

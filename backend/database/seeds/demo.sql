@@ -11,19 +11,14 @@ SELECT ('60000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
        '$argon2id$v=19$m=65536,p=4,t=3$suQmAoSiSoo/+vGoxeq0yQ$1z+74owouG/3hq49gHghnjWZsoYCcy0Q2bYGHdnT1Os',
        '2026-07-23T13:00:00Z'
 FROM seller_numbers
-ON CONFLICT (id) DO UPDATE SET
-  email = EXCLUDED.email,
-  name = EXCLUDED.name,
-  password_hash = EXCLUDED.password_hash,
-  status = 'ACTIVE',
-  email_verified_at = EXCLUDED.email_verified_at;
+ON CONFLICT (id) DO NOTHING;
 
 WITH seller_numbers AS (SELECT generate_series(1, 25) AS n)
 INSERT INTO user_roles (user_id, role, status)
 SELECT ('60000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
        'SELLER', 'ACTIVE'
 FROM seller_numbers
-ON CONFLICT (user_id, role) DO UPDATE SET status = 'ACTIVE';
+ON CONFLICT (user_id, role) DO NOTHING;
 
 WITH seller_numbers AS (SELECT generate_series(1, 25) AS n)
 INSERT INTO seller_profiles (id, user_id)
@@ -183,16 +178,14 @@ SELECT ('63000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
        '$argon2id$v=19$m=65536,p=4,t=3$suQmAoSiSoo/+vGoxeq0yQ$1z+74owouG/3hq49gHghnjWZsoYCcy0Q2bYGHdnT1Os',
        '2026-07-23T13:00:00Z'
 FROM buyer_numbers
-ON CONFLICT (id) DO UPDATE SET
-  email = EXCLUDED.email, name = EXCLUDED.name,
-  password_hash = EXCLUDED.password_hash, status = 'ACTIVE';
+ON CONFLICT (id) DO NOTHING;
 
 WITH buyer_numbers AS (SELECT generate_series(1, 29) AS n)
 INSERT INTO user_roles (user_id, role, status)
 SELECT ('63000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
        'BUYER', 'ACTIVE'
 FROM buyer_numbers
-ON CONFLICT (user_id, role) DO UPDATE SET status = 'ACTIVE';
+ON CONFLICT (user_id, role) DO NOTHING;
 
 WITH buyer_numbers AS (SELECT generate_series(1, 29) AS n)
 INSERT INTO buyer_profiles (id, user_id)
@@ -231,16 +224,14 @@ SELECT ('64000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
        '$argon2id$v=19$m=65536,p=4,t=3$suQmAoSiSoo/+vGoxeq0yQ$1z+74owouG/3hq49gHghnjWZsoYCcy0Q2bYGHdnT1Os',
        '2026-07-23T13:00:00Z'
 FROM driver_numbers
-ON CONFLICT (id) DO UPDATE SET
-  email = EXCLUDED.email, name = EXCLUDED.name,
-  password_hash = EXCLUDED.password_hash, status = 'ACTIVE';
+ON CONFLICT (id) DO NOTHING;
 
 WITH driver_numbers AS (SELECT generate_series(1, 29) AS n)
 INSERT INTO user_roles (user_id, role, status)
 SELECT ('64000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
        'DRIVER', 'ACTIVE'
 FROM driver_numbers
-ON CONFLICT (user_id, role) DO UPDATE SET status = 'ACTIVE';
+ON CONFLICT (user_id, role) DO NOTHING;
 
 WITH driver_numbers AS (SELECT generate_series(1, 29) AS n)
 INSERT INTO driver_profiles (id, user_id, is_available)
@@ -263,16 +254,14 @@ INSERT INTO users (id, email, name, password_hash, email_verified_at)
 VALUES (
   '65000000-0000-4000-8000-000000000001',
   'admin@demo.burhanpedia.local', 'Admin Demo',
-  '$argon2id$v=19$m=65536,p=4,t=3$suQmAoSiSoo/+vGoxeq0yQ$1z+74owouG/3hq49gHghnjWZsoYCcy0Q2bYGHdnT1Os',
+  'PENDING_DEMO_ADMIN_CREDENTIAL',
   '2026-07-23T13:00:00Z'
 )
-ON CONFLICT (id) DO UPDATE SET
-  email = EXCLUDED.email, name = EXCLUDED.name,
-  password_hash = EXCLUDED.password_hash, status = 'ACTIVE';
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role, status)
 VALUES ('65000000-0000-4000-8000-000000000001', 'ADMIN', 'ACTIVE')
-ON CONFLICT (user_id, role) DO UPDATE SET status = 'ACTIVE';
+ON CONFLICT (user_id, role) DO NOTHING;
 
 INSERT INTO admin_profiles (id, user_id)
 VALUES (
